@@ -1,0 +1,102 @@
+.pitch {
+  background: linear-gradient(180deg, #15803d 0%, #166534 100%);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 24px 16px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 520px;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Pitch Field Markings */
+.pitch::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.centerCircle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  position: relative;
+  z-index: 2;
+  gap: 8px;
+}
+
+.playerSlot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  background: rgba(11, 14, 20, 0.85);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  min-width: 80px;
+  text-align: center;
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+  backdrop-filter: blur(4px);
+}
+
+.playerSlot:hover {
+  transform: scale(1.05);
+  border-color: var(--accent-green);
+}
+
+.playerSlotCaptain {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
+.slotPosBadge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.slotName {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90px;
+}
+
+.slotClub {
+  font-size: 0.6875rem;
+  color: var(--text-secondary);
+}
+
+.captainTag {
+  background: var(--accent-gold);
+  color: #000;
+  font-weight: 800;
+  font-size: 0.625rem;
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+  margin-top: 2px;
+}

@@ -31,13 +31,25 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Rotas protegidas (redireciona para /login se não autenticado)
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/login')
-  const isPublicRoute = isAuthRoute || request.nextUrl.pathname === '/'
+  // Rotas públicas (não exigem autenticação)
+  const pathname = request.nextUrl.pathname
+  const isPublicRoute =
+    pathname === '/' ||
+    pathname === '/login' ||
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/join/')
 
+  // Redireciona não-autenticados para /login
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  // Redireciona autenticados que acessam /login para /dashboard
+  if (user && pathname === '/login') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
 

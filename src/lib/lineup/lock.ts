@@ -32,10 +32,12 @@ export async function checkRoundLockStatus(
   }
 
   const kickoffTime = new Date(fixtures[0].kickoff_at).getTime()
+  // Market closes exactly 30 minutes before the first kickoff of the round
+  const marketLockTime = kickoffTime - 30 * 60 * 1000
   const now = Date.now()
 
   return {
-    isLocked: now >= kickoffTime,
+    isLocked: now >= marketLockTime,
     kickoffAt: fixtures[0].kickoff_at,
     roundNumber: fixtureRound,
   }
@@ -49,6 +51,7 @@ export function generateAutoFallbackLineup(
 ): {
   formation: Formation
   starters: { playerId: string; position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'; isCaptain: boolean }[]
+  reserves: { playerId: string; position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'; isCaptain: boolean }[]
 } {
   const formation: Formation = '4-3-3'
   const reqs = FORMATION_REQUIREMENTS[formation]
@@ -75,19 +78,40 @@ export function generateAutoFallbackLineup(
     }
   }
 
-  // Assign captain to highest avgPoints player among starters
-  if (starters.length > 0) {
-    let topStarter = starters[0]
-    let maxPts = -1
-    starters.forEach((s) => {
-      const p = roster.find((r) => r.id === s.playerId)
-      if (p && p.avgPoints > maxPts) {
-        maxPts = p.avgPoints
-        topStarter = s
-      }
-    })
-    topStarter.isCaptain = true
+  // Pick top remaining player per position as reserves (1 for each pos: GOL, LAT, ZAG, MEI, ATA)
+  const starterPlayerIds = new Set(starters.map((s) => s.playerId))
+  const reserves: { playerId: string; position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'; isCaptain: boolean }[] = []
+
+  for (const pos of ['GOL', 'LAT', 'ZAG', 'MEI', 'ATA'] as const) {
+    const pool = grouped[pos] || []
+    const reserveCandidate = pool.find((p) => !starterPlayerIds.has(p.id))
+    if (reserveCandidate) {
+      reserves.push({
+        playerId: reserveCandidate.id,
+        position: pos,
+        isCaptain: false,
+      })
+    }
   }
 
-  return { formation, starters }
+  // Set captain to top avgPoints starter
+  let topStarterId: string | null = null
+  let topAvg = -Infinity
+  for (const s of starters) {
+    const p = roster.find((r) => r.id === s.playerId)
+    if (p && p.avgPoints > topAvg) {
+      topAvg = p.avgPoints
+      topStarterId = s.playerId
+    }
+  }
+
+  if (topStarterId) {
+    for (const s of starters) {
+      if (s.playerId === topStarterId) {
+        s.isCaptain = true
+      }
+    }
+  }
+
+  return { formation, starters, reserves }
 }

@@ -23,6 +23,18 @@ describe('Berger H2H Generator & Standings', () => {
     expect(round3).toHaveLength(2)
   })
 
+  it('generates matchups through endRound repeating cycles (e.g. 4 teams from round 28 to 38 = 11 rounds)', () => {
+    const teams = ['T1', 'T2', 'T3', 'T4']
+    const matchups = generateBergerMatchups(teams, 28, 38)
+
+    // 11 rounds (28..38), 2 matches per round = 22 matches
+    expect(matchups).toHaveLength(22)
+    for (let r = 28; r <= 38; r++) {
+      const roundMatches = matchups.filter((m) => m.fixtureRound === r)
+      expect(roundMatches).toHaveLength(2)
+    }
+  })
+
   it('handles odd number of teams with BYE filtering (3 teams -> 3 rounds)', () => {
     const teams = ['T1', 'T2', 'T3']
     const matchups = generateBergerMatchups(teams, 1)

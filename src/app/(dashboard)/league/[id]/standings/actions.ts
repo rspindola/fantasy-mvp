@@ -4,21 +4,30 @@ import { createClient } from '@/lib/supabase/server'
 import { calculateTotalStandings, type TotalStandingsRow } from '@/lib/standings/total-standings'
 import { calculateH2HStandings, type H2HStandingsRow } from '@/lib/h2h/h2h-processor'
 
+export type MatchupItem = {
+  id: string
+  fixtureRound: number
+  homeTeamId: string
+  homeTeamName: string
+  awayTeamId: string
+  awayTeamName: string
+  homePoints: number | null
+  awayPoints: number | null
+  result: 'home' | 'away' | 'draw' | null
+}
+
 export type StandingsPageData = {
   leagueId: string
   leagueName: string
   scoringMode: 'TOTAL' | 'H2H'
+  h2hFormat?: 'SINGLE_ROUND' | 'DOUBLE_ROUND'
   currentRound: number
+  totalRounds: number
+  finalRound: number
   totalStandings: TotalStandingsRow[]
   h2hStandings: H2HStandingsRow[]
-  currentMatchups: {
-    id: string
-    homeTeamName: string
-    awayTeamName: string
-    homePoints: number | null
-    awayPoints: number | null
-    result: string | null
-  }[]
+  allMatchups: MatchupItem[]
+  currentMatchups: MatchupItem[]
 }
 
 export async function getStandingsData(leagueId: string): Promise<StandingsPageData | null> {
@@ -32,7 +41,7 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
   // Fetch league info
   const { data: league } = await supabase
     .from('leagues')
-    .select('id, name, scoring_mode, season_id')
+    .select('id, name, scoring_mode, h2h_format, season_id')
     .eq('id', leagueId)
     .single()
 
@@ -41,11 +50,12 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
   // Fetch season info
   const { data: season } = await supabase
     .from('seasons')
-    .select('current_round')
+    .select('current_round, total_rounds')
     .eq('id', league.season_id)
     .single()
 
   const currentRound = season?.current_round ?? 1
+  const totalRounds = season?.total_rounds ?? 38
 
   // Fetch round scores history for TOTAL standings
   const { data: scoresData } = await supabase
@@ -76,7 +86,8 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
 
   // Fetch H2H matchups for H2H standings & current round matchups
   let h2hStandings: H2HStandingsRow[] = []
-  let currentMatchups: StandingsPageData['currentMatchups'] = []
+  let allMatchups: MatchupItem[] = []
+  let currentMatchups: MatchupItem[] = []
 
   if (league.scoring_mode === 'H2H') {
     const { data: matchupsData } = await supabase
@@ -93,8 +104,9 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
         away_team:fantasy_teams!h2h_matchups_away_team_id_fkey(name)
       `)
       .eq('league_id', leagueId)
+      .order('fixture_round', { ascending: true })
 
-    const matchupsRecords = (matchupsData || []).map((m: any) => ({
+    allMatchups = (matchupsData || []).map((m: any) => ({
       id: m.id,
       fixtureRound: m.fixture_round,
       homeTeamId: m.home_team_id,
@@ -106,27 +118,27 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
       result: m.result as any,
     }))
 
-    h2hStandings = calculateH2HStandings(matchupsRecords)
+    h2hStandings = calculateH2HStandings(allMatchups)
 
-    currentMatchups = matchupsRecords
-      .filter((m) => m.fixtureRound === currentRound)
-      .map((m) => ({
-        id: m.id,
-        homeTeamName: m.homeTeamName,
-        awayTeamName: m.awayTeamName,
-        homePoints: m.homePoints,
-        awayPoints: m.awayPoints,
-        result: m.result,
-      }))
+    currentMatchups = allMatchups.filter((m) => m.fixtureRound === currentRound)
   }
+
+  const finalRound =
+    allMatchups.length > 0
+      ? Math.max(...allMatchups.map((m) => m.fixtureRound))
+      : totalRounds
 
   return {
     leagueId,
     leagueName: league.name,
     scoringMode: league.scoring_mode as any,
+    h2hFormat: league.h2h_format as any,
     currentRound,
+    totalRounds,
+    finalRound,
     totalStandings,
     h2hStandings,
+    allMatchups,
     currentMatchups,
   }
 }

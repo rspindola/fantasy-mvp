@@ -42,6 +42,7 @@
 .tabs {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .tabBtn {
@@ -56,10 +57,20 @@
   transition: all var(--transition-fast);
 }
 
+.tabBtn:hover {
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+}
+
 .tabBtnActive {
   background: var(--accent-green);
   color: var(--text-inverse);
   border-color: var(--accent-green);
+}
+
+.tabBtnActive:hover {
+  background: var(--accent-green);
+  color: var(--text-inverse);
 }
 
 .card {
@@ -147,9 +158,165 @@
   color: var(--text-secondary);
 }
 
+/* Matchups Navigation & Header */
+.matchupsNav {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.matchupsNavTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.roundSwitcher {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navArrowBtn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.125rem;
+  transition: all var(--transition-fast);
+}
+
+.navArrowBtn:hover:not(:disabled) {
+  border-color: var(--accent-green);
+  background: var(--bg-card);
+  color: var(--accent-green);
+}
+
+.navArrowBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.roundTitleArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 140px;
+}
+
+.roundTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.roundStatusTag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-top: 2px;
+}
+
+.statusCompleted {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.statusCurrent {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent-gold);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.statusUpcoming {
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+.viewToggleBtn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.viewToggleBtn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.viewToggleBtnActive {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+/* Round Pills Bar */
+.roundPillsScroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+}
+
+.roundPill {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.roundPill:hover {
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+}
+
+.roundPillActive {
+  background: var(--accent-green);
+  color: var(--text-inverse);
+  border-color: var(--accent-green);
+}
+
+.roundPillCurrentIndicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+}
+
+/* Matchup Cards Grid */
 .matchupsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 16px;
 }
 
@@ -157,10 +324,16 @@
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 16px;
+  padding: 18px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.matchupCard:hover {
+  border-color: var(--border-medium);
 }
 
 .matchupTeam {
@@ -172,18 +345,64 @@
 
 .matchupTeamName {
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+}
+
+.winnerName {
+  color: var(--accent-green);
+  font-weight: 700;
 }
 
 .matchupScore {
-  font-size: 1.125rem;
+  font-size: 1.1875rem;
   font-weight: 700;
   color: var(--accent-green);
+}
+
+.matchupScorePending {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .vsBadge {
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--text-muted);
-  padding: 0 12px;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+/* All Rounds Full View */
+.allRoundsList {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.roundSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.roundSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.roundSectionTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }

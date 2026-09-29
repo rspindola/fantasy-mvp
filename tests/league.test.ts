@@ -18,11 +18,20 @@ describe('H2H Validation', () => {
     expect(h2hRoundsNeeded(15)).toBe(15)
   })
 
-  it('validates if H2H can start with remaining rounds', () => {
-    expect(canStartH2H(10, 38)).toBe(true)
-    expect(canStartH2H(10, 9)).toBe(true)
-    expect(canStartH2H(10, 8)).toBe(false)
-    expect(canStartH2H(12, 10)).toBe(false)
+  it('calculates rounds needed for double round-robin (Ida e Volta)', () => {
+    expect(h2hRoundsNeeded(4, 'DOUBLE_ROUND')).toBe(6)
+    expect(h2hRoundsNeeded(10, 'DOUBLE_ROUND')).toBe(18)
+    expect(h2hRoundsNeeded(20, 'DOUBLE_ROUND')).toBe(38)
+  })
+
+  it('validates if H2H can start with remaining rounds and format', () => {
+    expect(canStartH2H(10, 38, 'SINGLE_ROUND')).toBe(true)
+    expect(canStartH2H(10, 9, 'SINGLE_ROUND')).toBe(true)
+    expect(canStartH2H(10, 8, 'SINGLE_ROUND')).toBe(false)
+    expect(canStartH2H(12, 10, 'SINGLE_ROUND')).toBe(false)
+    expect(canStartH2H(4, 6, 'DOUBLE_ROUND')).toBe(true)
+    expect(canStartH2H(4, 5, 'DOUBLE_ROUND')).toBe(false)
+    expect(canStartH2H(20, 38, 'DOUBLE_ROUND')).toBe(true)
   })
 })
 

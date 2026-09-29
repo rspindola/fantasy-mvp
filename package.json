@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "seed": "tsx scripts/seed-catalog.ts",
     "seed:api": "tsx scripts/seed-from-api.ts",
+    "seed:demo": "tsx scripts/seed-demo-league.ts",
     "migrate": "tsx scripts/migrate.ts"
   },
   "dependencies": {

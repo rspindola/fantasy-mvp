@@ -11,6 +11,7 @@ export type LeagueDetails = {
   name: string
   inviteCode: string
   scoringMode: 'TOTAL' | 'H2H'
+  h2hFormat?: 'SINGLE_ROUND' | 'DOUBLE_ROUND'
   draftMode: 'MANUAL' | 'AUTO' | 'HYBRID'
   teamCap: number
   status: 'open' | 'drafting' | 'active' | 'closed'
@@ -45,6 +46,7 @@ export async function getLeagueDetails(leagueId: string): Promise<LeagueDetails 
       name,
       invite_code,
       scoring_mode,
+      h2h_format,
       draft_mode,
       team_cap,
       status,
@@ -89,6 +91,7 @@ export async function getLeagueDetails(leagueId: string): Promise<LeagueDetails 
     name: league.name,
     inviteCode: league.invite_code,
     scoringMode: league.scoring_mode as any,
+    h2hFormat: (league.h2h_format as any) ?? 'DOUBLE_ROUND',
     draftMode: league.draft_mode as any,
     teamCap: league.team_cap,
     status: league.status as any,
@@ -114,7 +117,7 @@ export async function startDraftAction(leagueId: string) {
   // Fetch league to verify commissioner
   const { data: league } = await supabase
     .from('leagues')
-    .select('commissioner_id, status, scoring_mode')
+    .select('commissioner_id, status, scoring_mode, h2h_format')
     .eq('id', leagueId)
     .single()
 
@@ -134,7 +137,7 @@ export async function startDraftAction(leagueId: string) {
 
   const numTeams = teamCount || 0
   if (numTeams < 2) {
-    throw new Error('A liga precisa de no mínimo 2 teams para iniciar o draft')
+    throw new Error('A liga precisa de no mínimo 2 times para iniciar o draft')
   }
 
   // Validate H2H rounds if applicable
@@ -147,9 +150,10 @@ export async function startDraftAction(leagueId: string) {
       .single()
 
     const remainingRounds = (season?.total_rounds ?? 38) - (season?.current_round ?? 1) + 1
-    if (!canStartH2H(numTeams, remainingRounds)) {
+    const format = (league.h2h_format as any) ?? 'DOUBLE_ROUND'
+    if (!canStartH2H(numTeams, remainingRounds, format)) {
       throw new Error(
-        `Para um campeonato H2H com ${numTeams} times, são necessárias ${numTeams % 2 === 0 ? numTeams - 1 : numTeams} rodadas. Restam apenas ${remainingRounds} rodadas na temporada.`
+        `Para um campeonato H2H com ${numTeams} times no formato ${format === 'DOUBLE_ROUND' ? 'Ida e Volta' : 'Turno Único'}, restam apenas ${remainingRounds} rodadas na temporada.`
       )
     }
   }

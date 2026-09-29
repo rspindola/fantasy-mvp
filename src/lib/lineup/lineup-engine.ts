@@ -24,6 +24,7 @@ export interface LineupSlotItem {
 export interface ValidateLineupInput {
   formation: Formation
   starters: LineupSlotItem[]
+  reserves?: LineupSlotItem[]
   rosterPlayerIds: string[]
 }
 
@@ -33,7 +34,7 @@ export interface LineupValidationResult {
 }
 
 /**
- * Validates a proposed starting 11 lineup against formation requirements, captain rule, and roster ownership.
+ * Validates a proposed starting 11 lineup and reserves against formation requirements, captain rule, and roster ownership.
  */
 export function validateLineup(input: ValidateLineupInput): LineupValidationResult {
   const errors: string[] = []
@@ -49,14 +50,24 @@ export function validateLineup(input: ValidateLineupInput): LineupValidationResu
     errors.push(`A escalação precisa ter exatamente 1 capitão (encontrados: ${captainCount}).`)
   }
 
-  // 3. All starters must be in user's roster
+  // 3. All starters and reserves must be in user's roster
   const rosterSet = new Set(input.rosterPlayerIds)
-  const invalidRosterPlayers = input.starters.filter((s) => !rosterSet.has(s.playerId))
+  const allSlots = [...input.starters, ...(input.reserves || [])]
+  const invalidRosterPlayers = allSlots.filter((s) => !rosterSet.has(s.playerId))
   if (invalidRosterPlayers.length > 0) {
     errors.push('Existem jogadores na escalação que não pertencem ao seu elenco.')
   }
 
-  // 4. Validate position counts against formation requirements
+  // 4. Starters and reserves must not overlap
+  const starterIds = new Set(input.starters.map((s) => s.playerId))
+  if (input.reserves) {
+    const overlapping = input.reserves.filter((r) => starterIds.has(r.playerId))
+    if (overlapping.length > 0) {
+      errors.push('Um jogador não pode ser titular e reserva ao mesmo tempo.')
+    }
+  }
+
+  // 5. Validate position counts for starters against formation requirements
   const reqs = FORMATION_REQUIREMENTS[input.formation]
   if (reqs) {
     const counts: Record<string, number> = { GOL: 0, LAT: 0, ZAG: 0, MEI: 0, ATA: 0 }

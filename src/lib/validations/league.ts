@@ -12,6 +12,7 @@ export const createLeagueSchema = z.object({
     .min(2, 'A liga precisa de no mínimo 2 times.')
     .max(20, 'O limite máximo é de 20 times por liga.'),
   scoringMode: z.enum(['TOTAL', 'H2H']),
+  h2hFormat: z.enum(['SINGLE_ROUND', 'DOUBLE_ROUND']).optional().default('DOUBLE_ROUND'),
   draftMode: z.enum(['MANUAL', 'AUTO', 'HYBRID']),
   pickTimerSeconds: z
     .number()

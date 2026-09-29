@@ -5,12 +5,15 @@ export interface H2HMatchupSlot {
 }
 
 /**
- * Generates single round-robin H2H matchups using Berger circle algorithm.
+ * Generates round-robin H2H matchups using Berger circle algorithm.
  * If teamIds count N is odd, adds a dummy 'BYE' team (1 team rests per round).
+ * If endRound is provided, continues cycling through the schedule (inverting home/away
+ * on alternating cycles) until all rounds up to endRound are generated.
  */
 export function generateBergerMatchups(
   teamIds: string[],
-  startRound: number = 1
+  startRound: number = 1,
+  endRound?: number
 ): H2HMatchupSlot[] {
   if (teamIds.length < 2) return []
 
@@ -22,30 +25,28 @@ export function generateBergerMatchups(
   }
 
   const numTeams = teams.length
-  const numRounds = numTeams - 1
+  const cycleRounds = numTeams - 1
   const half = numTeams / 2
 
-  const matchups: H2HMatchupSlot[] = []
-
+  // Generate canonical single round-robin cycle (relative rounds: 0..cycleRounds-1)
+  const canonicalRounds: { home: string; away: string }[][] = []
   let teamList = [...teams]
 
-  for (let r = 0; r < numRounds; r++) {
-    const currentRound = startRound + r
-
+  for (let r = 0; r < cycleRounds; r++) {
+    const roundMatches: { home: string; away: string }[] = []
     for (let i = 0; i < half; i++) {
       const home = teamList[i]
       const away = teamList[numTeams - 1 - i]
 
-      // Filter out BYE matches
       if (home !== 'BYE' && away !== 'BYE') {
-        // Alternate home/away for balance
         if (r % 2 === 0) {
-          matchups.push({ fixtureRound: currentRound, homeTeamId: home, awayTeamId: away })
+          roundMatches.push({ home, away })
         } else {
-          matchups.push({ fixtureRound: currentRound, homeTeamId: away, awayTeamId: home })
+          roundMatches.push({ home: away, away: home })
         }
       }
     }
+    canonicalRounds.push(roundMatches)
 
     // Rotate array elements (keep index 0 fixed, rotate 1..N-1)
     teamList = [
@@ -53,6 +54,32 @@ export function generateBergerMatchups(
       teamList[numTeams - 1],
       ...teamList.slice(1, numTeams - 1),
     ]
+  }
+
+  const maxRound = endRound !== undefined && endRound >= startRound
+    ? endRound
+    : startRound + cycleRounds - 1
+
+  const matchups: H2HMatchupSlot[] = []
+  let currentRound = startRound
+  let cycleIndex = 0
+
+  while (currentRound <= maxRound) {
+    for (let r = 0; r < cycleRounds && currentRound <= maxRound; r++) {
+      const matches = canonicalRounds[r]
+      const invertHomeAway = cycleIndex % 2 === 1
+
+      for (const m of matches) {
+        matchups.push({
+          fixtureRound: currentRound,
+          homeTeamId: invertHomeAway ? m.away : m.home,
+          awayTeamId: invertHomeAway ? m.home : m.away,
+        })
+      }
+
+      currentRound++
+    }
+    cycleIndex++
   }
 
   return matchups

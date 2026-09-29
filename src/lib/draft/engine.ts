@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { generateSnakeOrder } from './snake-order'
 import { autoPickPlayer, type PlayerCandidate, type PositionKey } from './auto-pick'
+import { generateBergerMatchups } from '@/lib/h2h/berger-generator'
+import { h2hRoundsNeeded } from '@/lib/league/h2h-validation'
 
 /**
  * Starts the draft for a league:
@@ -164,10 +166,20 @@ export async function makePickEngine(
 /**
  * Completes the draft:
  * 1. Copies all draft_picks into roster_players
- * 2. Changes league status to 'active'
+ * 2. Generates H2H matchups if scoring_mode === 'H2H'
+ * 3. Changes league status to 'active'
  */
 export async function completeDraftEngine(leagueId: string) {
   const supabase = await createClient()
+
+  // Fetch league info
+  const { data: league, error: leagueErr } = await supabase
+    .from('leagues')
+    .select('scoring_mode, season_id, h2h_format')
+    .eq('id', leagueId)
+    .single()
+
+  if (leagueErr || !league) throw new Error('Erro ao buscar informações da liga.')
 
   // Fetch all picks
   const { data: picks, error: picksErr } = await supabase
@@ -190,6 +202,52 @@ export async function completeDraftEngine(leagueId: string) {
   if (rosterErr) {
     console.error('Error populating roster_players:', rosterErr)
     throw new Error('Erro ao consolidar elencos da liga.')
+  }
+
+  // If H2H, generate matchups using Berger algorithm
+  if (league.scoring_mode === 'H2H') {
+    const { data: teams } = await supabase
+      .from('fantasy_teams')
+      .select('id')
+      .eq('league_id', leagueId)
+      .order('draft_order', { ascending: true })
+
+    if (teams && teams.length >= 2) {
+      const teamIds = teams.map((t) => t.id)
+
+      // Get season rounds to schedule all fixtures until tournament end
+      const { data: season } = await supabase
+        .from('seasons')
+        .select('current_round, total_rounds')
+        .eq('id', league.season_id)
+        .single()
+
+      const startRound = season?.current_round ?? 1
+      const roundsNeeded = h2hRoundsNeeded(
+        teamIds.length,
+        (league.h2h_format as any) ?? 'DOUBLE_ROUND'
+      )
+      const endRound = startRound + roundsNeeded - 1
+      const matchups = generateBergerMatchups(teamIds, startRound, endRound)
+
+      // Insert matchups
+      if (matchups.length > 0) {
+        const matchupRecords = matchups.map((m) => ({
+          league_id: leagueId,
+          fixture_round: m.fixtureRound,
+          home_team_id: m.homeTeamId,
+          away_team_id: m.awayTeamId,
+        }))
+
+        const { error: matchupErr } = await supabase
+          .from('h2h_matchups')
+          .insert(matchupRecords)
+
+        if (matchupErr) {
+          console.error('Error generating H2H matchups:', matchupErr)
+        }
+      }
+    }
   }
 
   // Update status to 'active'

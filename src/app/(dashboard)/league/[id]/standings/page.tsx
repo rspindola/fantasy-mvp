@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { getStandingsData, type StandingsPageData } from './actions'
+import { getStandingsData, type StandingsPageData, type MatchupItem } from './actions'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import styles from './page.module.css'
@@ -15,12 +15,15 @@ export default function StandingsPage() {
   const [data, setData] = useState<StandingsPageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'TOTAL' | 'H2H' | 'MATCHUPS'>('TOTAL')
+  const [selectedRound, setSelectedRound] = useState<number>(1)
+  const [viewAllRounds, setViewAllRounds] = useState(false)
 
   useEffect(() => {
     if (leagueId) {
       getStandingsData(leagueId).then((res) => {
         if (res) {
           setData(res)
+          setSelectedRound(res.currentRound)
           if (res.scoringMode === 'H2H') {
             setActiveTab('H2H')
           }
@@ -49,6 +52,71 @@ export default function StandingsPage() {
     )
   }
 
+  // Get all unique rounds present in matchups, sorted
+  const matchupRounds = Array.from(
+    new Set(data.allMatchups.map((m) => m.fixtureRound))
+  ).sort((a, b) => a - b)
+
+  const minRound = matchupRounds.length > 0 ? matchupRounds[0] : data.currentRound
+  const maxRound = matchupRounds.length > 0 ? matchupRounds[matchupRounds.length - 1] : data.totalRounds
+
+  const filteredMatchups = data.allMatchups.filter(
+    (m) => m.fixtureRound === selectedRound
+  )
+
+  const handlePrevRound = () => {
+    const currentIndex = matchupRounds.indexOf(selectedRound)
+    if (currentIndex > 0) {
+      setSelectedRound(matchupRounds[currentIndex - 1])
+    }
+  }
+
+  const handleNextRound = () => {
+    const currentIndex = matchupRounds.indexOf(selectedRound)
+    if (currentIndex !== -1 && currentIndex < matchupRounds.length - 1) {
+      setSelectedRound(matchupRounds[currentIndex + 1])
+    }
+  }
+
+  const renderMatchupCard = (m: MatchupItem) => {
+    const hasScores = m.homePoints !== null && m.awayPoints !== null
+    const isHomeWinner = hasScores && (m.homePoints! > m.awayPoints! || m.result === 'home')
+    const isAwayWinner = hasScores && (m.awayPoints! > m.homePoints! || m.result === 'away')
+    const isDraw = hasScores && m.homePoints === m.awayPoints
+
+    return (
+      <div key={m.id} className={styles.matchupCard}>
+        <div className={styles.matchupTeam}>
+          <span
+            className={`${styles.matchupTeamName} ${isHomeWinner ? styles.winnerName : ''}`}
+          >
+            {isHomeWinner && '👑 '}
+            {m.homeTeamName}
+          </span>
+          <span className={hasScores ? styles.matchupScore : styles.matchupScorePending}>
+            {m.homePoints !== null ? `${m.homePoints} pts` : 'A disputar'}
+          </span>
+        </div>
+
+        <div className={styles.vsBadge}>
+          {isDraw ? 'EMPATE' : 'VS'}
+        </div>
+
+        <div className={styles.matchupTeam} style={{ textAlign: 'right' }}>
+          <span
+            className={`${styles.matchupTeamName} ${isAwayWinner ? styles.winnerName : ''}`}
+          >
+            {m.awayTeamName}
+            {isAwayWinner && ' 👑'}
+          </span>
+          <span className={hasScores ? styles.matchupScore : styles.matchupScorePending}>
+            {m.awayPoints !== null ? `${m.awayPoints} pts` : 'A disputar'}
+          </span>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={styles.container}>
       {/* Top Bar */}
@@ -56,7 +124,9 @@ export default function StandingsPage() {
         <div className={styles.titleBox}>
           <h1 className={styles.leagueTitle}>{data.leagueName} — Classificação</h1>
           <span className={styles.subTitle}>
-            Rodada {data.currentRound} de 38 · Modo {data.scoringMode}
+            Rodada {data.currentRound} de {data.totalRounds} · Modo {data.scoringMode}
+            {data.scoringMode === 'H2H' &&
+              ` (${data.h2hFormat === 'SINGLE_ROUND' ? 'Turno Único' : 'Ida e Volta'} · Final na R${data.finalRound})`}
           </span>
         </div>
 
@@ -67,7 +137,7 @@ export default function StandingsPage() {
               activeTab === 'TOTAL' ? styles.tabBtnActive : ''
             }`}
           >
-            Tabela TOTAL
+            Tabela Geral (Pontos)
           </button>
 
           {data.scoringMode === 'H2H' && (
@@ -86,7 +156,7 @@ export default function StandingsPage() {
                   activeTab === 'MATCHUPS' ? styles.tabBtnActive : ''
                 }`}
               >
-                Duelos da Rodada
+                Confrontos & Calendário
               </button>
             </>
           )}
@@ -232,33 +302,148 @@ export default function StandingsPage() {
           </div>
         )}
 
-        {/* Aba Duelos da Rodada */}
+        {/* Aba Confrontos & Calendário (Duelos H2H) */}
         {activeTab === 'MATCHUPS' && (
-          <div className={styles.matchupsGrid}>
-            {data.currentMatchups.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)' }}>
-                Nenhum confronto agendado para esta rodada.
-              </p>
-            ) : (
-              data.currentMatchups.map((m) => (
-                <div key={m.id} className={styles.matchupCard}>
-                  <div className={styles.matchupTeam}>
-                    <span className={styles.matchupTeamName}>{m.homeTeamName}</span>
-                    <span className={styles.matchupScore}>
-                      {m.homePoints !== null ? `${m.homePoints} pts` : '-'}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Navigation Header */}
+            <div className={styles.matchupsNav}>
+              <div className={styles.matchupsNavTop}>
+                {/* Switcher */}
+                <div className={styles.roundSwitcher}>
+                  <button
+                    onClick={handlePrevRound}
+                    disabled={selectedRound <= minRound}
+                    className={styles.navArrowBtn}
+                    title="Rodada anterior"
+                  >
+                    ◀
+                  </button>
+
+                  <div className={styles.roundTitleArea}>
+                    <span className={styles.roundTitle}>
+                      Rodada {selectedRound}
+                    </span>
+                    <span
+                      className={`${styles.roundStatusTag} ${
+                        selectedRound < data.currentRound
+                          ? styles.statusCompleted
+                          : selectedRound === data.currentRound
+                          ? styles.statusCurrent
+                          : styles.statusUpcoming
+                      }`}
+                    >
+                      {selectedRound < data.currentRound
+                        ? '✓ Finalizada'
+                        : selectedRound === data.currentRound
+                        ? '🔥 Rodada Atual'
+                        : '⏳ A Disputar'}
                     </span>
                   </div>
 
-                  <div className={styles.vsBadge}>VS</div>
-
-                  <div className={styles.matchupTeam} style={{ textAlign: 'right' }}>
-                    <span className={styles.matchupTeamName}>{m.awayTeamName}</span>
-                    <span className={styles.matchupScore}>
-                      {m.awayPoints !== null ? `${m.awayPoints} pts` : '-'}
-                    </span>
-                  </div>
+                  <button
+                    onClick={handleNextRound}
+                    disabled={selectedRound >= maxRound}
+                    className={styles.navArrowBtn}
+                    title="Próxima rodada"
+                  >
+                    ▶
+                  </button>
                 </div>
-              ))
+
+                {/* View Mode Toggle */}
+                <button
+                  onClick={() => setViewAllRounds(!viewAllRounds)}
+                  className={`${styles.viewToggleBtn} ${
+                    viewAllRounds ? styles.viewToggleBtnActive : ''
+                  }`}
+                >
+                  {viewAllRounds
+                    ? '🎯 Ver Rodada Selecionada'
+                    : '📅 Ver Todas as Rodadas (Calendário Completo)'}
+                </button>
+              </div>
+
+              {/* Round Pills Quick Jump */}
+              {!viewAllRounds && matchupRounds.length > 1 && (
+                <div className={styles.roundPillsScroll}>
+                  {matchupRounds.map((r) => {
+                    const isCurrent = r === data.currentRound
+                    const isSelected = r === selectedRound
+                    return (
+                      <button
+                        key={r}
+                        onClick={() => setSelectedRound(r)}
+                        className={`${styles.roundPill} ${
+                          isSelected ? styles.roundPillActive : ''
+                        }`}
+                      >
+                        {isCurrent && <span className={styles.roundPillCurrentIndicator} />}
+                        R{r}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Matchups Content */}
+            {data.allMatchups.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '32px 0' }}>
+                Nenhum confronto agendado para esta liga.
+              </p>
+            ) : viewAllRounds ? (
+              /* Full Schedule View (All rounds from first to last) */
+              <div className={styles.allRoundsList}>
+                {matchupRounds.map((r) => {
+                  const roundMatches = data.allMatchups.filter(
+                    (m) => m.fixtureRound === r
+                  )
+                  const isCurrent = r === data.currentRound
+                  const isCompleted = r < data.currentRound
+
+                  return (
+                    <div key={r} className={styles.roundSection}>
+                      <div className={styles.roundSectionHeader}>
+                        <span className={styles.roundSectionTitle}>
+                          Rodada {r} de {data.finalRound}
+                          {isCurrent && (
+                            <Badge variant="MEI">Rodada Atual</Badge>
+                          )}
+                          {isCompleted && (
+                            <span
+                              className={`${styles.roundStatusTag} ${styles.statusCompleted}`}
+                            >
+                              Finalizada
+                            </span>
+                          )}
+                          {!isCurrent && !isCompleted && (
+                            <span
+                              className={`${styles.roundStatusTag} ${styles.statusUpcoming}`}
+                            >
+                              A Disputar
+                            </span>
+                          )}
+                        </span>
+                      </div>
+
+                      <div className={styles.matchupsGrid}>
+                        {roundMatches.map((m) => renderMatchupCard(m))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              /* Single Round Focus View */
+              <div className={styles.matchupsGrid}>
+                {filteredMatchups.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)' }}>
+                    Nenhum confronto agendado para a rodada {selectedRound}.
+                  </p>
+                ) : (
+                  filteredMatchups.map((m) => renderMatchupCard(m))
+                )}
+              </div>
             )}
           </div>
         )}

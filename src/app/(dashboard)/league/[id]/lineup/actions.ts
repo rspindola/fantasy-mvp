@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { validateLineup, type Formation, type LineupSlotItem } from '@/lib/lineup/lineup-engine'
-import { checkRoundLockStatus } from '@/lib/lineup/lock'
+import { checkRoundLockStatus, generateAutoFallbackLineup } from '@/lib/lineup/lock'
 import { revalidatePath } from 'next/cache'
 
 export type LineupPageData = {
@@ -20,10 +20,17 @@ export type LineupPageData = {
     name: string
     position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'
     clubShortName: string
+    clubLogoUrl: string | null
     photoUrl: string | null
     avgPoints: number
   }[]
   starters: {
+    playerId: string
+    position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'
+    isCaptain: boolean
+    slotPosition: string
+  }[]
+  reserves: {
     playerId: string
     position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'
     isCaptain: boolean
@@ -80,7 +87,7 @@ export async function getLineupData(leagueId: string): Promise<LineupPageData | 
         position,
         photo_url,
         avg_points,
-        club:real_clubs(short_name)
+        club:real_clubs(short_name, logo_url)
       )
     `)
     .eq('fantasy_team_id', team.id)
@@ -90,6 +97,7 @@ export async function getLineupData(leagueId: string): Promise<LineupPageData | 
     name: r.player.name,
     position: r.player.position,
     clubShortName: r.player.club?.short_name ?? '',
+    clubLogoUrl: r.player.club?.logo_url ?? null,
     photoUrl: r.player.photo_url ?? null,
     avgPoints: Number(r.player.avg_points ?? 0),
   }))
@@ -119,8 +127,14 @@ export async function getLineupData(leagueId: string): Promise<LineupPageData | 
     isCaptain: boolean
     slotPosition: string
   }[] = []
+  let reserves: {
+    playerId: string
+    position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'
+    isCaptain: boolean
+    slotPosition: string
+  }[] = []
 
-  if (lineup && lineup.slots) {
+  if (lineup && lineup.slots && lineup.slots.length > 0) {
     starters = lineup.slots
       .filter((s: any) => s.is_starter)
       .map((s: any) => ({
@@ -129,6 +143,30 @@ export async function getLineupData(leagueId: string): Promise<LineupPageData | 
         isCaptain: s.is_captain ?? false,
         slotPosition: s.slot_position,
       }))
+    reserves = lineup.slots
+      .filter((s: any) => !s.is_starter)
+      .map((s: any) => ({
+        playerId: s.player_id,
+        position: s.player?.position ?? 'MEI',
+        isCaptain: false,
+        slotPosition: s.slot_position,
+      }))
+  } else if (roster.length > 0) {
+    // Auto populate top starters and reserves for initial visit
+    const fallback = generateAutoFallbackLineup(roster)
+    formation = fallback.formation
+    starters = fallback.starters.map((s: { playerId: string; position: any; isCaptain: boolean }, idx: number) => ({
+      playerId: s.playerId,
+      position: s.position,
+      isCaptain: s.isCaptain,
+      slotPosition: `${s.position}_${idx + 1}`,
+    }))
+    reserves = (fallback.reserves || []).map((s: { playerId: string; position: any }, idx: number) => ({
+      playerId: s.playerId,
+      position: s.position,
+      isCaptain: false,
+      slotPosition: `RES_${s.position}`,
+    }))
   }
 
   return {
@@ -143,6 +181,7 @@ export async function getLineupData(leagueId: string): Promise<LineupPageData | 
     formation,
     roster,
     starters,
+    reserves,
   }
 }
 
@@ -151,7 +190,8 @@ export async function saveLineupAction(
   teamId: string,
   fixtureRound: number,
   formation: Formation,
-  starters: LineupSlotItem[]
+  starters: LineupSlotItem[],
+  reserves: LineupSlotItem[] = []
 ) {
   const supabase = await createClient()
   const {
@@ -186,6 +226,7 @@ export async function saveLineupAction(
   const valResult = validateLineup({
     formation,
     starters,
+    reserves,
     rosterPlayerIds,
   })
 
@@ -216,8 +257,8 @@ export async function saveLineupAction(
   // Clear previous lineup_slots for this lineup
   await supabase.from('lineup_slots').delete().eq('lineup_id', lineup.id)
 
-  // Insert new lineup_slots
-  const slotRecords = starters.map((s, index) => ({
+  // Insert new lineup_slots (starters + reserves)
+  const starterRecords = starters.map((s, index) => ({
     lineup_id: lineup.id,
     player_id: s.playerId,
     slot_position: `${s.position}_${index + 1}`,
@@ -225,10 +266,21 @@ export async function saveLineupAction(
     is_starter: true,
   }))
 
-  const { error: slotsErr } = await supabase.from('lineup_slots').insert(slotRecords)
+  const reserveRecords = reserves.map((s) => ({
+    lineup_id: lineup.id,
+    player_id: s.playerId,
+    slot_position: `RES_${s.position}`,
+    is_captain: false,
+    is_starter: false,
+  }))
+
+  const { error: slotsErr } = await supabase
+    .from('lineup_slots')
+    .insert([...starterRecords, ...reserveRecords])
+
   if (slotsErr) {
     console.error('Error saving lineup slots:', slotsErr)
-    throw new Error('Erro ao registrar titulares no banco de dados.')
+    throw new Error('Erro ao registrar escalação no banco de dados.')
   }
 
   revalidatePath(`/league/${leagueId}/lineup`)

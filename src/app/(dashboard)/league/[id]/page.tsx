@@ -100,7 +100,11 @@ export default function LeagueDetailsPage() {
         </div>
 
         <div className={styles.configBadges}>
-          <Badge variant="default">Pontuação {league.scoringMode}</Badge>
+          <Badge variant="default">
+            Pontuação {league.scoringMode}
+            {league.scoringMode === 'H2H' &&
+              ` (${league.h2hFormat === 'SINGLE_ROUND' ? 'Turno Único' : 'Ida e Volta'})`}
+          </Badge>
           <Badge variant="default">Draft {league.draftMode}</Badge>
           <Badge variant="default">Timer: {league.pickTimerSeconds}s</Badge>
           <Badge variant="default">

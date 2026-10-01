@@ -85,35 +85,47 @@ export default function StandingsPage() {
     const isDraw = hasScores && m.homePoints === m.awayPoints
 
     return (
-      <div key={m.id} className={styles.matchupCard}>
-        <div className={styles.matchupTeam}>
-          <span
-            className={`${styles.matchupTeamName} ${isHomeWinner ? styles.winnerName : ''}`}
-          >
-            {isHomeWinner && '👑 '}
-            {m.homeTeamName}
-          </span>
-          <span className={hasScores ? styles.matchupScore : styles.matchupScorePending}>
-            {m.homePoints !== null ? `${m.homePoints} pts` : 'A disputar'}
-          </span>
-        </div>
+      <Link
+        key={m.id}
+        href={`/league/${leagueId}/matchup/${m.id}`}
+        className={styles.matchupCardLink}
+      >
+        <div className={styles.matchupCard}>
+          <div className={styles.matchupBody}>
+            <div className={styles.matchupTeam}>
+              <span
+                className={`${styles.matchupTeamName} ${isHomeWinner ? styles.winnerName : ''}`}
+              >
+                {isHomeWinner && '👑 '}
+                {m.homeTeamName}
+              </span>
+              <span className={hasScores ? styles.matchupScore : styles.matchupScorePending}>
+                {m.homePoints !== null ? `${m.homePoints} pts` : 'A disputar'}
+              </span>
+            </div>
 
-        <div className={styles.vsBadge}>
-          {isDraw ? 'EMPATE' : 'VS'}
-        </div>
+            <div className={styles.vsBadge}>
+              {isDraw ? 'EMPATE' : 'VS'}
+            </div>
 
-        <div className={styles.matchupTeam} style={{ textAlign: 'right' }}>
-          <span
-            className={`${styles.matchupTeamName} ${isAwayWinner ? styles.winnerName : ''}`}
-          >
-            {m.awayTeamName}
-            {isAwayWinner && ' 👑'}
-          </span>
-          <span className={hasScores ? styles.matchupScore : styles.matchupScorePending}>
-            {m.awayPoints !== null ? `${m.awayPoints} pts` : 'A disputar'}
-          </span>
+            <div className={styles.matchupTeam} style={{ textAlign: 'right' }}>
+              <span
+                className={`${styles.matchupTeamName} ${isAwayWinner ? styles.winnerName : ''}`}
+              >
+                {m.awayTeamName}
+                {isAwayWinner && ' 👑'}
+              </span>
+              <span className={hasScores ? styles.matchupScore : styles.matchupScorePending}>
+                {m.awayPoints !== null ? `${m.awayPoints} pts` : 'A disputar'}
+              </span>
+            </div>
+          </div>
+
+          <div className={styles.matchupFooter}>
+            <span>🔍 Raio-X do Duelo · Ver Escalações</span>
+          </div>
         </div>
-      </div>
+      </Link>
     )
   }
 
@@ -124,7 +136,9 @@ export default function StandingsPage() {
         <div className={styles.titleBox}>
           <h1 className={styles.leagueTitle}>{data.leagueName} — Classificação</h1>
           <span className={styles.subTitle}>
-            Rodada {data.currentRound} de {data.totalRounds} · Modo {data.scoringMode}
+            Rodada {data.currentRound}
+            {data.postponedRounds?.includes(data.currentRound) && '*'} de {data.totalRounds} · Modo{' '}
+            {data.scoringMode}
             {data.scoringMode === 'H2H' &&
               ` (${data.h2hFormat === 'SINGLE_ROUND' ? 'Turno Único' : 'Ida e Volta'} · Final na R${data.finalRound})`}
           </span>
@@ -322,6 +336,9 @@ export default function StandingsPage() {
                   <div className={styles.roundTitleArea}>
                     <span className={styles.roundTitle}>
                       Rodada {selectedRound}
+                      {data.postponedRounds?.includes(selectedRound) && (
+                        <span style={{ color: '#fbbf24', marginLeft: '2px' }}>*</span>
+                      )}
                     </span>
                     <span
                       className={`${styles.roundStatusTag} ${
@@ -333,9 +350,13 @@ export default function StandingsPage() {
                       }`}
                     >
                       {selectedRound < data.currentRound
-                        ? '✓ Finalizada'
+                        ? data.postponedRounds?.includes(selectedRound)
+                          ? '⚠️ Apuração Provisória (*)'
+                          : '✓ Finalizada'
                         : selectedRound === data.currentRound
-                        ? '🔥 Rodada Atual'
+                        ? data.postponedRounds?.includes(selectedRound)
+                          ? '🔥 Rodada Atual (*)'
+                          : '🔥 Rodada Atual'
                         : '⏳ A Disputar'}
                     </span>
                   </div>
@@ -363,12 +384,38 @@ export default function StandingsPage() {
                 </button>
               </div>
 
+              {/* Informative banner if selected round has postponed matches */}
+              {!viewAllRounds && data.postponedRounds?.includes(selectedRound) && (
+                <div
+                  style={{
+                    background: 'rgba(234, 179, 8, 0.08)',
+                    border: '1px solid rgba(234, 179, 8, 0.3)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '10px 14px',
+                    fontSize: '0.8125rem',
+                    color: '#fef08a',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    marginTop: '8px',
+                  }}
+                >
+                  <span>⭐</span>
+                  <span>
+                    <strong>Rodada com partidas adiadas (*):</strong> Esta rodada possui jogos adiados
+                    pela CBF. A apuração é provisória e os pontos serão atualizados retroativamente após
+                    a realização das partidas pendentes.
+                  </span>
+                </div>
+              )}
+
               {/* Round Pills Quick Jump */}
               {!viewAllRounds && matchupRounds.length > 1 && (
                 <div className={styles.roundPillsScroll}>
                   {matchupRounds.map((r) => {
                     const isCurrent = r === data.currentRound
                     const isSelected = r === selectedRound
+                    const isPostponed = data.postponedRounds?.includes(r)
                     return (
                       <button
                         key={r}
@@ -379,6 +426,7 @@ export default function StandingsPage() {
                       >
                         {isCurrent && <span className={styles.roundPillCurrentIndicator} />}
                         R{r}
+                        {isPostponed && '*'}
                       </button>
                     )
                   })}
@@ -400,16 +448,33 @@ export default function StandingsPage() {
                   )
                   const isCurrent = r === data.currentRound
                   const isCompleted = r < data.currentRound
+                  const isPostponed = data.postponedRounds?.includes(r)
 
                   return (
                     <div key={r} className={styles.roundSection}>
                       <div className={styles.roundSectionHeader}>
                         <span className={styles.roundSectionTitle}>
-                          Rodada {r} de {data.finalRound}
+                          Rodada {r}
+                          {isPostponed && '*'} de {data.finalRound}
                           {isCurrent && (
                             <Badge variant="MEI">Rodada Atual</Badge>
                           )}
-                          {isCompleted && (
+                          {isPostponed && (
+                            <span
+                              style={{
+                                fontSize: '0.6875rem',
+                                padding: '2px 8px',
+                                borderRadius: '9999px',
+                                background: 'rgba(234, 179, 8, 0.2)',
+                                color: '#fbbf24',
+                                border: '1px solid rgba(234, 179, 8, 0.4)',
+                                fontWeight: 700,
+                              }}
+                            >
+                              ⭐ Jogos Adiados (*)
+                            </span>
+                          )}
+                          {isCompleted && !isPostponed && (
                             <span
                               className={`${styles.roundStatusTag} ${styles.statusCompleted}`}
                             >

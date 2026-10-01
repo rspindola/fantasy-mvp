@@ -154,3 +154,48 @@
 .rulesList li {
   margin-left: 20px;
 }
+
+.postponedCard {
+  background: rgba(234, 179, 8, 0.08);
+  border: 1px solid rgba(234, 179, 8, 0.25);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.postponedHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.postponedBadge {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(234, 179, 8, 0.2);
+  color: #fbbf24;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+}
+
+.postponedTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #fef08a;
+  margin: 0;
+}
+
+.postponedDesc {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+

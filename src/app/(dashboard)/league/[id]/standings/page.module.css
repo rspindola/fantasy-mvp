@@ -320,20 +320,34 @@
   gap: 16px;
 }
 
+.matchupCardLink {
+  text-decoration: none;
+  display: block;
+}
+
+.matchupCardLink:hover .matchupCard {
+  border-color: var(--accent-green);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
 .matchupCard {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 18px 20px;
+  padding: 16px 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.matchupBody {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  transition: border-color var(--transition-fast), transform var(--transition-fast);
-}
-
-.matchupCard:hover {
-  border-color: var(--border-medium);
+  width: 100%;
 }
 
 .matchupTeam {
@@ -375,6 +389,23 @@
   border-radius: 999px;
   border: 1px solid var(--border-subtle);
   flex-shrink: 0;
+}
+
+.matchupFooter {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: color var(--transition-fast);
+}
+
+.matchupCardLink:hover .matchupFooter {
+  color: var(--accent-green);
 }
 
 /* All Rounds Full View */

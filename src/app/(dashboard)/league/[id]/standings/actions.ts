@@ -28,6 +28,7 @@ export type StandingsPageData = {
   h2hStandings: H2HStandingsRow[]
   allMatchups: MatchupItem[]
   currentMatchups: MatchupItem[]
+  postponedRounds: number[]
 }
 
 export async function getStandingsData(leagueId: string): Promise<StandingsPageData | null> {
@@ -128,6 +129,17 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
       ? Math.max(...allMatchups.map((m) => m.fixtureRound))
       : totalRounds
 
+  // Fetch postponed rounds
+  const { data: postponedFixtures } = await supabase
+    .from('fixtures')
+    .select('round')
+    .eq('season_id', league.season_id)
+    .eq('status', 'postponed')
+
+  const postponedRounds = Array.from(
+    new Set((postponedFixtures || []).map((f: any) => f.round))
+  ).sort((a: any, b: any) => a - b)
+
   return {
     leagueId,
     leagueName: league.name,
@@ -140,5 +152,6 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
     h2hStandings,
     allMatchups,
     currentMatchups,
+    postponedRounds,
   }
 }

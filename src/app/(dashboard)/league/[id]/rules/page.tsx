@@ -324,6 +324,67 @@ export default function LeagueRulesPage() {
           </ul>
         </div>
       </div>
+
+      {/* Seção 4: Partidas Adiadas & Recálculo Retroativo (Símbolo *) */}
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <span style={{ fontSize: '1.5rem' }}>⏱️</span>
+          <h2 className={styles.sectionTitle}>Partidas Adiadas & Recálculo Retroativo (Símbolo *)</h2>
+        </div>
+
+        <div className={styles.postponedCard}>
+          <div className={styles.postponedHeader}>
+            <span className={styles.postponedBadge}>Regra Oficial do Asterisco (*)</span>
+            <h3 className={styles.postponedTitle}>
+              Rodadas com partidas adiadas ficam marcadas com * e serão atualizadas após o fechamento da mesma
+            </h3>
+          </div>
+          <p className={styles.postponedDesc}>
+            No Campeonato Brasileiro da Série A, é comum que jogos sejam adiados pela CBF por conta
+            de calendários de copas continentais (Libertadores/Sul-Americana), condições climáticas
+            ou manutenções de estádios. Veja como nossa liga gerencia essas rodadas mantendo a
+            justiça e o andamento fluido do campeonato:
+          </p>
+        </div>
+
+        <div className={styles.rulesList}>
+          <ul>
+            <li>
+              <strong>Identificação Visual com Asterisco (ex: Rodada 28*):</strong> Qualquer rodada
+              que possua uma ou mais partidas adiadas é marcada visualmente com um asterisco{' '}
+              <code>*</code> no título da rodada, no seletor de duelos e nas tabelas de classificação.
+            </li>
+            <li>
+              <strong>Fechamento Provisório & Mercado Destravado:</strong> Para que a liga não fique
+              travada esperando semanas ou meses até o jogo atrasado acontecer, o comissário realiza a{' '}
+              <em>apuração provisória</em> da rodada com as partidas já disputadas. O mercado para a
+              próxima rodada abre imediatamente, permitindo que os técnicos escalem normalmente.
+            </li>
+            <li>
+              <strong>Status dos Atletas da Partida Adiada:</strong> Durante o fechamento provisório, os
+              jogadores dos clubes com jogo adiado recebem a flag <code>⏱️ Jogo Adiado</code>. O banco
+              de reservas pode cobri-los provisoriamente via Auto-Substituição até a data do jogo real.
+            </li>
+            <li>
+              <strong>Recálculo Retroativo Obrigatório:</strong> Quando a CBF finalmente realizar a partida
+              adiada e os scouts forem consolidados, o comissário/sistema aciona o{' '}
+              <strong>Recálculo da Rodada</strong>. O sistema:
+              <ul style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <li>Computa os scouts e pontos oficiais dos atletas que disputaram o jogo adiado;</li>
+                <li>Reavalia a Auto-Substituição (caso o titular tenha pontuado no jogo adiado, ele reassume sua vaga);</li>
+                <li>Atualiza os placares e define o vencedor oficial de cada confronto H2H daquela rodada;</li>
+                <li>Atualiza retroativamente a tabela de classificação geral da liga e o saldo de pontos.</li>
+              </ul>
+            </li>
+            <li>
+              <strong>Remoção do Asterisco:</strong> Após a realização de todos os jogos adiados e a
+              consolidação definitiva das pontuações, o asterisco <code>*</code> é removido e os resultados
+              tornam-se oficiais e definitivos.
+            </li>
+          </ul>
+        </div>
+      </div>
+
     </div>
   )
 }

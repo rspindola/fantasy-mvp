@@ -1,14 +1,32 @@
 import { Client } from 'pg'
 import { generateBergerMatchups } from '../src/lib/h2h/berger-generator'
-import { calculatePlayerScoring, calculateTeamRoundScore } from '../src/lib/scoring/scoring-engine'
-import { autoPickPlayer, type PlayerCandidate } from '../src/lib/draft/auto-pick'
+import { calculateTeamRoundScore } from '../src/lib/scoring/scoring-engine'
+import { processAutoSubstitutions, type LineupPlayerInput } from '../src/lib/lineup/auto-sub'
+import { syncRound27RealStats } from './fetch-r27-stats'
+
+interface PlayerCandidate {
+  id: string
+  name: string
+  position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'
+  avgPoints: number
+  totalMinutes: number
+}
+
+// Strict quotas according to business rules: exactly 24 players per squad
+const STRICT_QUOTAS: Record<'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA', number> = {
+  GOL: 3,
+  LAT: 5,
+  ZAG: 5,
+  MEI: 7,
+  ATA: 4,
+}
 
 async function seedDemoLeague() {
   const connectionString =
     process.env.DATABASE_URL ||
     'postgres://postgres.ilinrgasbkhvzujltbhp:pQXA9LMIwHZdqBfK@aws-0-ca-central-1.pooler.supabase.com:6543/postgres'
 
-  console.log('🎮 Criando Liga de Demonstração Interativa com Mercado ABERTO...')
+  console.log('🎮 Criando Liga H2H Turno Único com 12 TIMES e R27 Realizada (Scouts Oficiais)...')
   const client = new Client({ connectionString, ssl: { rejectUnauthorized: false } })
 
   try {
@@ -44,18 +62,26 @@ async function seedDemoLeague() {
       }
     }
 
-    // 3. Clear any previous DEMO league
-    await client.query(`DELETE FROM leagues WHERE invite_code = 'DEMO2026';`)
+    // 3. Reset existing fantasy leagues completely
+    console.log('🧹 Resetando dados de ligas anteriores...')
+    await client.query(`TRUNCATE leagues CASCADE;`)
 
-    // 4. Update Round 28 fixtures kickoff_at to future date (48h from now) so market is OPEN (lock is 30m before kickoff)
+    // 4. Sync real Round 27 player scouts from API-Football cache
+    await syncRound27RealStats(client, seasonId)
+
+    // 5. Update Round 28 fixtures kickoff_at to future date (48h from now) so market is OPEN
     const futureKickoff = new Date(Date.now() + 48 * 3600 * 1000).toISOString()
     await client.query(
       `UPDATE fixtures SET kickoff_at = $1 WHERE season_id = $2 AND round = 28;`,
       [futureKickoff, seasonId]
     )
 
-    // 5. Create Demo League
-    console.log('🏆 Criando liga "Liga Demo 2026" (Código: DEMO2026)...')
+    // Set Season current_round = 28 (R27 is completed, R28 is the active round)
+    await client.query(`UPDATE seasons SET current_round = 28 WHERE id = $1;`, [seasonId])
+
+    // 6. Create 12-team Demo League
+    console.log('🏆 Criando liga "Liga Demo 2026 (Série A)" com 12 times (Código: DEMO2026)...')
+    const totalPicks = 12 * 24 // 288 picks
     const leagueRes = await client.query(
       `
       INSERT INTO leagues (
@@ -68,32 +94,41 @@ async function seedDemoLeague() {
         'Liga Demo 2026 (Série A)',
         'DEMO2026',
         'H2H',
-        'DOUBLE_ROUND',
+        'SINGLE_ROUND', // 12 teams -> 11 rounds (R27 a R37)
         'HYBRID',
-        4,
+        12,
         'active', // Draft completed & active
         seasonId,
         commissionerId,
-        10800, // 3h
-        97,
-        96, // 4 teams * 24 players = 96 picks
+        10800,
+        totalPicks + 1,
+        totalPicks,
       ]
     )
     const leagueId = leagueRes.rows[0].id
 
-    // 6. Create 4 Fantasy Teams
-    console.log('🛡️  Criando 4 times de demonstração...')
+    // 7. Create 12 Fantasy Teams
+    console.log('🛡️  Criando 12 times de demonstração...')
     const teamNames = [
-      'Galácticos FC',
-      'Furia Rubro-Negra',
-      'Verdão Imparável',
-      'Tricolor de Aço',
+      'Galácticos FC',       // 1. Commissioner
+      'Furia Rubro-Negra',   // 2.
+      'Verdão Imparável',    // 3.
+      'Tricolor de Aço',     // 4.
+      'Soberano FC',         // 5.
+      'Alvinegro Praiano',   // 6.
+      'Imortal Tricolor',    // 7.
+      'Gigante da Colina',   // 8.
+      'Galo Atômico',        // 9.
+      'Furacão da Baixada',  // 10.
+      'Malandragem FC',      // 11.
+      'Time do Povo',        // 12.
     ]
 
     const teamIds: string[] = []
 
     for (let i = 0; i < teamNames.length; i++) {
-      const demoUserId = i === 0 ? commissionerId : `00000000-0000-0000-0000-00000000000${i + 1}`
+      const hexIndex = (i + 1).toString().padStart(12, '0')
+      const demoUserId = i === 0 ? commissionerId : `00000000-0000-0000-0000-${hexIndex}`
 
       if (i > 0) {
         await client.query(
@@ -126,10 +161,15 @@ async function seedDemoLeague() {
       teamIds.push(res.rows[0].id)
     }
 
-    // 7. Fetch active players from catalog and draft using autoPickPlayer
+    // 8. Fetch active players and Draft 288 players with strict quotas
+    console.log('📋 Realizando draft automático de 288 jogadores (12 times × 24 jogadores: 3 GOL, 5 LAT, 5 ZAG, 7 MEI, 4 ATA)...')
     const playersRes = await client.query(`
-      SELECT id, name, position, COALESCE(avg_points, 0) as avg_points, COALESCE(total_minutes, 0) as total_minutes FROM real_players WHERE is_active = true ORDER BY avg_points DESC;
+      SELECT p.id, p.name, p.position, COALESCE(p.avg_points, 0) as avg_points, COALESCE(p.total_minutes, 0) as total_minutes
+      FROM real_players p
+      WHERE p.is_active = true
+      ORDER BY p.avg_points DESC;
     `)
+
     let availablePlayers: PlayerCandidate[] = playersRes.rows.map((p) => ({
       id: p.id,
       name: p.name,
@@ -138,14 +178,13 @@ async function seedDemoLeague() {
       totalMinutes: Number(p.total_minutes),
     }))
 
-    console.log('📋 Realizando draft automático de 96 jogadores com regras de posição (2 GOL, 8 DEF [min 2 LAT, min 2 ZAG], 8 MEI, 6 ATA por time)...')
+    const teamRosters: Record<string, PlayerCandidate[]> = {}
+    const teamCounts: Record<string, Record<'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA', number>> = {}
 
-    const teamRosters: Record<string, PlayerCandidate[]> = {
-      [teamIds[0]]: [],
-      [teamIds[1]]: [],
-      [teamIds[2]]: [],
-      [teamIds[3]]: [],
-    }
+    teamIds.forEach((tId) => {
+      teamRosters[tId] = []
+      teamCounts[tId] = { GOL: 0, LAT: 0, ZAG: 0, MEI: 0, ATA: 0 }
+    })
 
     let pickNum = 1
     for (let round = 1; round <= 24; round++) {
@@ -153,14 +192,20 @@ async function seedDemoLeague() {
       const order = isEven ? [...teamIds].reverse() : [...teamIds]
 
       for (const tId of order) {
-        const currentRoster = teamRosters[tId]
-        const pickedPlayer = autoPickPlayer(availablePlayers, currentRoster)
+        const counts = teamCounts[tId]
+        
+        // Find best player whose position has not reached the quota
+        const candidateIndex = availablePlayers.findIndex(
+          (p) => counts[p.position] < STRICT_QUOTAS[p.position]
+        )
 
-        if (!pickedPlayer) {
-          throw new Error(`Sem jogador disponível para autoPick no pick ${pickNum}`)
+        if (candidateIndex === -1) {
+          throw new Error(`Sem jogador elegível no pick ${pickNum} para completar a cota do time ${tId}`)
         }
 
-        availablePlayers = availablePlayers.filter((p) => p.id !== pickedPlayer.id)
+        const pickedPlayer = availablePlayers.splice(candidateIndex, 1)[0]
+        counts[pickedPlayer.position]++
+        teamRosters[tId].push(pickedPlayer)
 
         await client.query(
           `
@@ -178,14 +223,13 @@ async function seedDemoLeague() {
           [tId, pickedPlayer.id]
         )
 
-        teamRosters[tId].push(pickedPlayer)
         pickNum++
       }
     }
 
-    // 8. Generate H2H Matchups (Berger algorithm) for 6 rounds (Ida e Volta: R28 a R33)
-    console.log('⚔️  Gerando confrontos H2H Ida e Volta (6 rodadas: R28 a R33)...')
-    const h2hMatchups = generateBergerMatchups(teamIds, 28, 33)
+    // 9. Generate H2H Matchups (Berger algorithm) for 11 rounds (Turno Único: R27 a R37, 66 duelos)
+    console.log('⚔️  Gerando confrontos H2H Turno Único para 12 times (11 rodadas: R27 a R37, 66 duelos)...')
+    const h2hMatchups = generateBergerMatchups(teamIds, 27, 37)
 
     for (const m of h2hMatchups) {
       await client.query(
@@ -197,17 +241,35 @@ async function seedDemoLeague() {
       )
     }
 
-    // 9. Create Lineups (Market OPEN) and Calculate Round 28 Scores
-    console.log('⚽ Escalando titulares (4-3-3: 1G, 2L, 2Z, 3M, 3A) e 5 reservas...')
+    // 10. Load Round 27 Real Player Stats map
+    const r27StatsRes = await client.query(`
+      SELECT pfs.*, p.position, p.name, p.photo_url, rc.short_name as club_short_name, rc.logo_url as club_logo_url
+      FROM player_fixture_stats pfs
+      JOIN fixtures f ON f.id = pfs.fixture_id
+      JOIN real_players p ON p.id = pfs.player_id
+      JOIN real_clubs rc ON rc.id = p.club_id
+      WHERE f.season_id = $1 AND f.round = 27;
+    `, [seasonId])
 
-    for (const tId of teamIds) {
+    const r27StatsMap = new Map<string, any>()
+    r27StatsRes.rows.forEach(r => r27StatsMap.set(r.player_id, r))
+    console.log(`📊 ${r27StatsMap.size} atletas possuem scouts reais na R27.`)
+
+    // 11. Create Round 27 Lineups, Auto-Substitutions and Official Scoring
+    console.log('⚽ Escalando titulares e reservas da R27 com aplicação de Auto-Sub e estatísticas reais...')
+    const teamScoresMap = new Map<string, number>()
+
+    for (let tIdx = 0; tIdx < teamIds.length; tIdx++) {
+      const tId = teamIds[tIdx]
       const roster = teamRosters[tId]
+
       const gol = roster.filter((p) => p.position === 'GOL')
       const lat = roster.filter((p) => p.position === 'LAT')
       const zag = roster.filter((p) => p.position === 'ZAG')
       const mei = roster.filter((p) => p.position === 'MEI')
       const ata = roster.filter((p) => p.position === 'ATA')
 
+      // Starters (4-3-3: 1 GOL, 2 LAT, 2 ZAG, 3 MEI, 3 ATA)
       const starters = [
         ...gol.slice(0, 1),
         ...lat.slice(0, 2),
@@ -216,6 +278,7 @@ async function seedDemoLeague() {
         ...ata.slice(0, 3),
       ]
 
+      // Reserves (5: 1 GOL, 1 LAT, 1 ZAG, 1 MEI, 1 ATA)
       const reserves = [
         ...gol.slice(1, 2),
         ...lat.slice(2, 3),
@@ -224,8 +287,104 @@ async function seedDemoLeague() {
         ...ata.slice(3, 4),
       ]
 
-      // Insert lineup with is_locked = false (Market OPEN)
+      // Captain: Midfielder idx 5 (or Attacker idx 8)
+      const captainPlayerId = starters[5]?.id || starters[0].id
+
+      // Insert Round 27 lineup (is_locked: true, completed round)
       const lineupRes = await client.query(
+        `
+        INSERT INTO lineups (fantasy_team_id, fixture_round, formation, is_locked)
+        VALUES ($1, 27, '4-3-3', true)
+        RETURNING id;
+      `,
+        [tId]
+      )
+      const lineupId = lineupRes.rows[0].id
+
+      // Insert Starters slots
+      for (let sIdx = 0; sIdx < starters.length; sIdx++) {
+        const p = starters[sIdx]
+        const isCaptain = p.id === captainPlayerId
+        await client.query(
+          `
+          INSERT INTO lineup_slots (lineup_id, player_id, slot_position, is_captain, is_starter)
+          VALUES ($1, $2, $3, $4, true);
+        `,
+          [lineupId, p.id, `${p.position}_${sIdx + 1}`, isCaptain]
+        )
+      }
+
+      // Insert Reserves slots
+      for (const resP of reserves) {
+        await client.query(
+          `
+          INSERT INTO lineup_slots (lineup_id, player_id, slot_position, is_captain, is_starter)
+          VALUES ($1, $2, $3, false, false);
+        `,
+          [lineupId, resP.id, `RES_${resP.position}`]
+        )
+      }
+
+      // Map to LineupPlayerInput for auto-sub engine
+      const startersInput: LineupPlayerInput[] = starters.map((p, idx) => {
+        const stat = r27StatsMap.get(p.id)
+        return {
+          playerId: p.id,
+          name: p.name,
+          position: p.position,
+          slotPosition: `${p.position}_${idx + 1}`,
+          isCaptain: p.id === captainPlayerId,
+          isStarter: true,
+          minutes: stat ? stat.minutes : 0,
+          points: stat ? Number(stat.computed_points) : 0.0,
+          scouts: stat ? {
+            goals: stat.goals,
+            assists: stat.assists,
+            tackles: stat.tackles,
+            cleanSheet: stat.clean_sheet,
+            saves: stat.saves,
+            yellowCards: stat.yellow_cards,
+          } : {},
+        }
+      })
+
+      const reservesInput: LineupPlayerInput[] = reserves.map((p) => {
+        const stat = r27StatsMap.get(p.id)
+        return {
+          playerId: p.id,
+          name: p.name,
+          position: p.position,
+          slotPosition: `RES_${p.position}`,
+          isCaptain: false,
+          isStarter: false,
+          minutes: stat ? stat.minutes : 0,
+          points: stat ? Number(stat.computed_points) : 0.0,
+          scouts: stat ? {
+            goals: stat.goals,
+            assists: stat.assists,
+            tackles: stat.tackles,
+            cleanSheet: stat.clean_sheet,
+            saves: stat.saves,
+            yellowCards: stat.yellow_cards,
+          } : {},
+        }
+      })
+
+      // Execute official Auto-Sub
+      const processed = processAutoSubstitutions(startersInput, reservesInput)
+
+      await client.query(
+        `
+        INSERT INTO round_scores (fantasy_team_id, fixture_round, total_points, captain_bonus)
+        VALUES ($1, 27, $2, $3);
+      `,
+        [tId, processed.totalPoints, processed.captainBonus]
+      )
+
+      teamScoresMap.set(tId, processed.totalPoints)
+
+      // Also create Round 28 Lineup with is_locked = false (Market OPEN)
+      const r28LineupRes = await client.query(
         `
         INSERT INTO lineups (fantasy_team_id, fixture_round, formation, is_locked)
         VALUES ($1, 28, '4-3-3', false)
@@ -233,100 +392,54 @@ async function seedDemoLeague() {
       `,
         [tId]
       )
-      const lineupId = lineupRes.rows[0].id
+      const r28LineupId = r28LineupRes.rows[0].id
 
-      const starterScores: { points: number; isCaptain: boolean }[] = []
-
-      // Insert Starters
-      for (let idx = 0; idx < starters.length; idx++) {
-        const player = starters[idx]
-        const isCaptain = idx === 5 // Pick top midfielder (idx 5) as captain
-
+      for (let sIdx = 0; sIdx < starters.length; sIdx++) {
+        const p = starters[sIdx]
         await client.query(
           `
           INSERT INTO lineup_slots (lineup_id, player_id, slot_position, is_captain, is_starter)
           VALUES ($1, $2, $3, $4, true);
         `,
-          [lineupId, player.id, `${player.position}_${idx + 1}`, isCaptain]
+          [r28LineupId, p.id, `${p.position}_${sIdx + 1}`, p.id === captainPlayerId]
         )
-
-        const pts = calculatePlayerScoring({
-          position: player.position as any,
-          minutes: 90,
-          goals: player.position === 'ATA' ? 1 : 0,
-          assists: player.position === 'MEI' ? 1 : 0,
-          shotsOnWoodwork: 0,
-          shotsOnTarget: 1,
-          shotsOffTarget: 1,
-          foulsDrawn: 2,
-          penaltiesWon: 0,
-          passesFailed: 3,
-          offsides: 0,
-          penaltiesMissed: 0,
-          cleanSheet: player.position === 'ZAG' || player.position === 'LAT' || player.position === 'GOL',
-          saves: player.position === 'GOL' ? 4 : 0,
-          penaltySaves: 0,
-          tackles: 2,
-          foulsCommitted: 1,
-          ownGoals: 0,
-          yellowCards: 0,
-          redCards: 0,
-          goalsConceded: 0,
-          penaltiesCommitted: 0,
-        })
-
-        starterScores.push({ points: pts, isCaptain })
       }
 
-      // Insert Reserves
-      for (const resPlayer of reserves) {
+      for (const resP of reserves) {
         await client.query(
           `
           INSERT INTO lineup_slots (lineup_id, player_id, slot_position, is_captain, is_starter)
           VALUES ($1, $2, $3, false, false);
         `,
-          [lineupId, resPlayer.id, `RES_${resPlayer.position}`]
+          [r28LineupId, resP.id, `RES_${resP.position}`]
         )
       }
-
-      const scoreResult = calculateTeamRoundScore(starterScores)
-
-      await client.query(
-        `
-        INSERT INTO round_scores (fantasy_team_id, fixture_round, total_points, captain_bonus)
-        VALUES ($1, 28, $2, $3);
-      `,
-        [tId, scoreResult.totalPoints, scoreResult.captainBonus]
-      )
     }
 
-    // 10. Update H2H matchups results for Round 28
-    const r28ScoresRes = await client.query(`
-      SELECT fantasy_team_id, total_points FROM round_scores WHERE fixture_round = 28;
-    `)
-    const scoresMap = new Map<string, number>()
-    r28ScoresRes.rows.forEach((row) => scoresMap.set(row.fantasy_team_id, Number(row.total_points)))
+    // 12. Update Round 27 H2H Matchups results
+    console.log('🏆 Atualizando resultados dos 6 duelos H2H da Rodada 27 com as pontuações reais...')
+    const r27Matchups = await client.query(
+      `SELECT id, home_team_id, away_team_id FROM h2h_matchups WHERE league_id = $1 AND fixture_round = 27;`,
+      [leagueId]
+    )
 
-    const r28Matchups = await client.query(`
-      SELECT id, home_team_id, away_team_id FROM h2h_matchups WHERE league_id = $1 AND fixture_round = 28;
-    `, [leagueId])
-
-    for (const m of r28Matchups.rows) {
-      const hPts = scoresMap.get(m.home_team_id) || 0
-      const aPts = scoresMap.get(m.away_team_id) || 0
+    for (const m of r27Matchups.rows) {
+      const hPts = teamScoresMap.get(m.home_team_id) || 0
+      const aPts = teamScoresMap.get(m.away_team_id) || 0
       const res = hPts > aPts ? 'home' : aPts > hPts ? 'away' : 'draw'
 
       await client.query(
-        `
-        UPDATE h2h_matchups SET home_points = $1, away_points = $2, result = $3 WHERE id = $4;
-      `,
+        `UPDATE h2h_matchups SET home_points = $1, away_points = $2, result = $3 WHERE id = $4;`,
         [hPts, aPts, res, m.id]
       )
     }
 
-    console.log('🎉 LIGA DEMO RE-CRIADA COM MERCADO ABERTO!')
-    console.log('👉 Acesse http://localhost:3000/dashboard para testar a escalação agora!')
-
+    console.log('\n🎉 SUCESSO! LIGA DE 12 TIMES CRIADA E RODADA 27 CONCLUÍDA COM PONTUAÇÃO REAL!')
+    console.log('--------------------------------------------------------------------------------')
+    console.log('📋 Formato: H2H Turno Único (12 times, 11 rodadas de R27 a R37, 66 confrontos)')
+    console.log('⚽ Rodada 27: FINALIZADA com scouts 100% REAIS da API-Football e Auto-Sub ativo')
+    console.log('🔥 Rodada 28: ABERTA para escalação e mercado aberto (jogos agendados)')
+    console.log('👉 Acesse http://localhost:3000/league/' + leagueId + '/standings para conferir!')
   } catch (err) {
     console.error('❌ Erro ao criar Liga Demo:', err)
   } finally {

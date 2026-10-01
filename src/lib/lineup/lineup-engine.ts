@@ -14,6 +14,20 @@ export const FORMATION_REQUIREMENTS: Record<Formation, PositionRequirements> = {
   '3-5-2': { GOL: 1, LAT: 0, ZAG: 3, MEI: 5, ATA: 2 },
 }
 
+export const POSITION_ORDER: Record<string, number> = {
+  GOL: 1,
+  LAT: 2,
+  ZAG: 3,
+  MEI: 4,
+  ATA: 5,
+}
+
+export function sortByPosition<T extends { position: string }>(a: T, b: T): number {
+  const orderA = POSITION_ORDER[a.position] ?? 99
+  const orderB = POSITION_ORDER[b.position] ?? 99
+  return orderA - orderB
+}
+
 export interface LineupSlotItem {
   playerId: string
   position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'

@@ -7,6 +7,7 @@ import { getLineupData, saveLineupAction, type LineupPageData } from './actions'
 import { FORMATION_REQUIREMENTS, type Formation, type LineupSlotItem } from '@/lib/lineup/lineup-engine'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { PlayerDetailModal } from '@/components/player/PlayerDetailModal'
 import styles from './page.module.css'
 
 type ModalState =
@@ -52,6 +53,7 @@ export default function LineupPage() {
   const [isPending, startTransition] = useTransition()
   const [saveMessage, setSaveMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
   const [modal, setModal] = useState<ModalState>(null)
+  const [modalPlayerId, setModalPlayerId] = useState<string | null>(null)
 
   const loadData = () => {
     if (leagueId) {
@@ -443,7 +445,12 @@ export default function LineupPage() {
                       starter.isCaptain ? styles.starterRowCaptain : ''
                     }`}
                   >
-                    <div className={styles.playerMeta}>
+                    <div
+                      className={styles.playerMeta}
+                      onClick={() => setModalPlayerId(starter.playerId)}
+                      title="Clique para ver a ficha completa do atleta"
+                      style={{ cursor: 'pointer' }}
+                    >
                       <PlayerAvatar name={player?.name ?? 'J'} photoUrl={player?.photoUrl ?? null} />
                       <Badge variant={starter.position as any}>
                         {starter.position}
@@ -503,7 +510,12 @@ export default function LineupPage() {
                 if (reserveItem && player) {
                   return (
                     <div key={pos} className={styles.reserveRow}>
-                      <div className={styles.playerMeta}>
+                      <div
+                        className={styles.playerMeta}
+                        onClick={() => setModalPlayerId(player.id)}
+                        title="Clique para ver a ficha completa do atleta"
+                        style={{ cursor: 'pointer' }}
+                      >
                         <PlayerAvatar name={player.name} photoUrl={player.photoUrl} />
                         <Badge variant={pos}>{pos}</Badge>
                         <div className={styles.playerInfo}>
@@ -584,7 +596,12 @@ export default function LineupPage() {
                     isStarter ? styles.rosterItemStarter : ''
                   }`}
                 >
-                  <div className={styles.playerMeta}>
+                  <div
+                    className={styles.playerMeta}
+                    onClick={() => setModalPlayerId(player.id)}
+                    title="Clique para ver a ficha completa do atleta"
+                    style={{ cursor: 'pointer' }}
+                  >
                     <PlayerAvatar name={player.name} photoUrl={player.photoUrl} />
                     <Badge variant={player.position as any}>{player.position}</Badge>
                     <div className={styles.playerInfo}>
@@ -641,6 +658,13 @@ export default function LineupPage() {
           </div>
         </div>
       </div>
+
+      {/* Player Detail Modal */}
+      <PlayerDetailModal
+        playerId={modalPlayerId}
+        leagueId={leagueId}
+        onClose={() => setModalPlayerId(null)}
+      />
     </div>
   )
 }

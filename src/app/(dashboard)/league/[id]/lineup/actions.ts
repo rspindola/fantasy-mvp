@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { validateLineup, type Formation, type LineupSlotItem } from '@/lib/lineup/lineup-engine'
+import { validateLineup, sortByPosition, type Formation, type LineupSlotItem } from '@/lib/lineup/lineup-engine'
 import { checkRoundLockStatus, generateAutoFallbackLineup } from '@/lib/lineup/lock'
 import { revalidatePath } from 'next/cache'
 
@@ -168,6 +168,9 @@ export async function getLineupData(leagueId: string): Promise<LineupPageData | 
       slotPosition: `RES_${s.position}`,
     }))
   }
+
+  starters.sort(sortByPosition)
+  reserves.sort(sortByPosition)
 
   return {
     leagueId,

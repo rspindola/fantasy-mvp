@@ -138,11 +138,29 @@ export default function LeagueDetailsPage() {
                   </Button>
                 </Link>
               </div>
-              <Link href={`/league/${league.id}/rules`}>
-                <Button variant="ghost" size="md" style={{ width: '100%' }}>
-                  📜 Regras da Liga & Tabela de Pontuação
-                </Button>
-              </Link>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <Link href={`/league/${league.id}/rules`} style={{ flex: 1 }}>
+                  <Button variant="ghost" size="md" style={{ width: '100%' }}>
+                    📜 Regras da Liga & Tabela
+                  </Button>
+                </Link>
+                {league.isCommissioner && (
+                  <Link href={`/league/${league.id}/admin`} style={{ flex: 1 }}>
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      style={{
+                        width: '100%',
+                        borderColor: 'rgba(234, 179, 8, 0.5)',
+                        color: '#fbbf24',
+                        background: 'rgba(234, 179, 8, 0.08)',
+                      }}
+                    >
+                      👑 Painel do Comissário
+                    </Button>
+                  </Link>
+                )}
+              </div>
             </div>
           )}
 

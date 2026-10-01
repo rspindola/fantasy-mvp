@@ -1,0 +1,381 @@
+'use server'
+
+import { createClient } from '@/lib/supabase/server'
+import {
+  processAutoSubstitutions,
+  type LineupPlayerInput,
+  type ProcessedLineupResult,
+} from '@/lib/lineup/auto-sub'
+import {
+  ensureRoundScouts,
+  executeAutoSubAndCloseRound,
+  type RoundClosingSummary,
+} from '@/lib/round/round-processor'
+import { sortByPosition } from '@/lib/lineup/lineup-engine'
+import { revalidatePath } from 'next/cache'
+
+export type MatchupTeamDetail = {
+  teamId: string
+  teamName: string
+  managerName: string
+  isCommissioner: boolean
+  isMe: boolean
+  totalPoints: number
+  captainBonus: number
+  formation: string
+  starters: (LineupPlayerInput & {
+    subbedOut: boolean
+    subbedInBy?: LineupPlayerInput
+  })[]
+  reserves: (LineupPlayerInput & {
+    subbedIn: boolean
+    subbedFor?: LineupPlayerInput
+  })[]
+  substitutions: {
+    outPlayerName: string
+    inPlayerName: string
+    position: string
+    pointsAdded: number
+    captainTransferred: boolean
+  }[]
+}
+
+export type MatchupDetailPageData = {
+  leagueId: string
+  leagueName: string
+  matchupId: string
+  fixtureRound: number
+  currentSeasonRound: number
+  status: 'completed' | 'live' | 'upcoming'
+  homeTeam: MatchupTeamDetail
+  awayTeam: MatchupTeamDetail
+  result: 'home' | 'away' | 'draw' | null
+  isCommissioner: boolean
+  isPostponedRound: boolean
+}
+
+export async function getMatchupDetailData(
+  leagueId: string,
+  matchupId: string
+): Promise<MatchupDetailPageData | null> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return null
+
+  // 1. Fetch matchup info
+  const { data: matchup, error: mErr } = await supabase
+    .from('h2h_matchups')
+    .select(`
+      id,
+      fixture_round,
+      home_team_id,
+      away_team_id,
+      home_points,
+      away_points,
+      result,
+      home_team:fantasy_teams!h2h_matchups_home_team_id_fkey(
+        id,
+        name,
+        user_id,
+        profile:profiles(display_name, avatar_url)
+      ),
+      away_team:fantasy_teams!h2h_matchups_away_team_id_fkey(
+        id,
+        name,
+        user_id,
+        profile:profiles(display_name, avatar_url)
+      )
+    `)
+    .eq('id', matchupId)
+    .single()
+
+  if (mErr || !matchup) return null
+
+  // 2. Fetch league and season
+  const { data: league } = await supabase
+    .from('leagues')
+    .select('id, name, commissioner_id, season_id')
+    .eq('id', leagueId)
+    .single()
+
+  if (!league) return null
+
+  const { data: season } = await supabase
+    .from('seasons')
+    .select('current_round, total_rounds')
+    .eq('id', league.season_id)
+    .single()
+
+  const currentSeasonRound = season?.current_round ?? 1
+  const currentMatchup = matchup
+  const currentLeague = league
+  const currentUserId = user?.id ?? ''
+
+  // Ensure scouts exist
+  await ensureRoundScouts(currentLeague.season_id, currentMatchup.fixture_round)
+
+  // Fetch round fixtures to check for postponed matches
+  const { data: roundFixtures } = await supabase
+    .from('fixtures')
+    .select('id, home_club_id, away_club_id, status')
+    .eq('season_id', currentLeague.season_id)
+    .eq('round', currentMatchup.fixture_round)
+
+  const isPostponedRound = (roundFixtures || []).some((f: any) => f.status === 'postponed')
+
+  const clubFixtureStatusMap = new Map<string, string>()
+  ;(roundFixtures || []).forEach((f: any) => {
+    clubFixtureStatusMap.set(f.home_club_id, f.status)
+    clubFixtureStatusMap.set(f.away_club_id, f.status)
+  })
+
+  // 3. Helper to process a team's lineup and auto-sub
+  async function loadTeamLineup(
+    teamId: string,
+    teamName: string,
+    managerName: string,
+    teamUserId: string
+  ): Promise<MatchupTeamDetail> {
+    const { data: lineup } = await supabase
+      .from('lineups')
+      .select('id, formation')
+      .eq('fantasy_team_id', teamId)
+      .eq('fixture_round', currentMatchup.fixture_round)
+      .maybeSingle()
+
+    const formation = lineup?.formation ?? '4-3-3'
+
+    if (!lineup) {
+      return {
+        teamId,
+        teamName,
+        managerName,
+        isCommissioner: teamUserId === currentLeague.commissioner_id,
+        isMe: teamUserId === currentUserId,
+        totalPoints: 0,
+        captainBonus: 0,
+        formation,
+        starters: [],
+        reserves: [],
+        substitutions: [],
+      }
+    }
+
+    // Fetch slots
+    const { data: slots } = await supabase
+      .from('lineup_slots')
+      .select(`
+        player_id,
+        slot_position,
+        is_captain,
+        is_starter,
+        player:real_players!inner(
+          id,
+          name,
+          position,
+          photo_url,
+          club_id,
+          club:real_clubs!inner(
+            short_name,
+            logo_url
+          )
+        )
+      `)
+      .eq('lineup_id', lineup.id)
+
+    const playerIds = (slots || []).map((s) => s.player_id)
+
+    // Fetch player stats for this round
+    const { data: statsData } = await supabase
+      .from('player_fixture_stats')
+      .select(`
+        player_id,
+        minutes,
+        computed_points,
+        tackles,
+        fouls_committed,
+        yellow_cards,
+        clean_sheet,
+        saves,
+        assists,
+        goals,
+        fixture:fixtures!inner(round)
+      `)
+      .in('player_id', playerIds)
+      .eq('fixture.round', currentMatchup.fixture_round)
+
+    const statsMap = new Map<
+      string,
+      {
+        minutes: number
+        points: number
+        matchStatus: 'played' | 'benched' | 'not_related'
+        scouts: any
+      }
+    >()
+    ;(statsData || []).forEach((st: any) => {
+      const minutes = st.minutes ?? 0
+      statsMap.set(st.player_id, {
+        minutes,
+        points: Number(st.computed_points ?? 0),
+        matchStatus: minutes > 0 ? 'played' : 'benched',
+        scouts: {
+          goals: st.goals,
+          assists: st.assists,
+          tackles: st.tackles,
+          cleanSheet: st.clean_sheet,
+          saves: st.saves,
+          yellowCards: st.yellow_cards,
+        },
+      })
+    })
+
+    const startersInput: LineupPlayerInput[] = (slots || [])
+      .filter((s: any) => s.is_starter)
+      .map((s: any) => {
+        const stat = statsMap.get(s.player_id) || {
+          minutes: 0,
+          points: 0.0,
+          matchStatus: 'not_related' as const,
+          scouts: {},
+        }
+        const isPostponedClub = clubFixtureStatusMap.get(s.player.club_id) === 'postponed'
+        const matchStatus =
+          isPostponedClub && stat.minutes === 0
+            ? ('postponed' as const)
+            : stat.matchStatus
+
+        return {
+          playerId: s.player_id,
+          name: s.player.name,
+          clubShortName: s.player.club?.short_name,
+          clubLogoUrl: s.player.club?.logo_url,
+          photoUrl: s.player.photo_url,
+          position: s.player.position,
+          slotPosition: s.slot_position,
+          isCaptain: s.is_captain ?? false,
+          isStarter: true,
+          minutes: stat.minutes,
+          points: stat.points,
+          matchStatus,
+          scouts: stat.scouts,
+        }
+      })
+
+    const reservesInput: LineupPlayerInput[] = (slots || [])
+      .filter((s: any) => !s.is_starter)
+      .map((s: any) => {
+        const stat = statsMap.get(s.player_id) || {
+          minutes: 0,
+          points: 0.0,
+          matchStatus: 'not_related' as const,
+          scouts: {},
+        }
+        const isPostponedClub = clubFixtureStatusMap.get(s.player.club_id) === 'postponed'
+        const matchStatus =
+          isPostponedClub && stat.minutes === 0
+            ? ('postponed' as const)
+            : stat.matchStatus
+
+        return {
+          playerId: s.player_id,
+          name: s.player.name,
+          clubShortName: s.player.club?.short_name,
+          clubLogoUrl: s.player.club?.logo_url,
+          photoUrl: s.player.photo_url,
+          position: s.player.position,
+          slotPosition: s.slot_position,
+          isCaptain: false,
+          isStarter: false,
+          minutes: stat.minutes,
+          points: stat.points,
+          matchStatus,
+          scouts: stat.scouts,
+        }
+      })
+
+    // Process Auto-Sub
+    const processed: ProcessedLineupResult = processAutoSubstitutions(
+      startersInput,
+      reservesInput
+    )
+
+    return {
+      teamId,
+      teamName,
+      managerName,
+      isCommissioner: teamUserId === currentLeague.commissioner_id,
+      isMe: teamUserId === currentUserId,
+      totalPoints: processed.totalPoints,
+      captainBonus: processed.captainBonus,
+      formation,
+      starters: [...processed.starters].sort(sortByPosition),
+      reserves: [...processed.reserves].sort(sortByPosition),
+      substitutions: processed.substitutions.map((sub) => ({
+        outPlayerName: sub.outPlayer.name,
+        inPlayerName: sub.inPlayer.name,
+        position: sub.position,
+        pointsAdded: sub.inPlayer.points,
+        captainTransferred: sub.captainTransferred,
+      })),
+    }
+  }
+
+  const homeTeamRaw = matchup.home_team as any
+  const awayTeamRaw = matchup.away_team as any
+
+  const homeTeam = await loadTeamLineup(
+    matchup.home_team_id,
+    homeTeamRaw?.name ?? 'Time Mandante',
+    homeTeamRaw?.profile?.display_name ?? 'Técnico',
+    homeTeamRaw?.user_id
+  )
+
+  const awayTeam = await loadTeamLineup(
+    matchup.away_team_id,
+    awayTeamRaw?.name ?? 'Time Visitante',
+    awayTeamRaw?.profile?.display_name ?? 'Técnico',
+    awayTeamRaw?.user_id
+  )
+
+  const status: MatchupDetailPageData['status'] =
+    matchup.fixture_round < currentSeasonRound
+      ? 'completed'
+      : matchup.fixture_round === currentSeasonRound
+      ? 'live'
+      : 'upcoming'
+
+  return {
+    leagueId,
+    leagueName: league.name,
+    matchupId,
+    fixtureRound: matchup.fixture_round,
+    currentSeasonRound,
+    status,
+    homeTeam,
+    awayTeam,
+    result: matchup.result as any,
+    isCommissioner: user.id === league.commissioner_id,
+    isPostponedRound,
+  }
+}
+
+/**
+ * Commissioner action to execute Auto-Subs and optionally advance the round.
+ */
+export async function executeAutoSubAction(
+  leagueId: string,
+  fixtureRound: number,
+  advanceRound: boolean = false
+): Promise<RoundClosingSummary> {
+  const summary = await executeAutoSubAndCloseRound(
+    leagueId,
+    fixtureRound,
+    advanceRound
+  )
+  revalidatePath(`/league/${leagueId}`)
+  return summary
+}

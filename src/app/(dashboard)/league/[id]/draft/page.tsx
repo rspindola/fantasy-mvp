@@ -15,6 +15,7 @@ import { createClient } from '@/lib/supabase/client'
 import { formatTimerSeconds } from '@/lib/utils/format'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { PlayerDetailModal } from '@/components/player/PlayerDetailModal'
 import styles from './page.module.css'
 
 export default function DraftRoomPage() {
@@ -23,6 +24,7 @@ export default function DraftRoomPage() {
 
   const [data, setData] = useState<DraftStateData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [modalPlayerId, setModalPlayerId] = useState<string | null>(null)
   const [posFilter, setPosFilter] = useState<string>('TODOS')
   const [search, setSearch] = useState('')
   const [selectedPlayer, setSelectedPlayer] = useState<any | null>(null)
@@ -296,6 +298,13 @@ export default function DraftRoomPage() {
                   <Button
                     size="sm"
                     variant="ghost"
+                    onClick={() => setModalPlayerId(selectedPlayer.id)}
+                  >
+                    🔍 Ver Ficha
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
                     onClick={() => setSelectedPlayer(null)}
                   >
                     Cancelar
@@ -340,23 +349,36 @@ export default function DraftRoomPage() {
                       <Badge variant={player.position as any}>
                         {player.position}
                       </Badge>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleToggleWishlist(player.id)
-                        }}
-                        className={`${styles.wishlistBtn} ${
-                          inWishlist ? styles.wishlistBtnActive : ''
-                        }`}
-                        title={
-                          inWishlist
-                            ? "Remover da Fila de Preferência"
-                            : "Adicionar à Fila de Preferência (Auto-pick prioriza)"
-                        }
-                      >
-                        {inWishlist ? '⭐ Na Fila' : '+ Fila'}
-                      </button>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setModalPlayerId(player.id)
+                          }}
+                          className={styles.wishlistBtn}
+                          title="Ver ficha técnica completa e scouts"
+                        >
+                          🔍 Ficha
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleToggleWishlist(player.id)
+                          }}
+                          className={`${styles.wishlistBtn} ${
+                            inWishlist ? styles.wishlistBtnActive : ''
+                          }`}
+                          title={
+                            inWishlist
+                              ? "Remover da Fila de Preferência"
+                              : "Adicionar à Fila de Preferência (Auto-pick prioriza)"
+                          }
+                        >
+                          {inWishlist ? '⭐ Na Fila' : '+ Fila'}
+                        </button>
+                      </div>
                     </div>
 
                     <div className={styles.playerName}>{player.name}</div>
@@ -465,6 +487,13 @@ export default function DraftRoomPage() {
           </div>
         </div>
       )}
+
+      {/* Player Detail Modal */}
+      <PlayerDetailModal
+        playerId={modalPlayerId}
+        leagueId={leagueId}
+        onClose={() => setModalPlayerId(null)}
+      />
     </div>
   )
 }

@@ -38,6 +38,15 @@ export async function getSeasonInfoAction(): Promise<SeasonInfo> {
 
 export async function createLeagueAction(
   _prevState: CreateLeagueState,
+  _formData: FormData
+): Promise<CreateLeagueState> {
+  return {
+    error: 'A criação de novas ligas está temporariamente desativada pelo comissário.',
+  }
+}
+
+export async function createLeagueActionOriginal(
+  _prevState: CreateLeagueState,
   formData: FormData
 ): Promise<CreateLeagueState> {
   const supabase = await createClient()

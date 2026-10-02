@@ -35,6 +35,19 @@ export async function signInWithPassword(
   redirect('/dashboard')
 }
 
+function getSiteUrl(): string {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://fantasy.kodly.app'
+  }
+  return 'http://localhost:3000'
+}
+
 export async function signInWithMagicLink(
   _prevState: AuthState,
   formData: FormData
@@ -46,16 +59,24 @@ export async function signInWithMagicLink(
   }
 
   const supabase = await createClient()
+  const siteUrl = getSiteUrl()
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/auth/callback`,
+      emailRedirectTo: `${siteUrl}/auth/callback`,
     },
   })
 
   if (error) {
-    return { error: 'Erro ao enviar magic link. Tente novamente.' }
+    const msg = error.message.toLowerCase()
+    if (msg.includes('rate limit') || (error as any).status === 429) {
+      return {
+        error:
+          'Limite temporário de envio de e-mails do provedor atingido. Aguarde alguns minutos ou entre usando a aba "E-mail e Senha".',
+      }
+    }
+    return { error: error.message || 'Erro ao enviar magic link. Tente novamente.' }
   }
 
   return { success: true }

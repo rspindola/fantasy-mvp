@@ -14,6 +14,11 @@ export async function signInWithPassword(
 ): Promise<AuthState> {
   const email = (formData.get('email') as string)?.trim()
   const password = formData.get('password') as string
+  const rawRedirect = (formData.get('redirectTo') as string)?.trim()
+  const targetRedirect =
+    rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')
+      ? rawRedirect
+      : '/dashboard'
 
   if (!email || !email.includes('@')) {
     return { error: 'Informe um e-mail válido.' }
@@ -32,7 +37,7 @@ export async function signInWithPassword(
     return { error: 'E-mail ou senha incorretos. Verifique suas credenciais.' }
   }
 
-  redirect('/dashboard')
+  redirect(targetRedirect)
 }
 
 function getSiteUrl(): string {
@@ -53,6 +58,11 @@ export async function signInWithMagicLink(
   formData: FormData
 ): Promise<AuthState> {
   const email = (formData.get('email') as string)?.trim()
+  const rawRedirect = (formData.get('redirectTo') as string)?.trim()
+  const targetRedirect =
+    rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')
+      ? rawRedirect
+      : '/dashboard'
 
   if (!email || !email.includes('@')) {
     return { error: 'Informe um e-mail válido.' }
@@ -64,7 +74,7 @@ export async function signInWithMagicLink(
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${siteUrl}/auth/callback`,
+      emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(targetRedirect)}`,
     },
   })
 

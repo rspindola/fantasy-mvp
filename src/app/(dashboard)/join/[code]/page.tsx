@@ -101,7 +101,16 @@ export default function JoinLeaguePage() {
           </div>
         </div>
 
-        {isClosed ? (
+        {league.userTeam ? (
+          <div style={{ textAlign: 'center', padding: '16px 0' }}>
+            <p style={{ color: 'var(--accent-green)', marginBottom: '16px', fontWeight: 500 }}>
+              ✅ Você já está inscrito nesta liga com o time <strong>{league.userTeam.name}</strong>!
+            </p>
+            <Link href={`/league/${league.id}`}>
+              <Button size="lg">Ir para a Liga →</Button>
+            </Link>
+          </div>
+        ) : isClosed ? (
           <div className={styles.error}>
             Esta liga não está mais aberta para novas inscrições (status: {league.status}).
           </div>

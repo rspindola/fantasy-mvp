@@ -36,6 +36,25 @@ export async function getLeagueByInviteCode(inviteCode: string) {
     .select('id', { count: 'exact', head: true })
     .eq('league_id', league.id)
 
+  // Check if current user already has a team in this league
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  let userTeam: { id: string; name: string } | null = null
+  if (user) {
+    const { data: team } = await supabase
+      .from('fantasy_teams')
+      .select('id, name')
+      .eq('league_id', league.id)
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (team) {
+      userTeam = team
+    }
+  }
+
   return {
     id: league.id,
     name: league.name,
@@ -46,6 +65,7 @@ export async function getLeagueByInviteCode(inviteCode: string) {
     status: league.status,
     commissionerName: (league.commissioner as any)?.display_name ?? 'Comissário',
     registeredTeams: count || 0,
+    userTeam,
   }
 }
 

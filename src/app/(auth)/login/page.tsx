@@ -1,17 +1,22 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { Suspense, useActionState, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { signInWithPassword, signInWithMagicLink, type AuthState } from './actions'
 import { Button } from '@/components/ui/Button'
 import styles from './page.module.css'
 
 const initialState: AuthState = {}
 
-export default function LoginPage() {
+function LoginFormContent() {
   const [authMode, setAuthMode] = useState<'password' | 'magic'>('password')
   const [emailInput, setEmailInput] = useState('')
   const [passwordInput, setPasswordInput] = useState('')
+
+  const searchParams = useSearchParams()
+  const redirectTarget = searchParams.get('redirect') || searchParams.get('next') || ''
+  const isJoinFlow = redirectTarget.includes('/join/')
 
   const [passwordState, passwordFormAction, isPasswordPending] = useActionState(
     signInWithPassword,
@@ -22,7 +27,6 @@ export default function LoginPage() {
     signInWithMagicLink,
     initialState
   )
-
 
   return (
     <main className={styles.container}>
@@ -37,6 +41,13 @@ export default function LoginPage() {
         <p className={styles.description}>
           Acesse com seu e-mail e senha para gerenciar seu time e suas ligas.
         </p>
+
+        {isJoinFlow && (
+          <div className={styles.leagueNotice}>
+            <span>🏆</span>
+            <span>Faça login para entrar diretamente na liga!</span>
+          </div>
+        )}
 
         {/* Tab Toggle */}
         <div className={styles.tabs}>
@@ -58,6 +69,9 @@ export default function LoginPage() {
 
         {authMode === 'password' ? (
           <form action={passwordFormAction} className={styles.form}>
+            {/* Preserva rota de destino após o login */}
+            <input type="hidden" name="redirectTo" value={redirectTarget} />
+
             {passwordState.error && (
               <div className={styles.error}>
                 <span>⚠️</span>
@@ -115,6 +129,9 @@ export default function LoginPage() {
           </div>
         ) : (
           <form action={magicFormAction} className={styles.form}>
+            {/* Preserva rota de destino após o magic link */}
+            <input type="hidden" name="redirectTo" value={redirectTarget} />
+
             {magicState.error && (
               <div className={styles.error}>
                 <span>⚠️</span>
@@ -146,11 +163,18 @@ export default function LoginPage() {
           </form>
         )}
 
-
         <Link href="/" className={styles.backLink}>
           ← Voltar à página inicial
         </Link>
       </div>
     </main>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<main className={styles.container}><div className={styles.card}><p>Carregando...</p></div></main>}>
+      <LoginFormContent />
+    </Suspense>
   )
 }

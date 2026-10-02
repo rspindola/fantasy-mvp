@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useState } from 'react'
+import Link from 'next/link'
 import { signInWithPassword, signInWithMagicLink, type AuthState } from './actions'
 import { Button } from '@/components/ui/Button'
 import styles from './page.module.css'
@@ -189,9 +190,9 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <a href="/" className={styles.backLink}>
+        <Link href="/" className={styles.backLink}>
           ← Voltar à página inicial
-        </a>
+        </Link>
       </div>
     </main>
   )

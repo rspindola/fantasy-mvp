@@ -409,7 +409,7 @@ export default function DraftRoomPage() {
                       color: 'var(--text-muted)',
                     }}
                   >
-                    Sua fila está vazia. Clique em "+ Fila" nos jogadores para
+                    Sua fila está vazia. Clique em &ldquo;+ Fila&rdquo; nos jogadores para
                     priorizá-los no auto-pick.
                   </span>
                 ) : (

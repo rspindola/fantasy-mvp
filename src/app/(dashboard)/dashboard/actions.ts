@@ -56,7 +56,7 @@ export async function getMyLeagues(): Promise<LeagueSummary[]> {
   // Get team count for each league
   const leagueIds = teams.map((t: any) => t.league.id)
   
-  let teamCounts: Record<string, number> = {}
+  const teamCounts: Record<string, number> = {}
   if (leagueIds.length > 0) {
     const { data: countData } = await supabase
       .from('fantasy_teams')

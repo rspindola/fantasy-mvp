@@ -1,57 +1,58 @@
 import { Client } from 'pg'
 import https from 'https'
 
-const API_KEY = process.env.FOOTBALL_API_KEY || '71fbb77f2a88622cbdde3989d0ab86db'
+const API_KEY = process.env.FOOTBALL_API_KEY
+if (!API_KEY) throw new Error('FOOTBALL_API_KEY env var is required')
 
-function fetchApi(path: string): Promise<{ response?: unknown[]; errors?: Record<string, unknown> }> {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'v3.football.api-sports.io',
-      path,
-      headers: {
-        'x-apisports-key': API_KEY,
-      },
-    }
+const LEAGUE_ID = 71    // Brasileirão Série A
+const SEASON    = 2026
 
-    https
-      .get(options, (res) => {
-        let body = ''
-        res.on('data', (chunk) => (body += chunk))
-        res.on('end', () => {
-          try {
-            const json = JSON.parse(body)
-            if (json.errors && Object.keys(json.errors).length > 0) {
-              console.warn(`⚠️ Warning API response for ${path}:`, json.errors)
-            }
-            resolve(json)
-          } catch (e) {
-            reject(e)
-          }
-        })
-      })
-      .on('error', reject)
-  })
-}
-
-// Pequeno delay para respeitar o rate limit da API-Football (100 req/dia no plano free)
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-// Mapeia posições da API-Football (Goalkeeper, Defender, Midfielder, Attacker) para Cartola
-function mapPosition(apiPos: string, indexInGroup: number): 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA' {
+function fetchApi(path: string): Promise<{ response?: unknown[]; errors?: Record<string, unknown>; results?: number }> {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'v3.football.api-sports.io',
+      path,
+      headers: { 'x-apisports-key': API_KEY },
+    }
+    https.get(options, (res) => {
+      let body = ''
+      res.on('data', (chunk) => (body += chunk))
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(body)
+          if (json.errors && Object.keys(json.errors).length > 0) {
+            console.warn(`⚠️  API warning for ${path}:`, json.errors)
+          }
+          resolve(json)
+        } catch (e) {
+          reject(new Error(`Failed to parse response: ${body.substring(0, 200)}`))
+        }
+      })
+    }).on('error', reject)
+  })
+}
+
+// API-Football position → formato interno
+function mapPosition(apiPos: string, idx: number): 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA' {
   switch (apiPos) {
-    case 'Goalkeeper':
-      return 'GOL'
-    case 'Defender':
-      // Alterna entre LAT e ZAG para defensores se não for especificado
-      return indexInGroup % 2 === 0 ? 'LAT' : 'ZAG'
-    case 'Midfielder':
-      return 'MEI'
-    case 'Attacker':
-      return 'ATA'
-    default:
-      return 'MEI'
+    case 'Goalkeeper': return 'GOL'
+    case 'Defender':   return idx % 2 === 0 ? 'ZAG' : 'LAT'
+    case 'Midfielder': return 'MEI'
+    case 'Attacker':   return 'ATA'
+    default:           return 'MEI'
+  }
+}
+
+// Status da API-Football → formato interno
+function mapStatus(short: string): string {
+  switch (short) {
+    case 'FT': case 'AET': case 'PEN': return 'FT'
+    case '1H': case '2H': case 'HT': case 'ET': case 'P':  return 'live'
+    default:   return 'scheduled'
   }
 }
 
@@ -60,166 +61,178 @@ async function seedFromApi() {
     process.env.DATABASE_URL ||
     'postgres://postgres.ilinrgasbkhvzujltbhp:pQXA9LMIwHZdqBfK@aws-0-ca-central-1.pooler.supabase.com:6543/postgres'
 
-  console.log('🌐 Conectando à API-Football e sincronizando elencos reais ao Supabase...')
+  console.log(`🌐 Conectando à API-Football (season=${SEASON}, league=${LEAGUE_ID})...`)
   const client = new Client({ connectionString, ssl: { rejectUnauthorized: false } })
 
   try {
     await client.connect()
-    console.log('✅ Conectado ao Supabase!')
+    console.log('✅ Conectado ao Supabase!\n')
 
     // 1. Limpar catálogo antigo
     console.log('🧹 Limpando catálogo antigo...')
     await client.query(`TRUNCATE TABLE real_players, fixtures, real_clubs, seasons CASCADE;`)
 
-    // 2. Criar Season 2026
+    // 2. Buscar times do Brasileirão 2026
+    console.log(`📡 Buscando times — league=${LEAGUE_ID} season=${SEASON}...`)
+    const teamsRes = await fetchApi(`/teams?league=${LEAGUE_ID}&season=${SEASON}`)
+    if (!teamsRes.response || teamsRes.response.length === 0) {
+      throw new Error('Nenhum time retornado da API!')
+    }
+
+    const teamsData = teamsRes.response as Array<{
+      team: { id: number; name: string; code?: string; logo: string }
+    }>
+    console.log(`🛡️  ${teamsData.length} times retornados\n`)
+
+    // 3. Buscar rodada atual
+    await sleep(6500)
+    const standingsRes = await fetchApi(`/standings?league=${LEAGUE_ID}&season=${SEASON}`)
+    const standingsData = (standingsRes.response as Array<{
+      league: { round: string }
+    }> | undefined)?.[0]
+    const currentRoundStr = standingsData?.league?.round || 'Regular Season - 28'
+    const currentRound = parseInt(currentRoundStr.replace(/[^0-9]/g, '')) || 28
+    console.log(`📅 Rodada atual: ${currentRound}\n`)
+
+    // 4. Criar Season 2026
     const seasonRes = await client.query(`
       INSERT INTO seasons (league_api_id, year, name, current_round, total_rounds)
-      VALUES (71, 2026, 'Brasileirão Série A 2026', 28, 38)
+      VALUES ($1, $2, $3, $4, 38)
       RETURNING id;
-    `)
+    `, [LEAGUE_ID, SEASON, `Brasileirão Série A ${SEASON}`, currentRound])
     const seasonId = seasonRes.rows[0].id
+    console.log(`✅ Season ${SEASON} criada (rodada atual: ${currentRound})\n`)
 
-    // 3. Buscar os 20 clubes reais na API-Football
-    console.log('📡 Buscando 20 clubes do Brasileirão na API-Football...')
-    const teamsResponse = await fetchApi('/teams?league=71&season=2024')
-    if (!teamsResponse.response || teamsResponse.response.length === 0) {
-      throw new Error('Nenhum clube retornado da API-Football!')
-    }
-
-    const clubsFromApi = teamsResponse.response as Array<{ team: { id: number; name: string; code?: string; logo: string } }>
-    console.log(`🛡️  ${clubsFromApi.length} clubes retornados da API!`)
-
-    const clubMap = new Map<number, string>() // apiTeamId -> dbClubId
-
-    for (const item of clubsFromApi) {
+    // 5. Inserir clubes
+    const clubMap = new Map<number, string>() // apiTeamId → dbClubId
+    for (const item of teamsData) {
       const team = item.team
       const shortName = (team.code || team.name.substring(0, 3)).toUpperCase()
-
-      const res = await client.query(
-        `
-        INSERT INTO real_clubs (season_id, name, short_name, logo_url, api_football_id)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id;
-      `,
+      const clubRes = await client.query(
+        `INSERT INTO real_clubs (season_id, name, short_name, logo_url, api_football_id)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id;`,
         [seasonId, team.name, shortName, team.logo, team.id]
       )
-
-      clubMap.set(team.id, res.rows[0].id)
+      clubMap.set(team.id, clubRes.rows[0].id)
     }
+    console.log(`✅ ${teamsData.length} clubes cadastrados\n`)
 
-    // 4. Buscar squads ao vivo para cada clube
-    console.log('🏃 Buscando elencos ao vivo para cada clube...')
-    let totalPlayersInserted = 0
+    // 6. Buscar elencos ao vivo (squad) de cada clube
+    console.log('🏃 Buscando elencos atuais de cada clube (6.5s por time)...')
+    let totalPlayers = 0
 
-    for (const item of clubsFromApi) {
+    for (const item of teamsData) {
       const team = item.team
       const dbClubId = clubMap.get(team.id)!
 
-      console.log(` ➔ Baixando elenco de: ${team.name}...`)
-      await sleep(6500) // 6.5s delay para respeitar o rate-limit (10 req/min)
+      console.log(`  ➔ ${team.name}...`)
+      await sleep(6500) // respeita rate-limit: 10 req/min no Pro
 
-      const squadResponse = await fetchApi(`/players/squads?team=${team.id}`)
+      const squadRes = await fetchApi(`/players/squads?team=${team.id}`)
+      const squadData = (squadRes.response as Array<{
+        players: Array<{ id: number; name: string; position: string; photo?: string }>
+      }>)?.[0]
 
-      const squadData = (squadResponse.response as Array<{ players: Array<{ id: number; name: string; position: string; photo?: string }> }>)?.[0]
-
-      if (squadData && squadData.players) {
-        const players = squadData.players
-        const playerSqlRows: string[] = []
-        const playerValues: (string | number | boolean)[] = []
-        let paramIdx = 1
-
-        players.forEach((p: { id: number; name: string; position: string; photo?: string }, idx: number) => {
-          const pos = mapPosition(p.position, idx)
-          const avgPoints = parseFloat((Math.random() * 6 + 1.5).toFixed(2))
-          const minutes = Math.floor(Math.random() * 1200) + 300
-
-          playerSqlRows.push(
-            `($${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, true, $${paramIdx++}, $${paramIdx++}, $${paramIdx++})`
-          )
-          playerValues.push(
-            dbClubId,
-            p.name,
-            pos,
-            p.id,
-            avgPoints,
-            minutes,
-            p.photo || `https://media.api-sports.io/football/players/${p.id}.png`
-          )
-        })
-
-        if (playerSqlRows.length > 0) {
-          const sql = `
-            INSERT INTO real_players (club_id, name, position, api_football_id, is_active, avg_points, total_minutes, photo_url)
-            VALUES ${playerSqlRows.join(',\n')}
-            ON CONFLICT (api_football_id) DO UPDATE SET name = EXCLUDED.name;
-          `
-          await client.query(sql, playerValues)
-          totalPlayersInserted += playerSqlRows.length
-        }
+      if (!squadData?.players?.length) {
+        console.log(`    ⚠️  Elenco vazio`)
+        continue
       }
+
+      const sqlRows: string[] = []
+      const values: (string | number | boolean)[] = []
+      let paramIdx = 1
+      let defIdx = 0
+
+      for (const p of squadData.players) {
+        const pos = mapPosition(p.position, p.position === 'Defender' ? defIdx++ : 0)
+        // avg_points e total_minutes serão atualizados pelo fetch-batch-rounds-stats depois
+        const baseByPos: Record<string, number> = { GOL: 3.8, ZAG: 3.4, LAT: 3.4, MEI: 4.0, ATA: 4.2 }
+        const avgPoints = parseFloat((baseByPos[pos] + Math.random() * 1.5).toFixed(2))
+        const totalMinutes = Math.floor(Math.random() * 900) + 300
+
+        sqlRows.push(
+          `($${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, true, $${paramIdx++}, $${paramIdx++}, $${paramIdx++})`
+        )
+        values.push(
+          dbClubId, p.name, pos, p.id, avgPoints, totalMinutes,
+          p.photo || `https://media.api-sports.io/football/players/${p.id}.png`
+        )
+      }
+
+      await client.query(`
+        INSERT INTO real_players (club_id, name, position, api_football_id, is_active, avg_points, total_minutes, photo_url)
+        VALUES ${sqlRows.join(',\n')}
+        ON CONFLICT (api_football_id) DO UPDATE SET
+          name = EXCLUDED.name,
+          club_id = EXCLUDED.club_id,
+          photo_url = EXCLUDED.photo_url;
+      `, values)
+
+      totalPlayers += squadData.players.length
+      console.log(`    ✅ ${squadData.players.length} jogadores`)
     }
 
-    console.log(`✅ Total de ${totalPlayersInserted} jogadores reais importados da API-Football!`)
+    console.log(`\n🏃 Total: ${totalPlayers} jogadores importados\n`)
 
-    // 5. Partidas da Season (API-Football)
-    console.log('📅 Ingerindo tabela de jogos reais da API-Football...')
+    // 7. Buscar todas as 380 partidas da temporada
+    console.log('📅 Buscando calendário completo (380 partidas)...')
     await sleep(6500)
-    const fixturesResponse = await fetchApi('/fixtures?league=71&season=2024')
+    const fixturesRes = await fetchApi(`/fixtures?league=${LEAGUE_ID}&season=${SEASON}`)
 
-    if (fixturesResponse.response && fixturesResponse.response.length > 0) {
-      const fixtureSqlRows: string[] = []
-      const fixtureValues: (string | number | boolean | null)[] = []
-      let fParamIdx = 1
-
-      const fixtureItems = fixturesResponse.response as Array<{
-        fixture: { id: number; date: string; status: { short: string } }
-        league: { round: string }
-        teams: { home: { id: number }; away: { id: number } }
-        goals: { home: number | null; away: number | null }
-      }>
-      for (const item of fixtureItems) {
-        const f = item.fixture
-        const league = item.league
-        const homeTeamDbId = clubMap.get(item.teams.home.id)
-        const awayTeamDbId = clubMap.get(item.teams.away.id)
-
-        if (!homeTeamDbId || !awayTeamDbId) continue
-
-        const roundNumber = parseInt(league.round.replace(/[^0-9]/g, '')) || 1
-        const statusStr = f.status.short === 'FT' ? 'FT' : 'scheduled'
-        const homeScore = item.goals.home
-        const awayScore = item.goals.away
-
-        fixtureSqlRows.push(
-          `($${fParamIdx++}, $${fParamIdx++}, $${fParamIdx++}, $${fParamIdx++}, $${fParamIdx++}, $${fParamIdx++}, $${fParamIdx++}, $${fParamIdx++}, $${fParamIdx++})`
-        )
-        fixtureValues.push(
-          seasonId,
-          roundNumber,
-          homeTeamDbId,
-          awayTeamDbId,
-          f.date,
-          statusStr,
-          homeScore,
-          awayScore,
-          f.id
-        )
-      }
-
-      if (fixtureSqlRows.length > 0) {
-        const sql = `
-          INSERT INTO fixtures (season_id, round, home_club_id, away_club_id, kickoff_at, status, home_score, away_score, api_fixture_id)
-          VALUES ${fixtureSqlRows.join(',\n')}
-          ON CONFLICT (api_fixture_id) DO NOTHING;
-        `
-        await client.query(sql, fixtureValues)
-        console.log(`✅ ${fixtureSqlRows.length} partidas importadas diretamente da API-Football!`)
-      }
+    if (!fixturesRes.response || fixturesRes.response.length === 0) {
+      throw new Error('Nenhuma partida retornada!')
     }
 
-    console.log('🎉 BANCO DE DADOS POPULADO 100% COM DADOS REAIS DA API-FOOTBALL!')
+    const fixtures = fixturesRes.response as Array<{
+      fixture: { id: number; date: string; status: { short: string } }
+      league: { round: string }
+      teams: { home: { id: number }; away: { id: number } }
+      goals: { home: number | null; away: number | null }
+    }>
+    console.log(`📋 ${fixtures.length} partidas encontradas`)
+
+    const fixSqlRows: string[] = []
+    const fixValues: (string | number | boolean | null)[] = []
+    let fIdx = 1
+    let skipped = 0
+
+    for (const m of fixtures) {
+      const homeDbId = clubMap.get(m.teams.home.id)
+      const awayDbId = clubMap.get(m.teams.away.id)
+      if (!homeDbId || !awayDbId) { skipped++; continue }
+
+      const round = parseInt(m.league.round.replace(/[^0-9]/g, '')) || 1
+      const status = mapStatus(m.fixture.status.short)
+
+      fixSqlRows.push(
+        `($${fIdx++}, $${fIdx++}, $${fIdx++}, $${fIdx++}, $${fIdx++}, $${fIdx++}, $${fIdx++}, $${fIdx++}, $${fIdx++})`
+      )
+      fixValues.push(
+        seasonId, round, homeDbId, awayDbId, m.fixture.date,
+        status, m.goals.home, m.goals.away, m.fixture.id
+      )
+    }
+
+    if (fixSqlRows.length > 0) {
+      await client.query(`
+        INSERT INTO fixtures (season_id, round, home_club_id, away_club_id, kickoff_at, status, home_score, away_score, api_fixture_id)
+        VALUES ${fixSqlRows.join(',\n')}
+        ON CONFLICT (api_fixture_id) DO NOTHING;
+      `, fixValues)
+    }
+
+    console.log(`✅ ${fixSqlRows.length} partidas importadas (${skipped} ignoradas)`)
+    console.log('\n🎉 SEED CONCLUÍDO — DADOS REAIS DO BRASILEIRÃO SÉRIE A 2026!')
+    console.log(`   Times     : ${teamsData.length}`)
+    console.log(`   Jogadores : ${totalPlayers}`)
+    console.log(`   Partidas  : ${fixSqlRows.length}`)
+    console.log(`   Rodada    : ${currentRound}/38`)
+    console.log('\n⚡ Próximo passo: rode o script de stats para popular as pontuações:')
+    console.log(`   npx tsx scripts/fetch-batch-rounds-stats.ts 1 ${currentRound}`)
+
   } catch (err) {
-    console.error('❌ Erro durante o sync da API:', err)
+    console.error('❌ Erro durante o seed:', err)
+    process.exit(1)
   } finally {
     await client.end()
   }

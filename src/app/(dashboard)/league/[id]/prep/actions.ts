@@ -3,15 +3,25 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+export type PrepClubData = {
+  id: string
+  name: string
+  shortName: string
+  logoUrl: string | null
+}
+
 export type PrepPlayerData = {
   id: string
   name: string
   position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'
+  clubId: string
   clubName: string
   clubShortName: string
-  logoUrl: string | null
+  clubLogoUrl: string | null
+  photoUrl: string | null
   avgPoints: number
   totalMinutes: number
+  interestCount: number
 }
 
 export type WishlistItemData = {
@@ -19,6 +29,8 @@ export type WishlistItemData = {
   playerName: string
   position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'
   clubShortName: string
+  clubLogoUrl: string | null
+  photoUrl: string | null
   priority: number
 }
 
@@ -30,6 +42,7 @@ export type PrepRoomData = {
   myTeamName: string
   availablePlayers: PrepPlayerData[]
   myWishlist: WishlistItemData[]
+  clubs: PrepClubData[]
 }
 
 export async function getPrepRoomData(leagueId: string): Promise<PrepRoomData | null> {
@@ -59,7 +72,28 @@ export async function getPrepRoomData(leagueId: string): Promise<PrepRoomData | 
 
   if (!myTeam) return null
 
-  // 3. Fetch user's current wishlist / queue
+  // 3. Fetch all teams in this league to calculate interest count
+  const { data: leagueTeams } = await supabase
+    .from('fantasy_teams')
+    .select('id')
+    .eq('league_id', leagueId)
+
+  const teamIds = (leagueTeams || []).map((t: any) => t.id)
+
+  // 4. Fetch all draft queues for this league
+  const interestMap: Record<string, number> = {}
+  if (teamIds.length > 0) {
+    const { data: leagueQueues } = await supabase
+      .from('draft_queues')
+      .select('player_id, fantasy_team_id')
+      .in('fantasy_team_id', teamIds)
+
+    for (const q of leagueQueues || []) {
+      interestMap[q.player_id] = (interestMap[q.player_id] || 0) + 1
+    }
+  }
+
+  // 5. Fetch user's current wishlist / queue
   const { data: queueData } = await supabase
     .from('draft_queues')
     .select(`
@@ -69,7 +103,8 @@ export async function getPrepRoomData(leagueId: string): Promise<PrepRoomData | 
         id,
         name,
         position,
-        club:real_clubs(short_name)
+        photo_url,
+        club:real_clubs(short_name, logo_url)
       )
     `)
     .eq('fantasy_team_id', myTeam.id)
@@ -80,19 +115,36 @@ export async function getPrepRoomData(leagueId: string): Promise<PrepRoomData | 
     playerName: q.player?.name ?? 'Jogador',
     position: (q.player?.position as any) ?? 'MEI',
     clubShortName: q.player?.club?.short_name ?? '',
+    clubLogoUrl: q.player?.club?.logo_url ?? null,
+    photoUrl: q.player?.photo_url ?? null,
     priority: q.priority,
   }))
 
-  // 4. Fetch available active real players ordered by avg_points desc
+  // 6. Fetch clubs for filter
+  const { data: clubsData } = await supabase
+    .from('real_clubs')
+    .select('id, name, short_name, logo_url')
+    .order('name', { ascending: true })
+
+  const clubs: PrepClubData[] = (clubsData || []).map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    shortName: c.short_name,
+    logoUrl: c.logo_url ?? null,
+  }))
+
+  // 7. Fetch available active real players ordered by avg_points desc
   const { data: players } = await supabase
     .from('real_players')
     .select(`
       id,
       name,
       position,
+      photo_url,
       avg_points,
       total_minutes,
-      club:real_clubs(name, short_name, logo_url)
+      club_id,
+      club:real_clubs(id, name, short_name, logo_url)
     `)
     .eq('is_active', true)
     .order('avg_points', { ascending: false, nullsFirst: false })
@@ -102,11 +154,14 @@ export async function getPrepRoomData(leagueId: string): Promise<PrepRoomData | 
     id: p.id,
     name: p.name,
     position: p.position as any,
+    clubId: p.club?.id ?? p.club_id ?? '',
     clubName: p.club?.name ?? '',
     clubShortName: p.club?.short_name ?? '',
-    logoUrl: p.club?.logo_url ?? null,
+    clubLogoUrl: p.club?.logo_url ?? null,
+    photoUrl: p.photo_url ?? null,
     avgPoints: Number(p.avg_points ?? 0),
     totalMinutes: p.total_minutes ?? 0,
+    interestCount: interestMap[p.id] ?? 0,
   }))
 
   return {
@@ -117,6 +172,7 @@ export async function getPrepRoomData(leagueId: string): Promise<PrepRoomData | 
     myTeamName: myTeam.name,
     availablePlayers,
     myWishlist,
+    clubs,
   }
 }
 

@@ -38,15 +38,19 @@ export default async function DashboardPage() {
             <input
               type="text"
               name="code"
-              placeholder="Código da Liga"
+              placeholder="Código"
               maxLength={8}
               required
               className={styles.joinInput}
             />
-            <Button variant="primary" size="md" type="submit">
-              Entrar na Liga
+            <Button variant="secondary" size="md" type="submit">
+              Entrar
             </Button>
           </form>
+
+          <Link href="/league/create">
+            <Button size="md">+ Criar Liga</Button>
+          </Link>
         </div>
       </div>
 
@@ -61,8 +65,11 @@ export default async function DashboardPage() {
           <span className={styles.emptyIcon}>🏆</span>
           <h3 className={styles.emptyTitle}>Você ainda não está em nenhuma liga</h3>
           <p className={styles.emptyText}>
-            A criação de novas ligas está temporariamente suspensa. Insira o código de convite fornecido pelo comissário para entrar na liga.
+            Crie sua própria liga para jogar com amigos ou insira o código de convite recebido.
           </p>
+          <Link href="/league/create">
+            <Button size="lg">Criar Minha Primeiríssima Liga</Button>
+          </Link>
         </div>
       ) : (
         <div className={styles.grid}>

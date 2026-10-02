@@ -4,7 +4,8 @@ import fs from 'fs'
 import path from 'path'
 import { calculatePlayerScoring } from '../src/lib/scoring/scoring-engine'
 
-const API_KEY = process.env.FOOTBALL_API_KEY || '71fbb77f2a88622cbdde3989d0ab86db'
+const API_KEY = process.env.FOOTBALL_API_KEY
+if (!API_KEY) throw new Error('FOOTBALL_API_KEY env var is required')
 const CACHE_FILE = path.join(__dirname, 'data', 'rounds_stats_cache.json')
 const R27_CACHE_FILE = path.join(__dirname, 'data', 'round27_stats_cache.json')
 
@@ -430,8 +431,8 @@ export async function fetchAndPopulateRounds(startRound: number, endRound: numbe
 // CLI Argument parsing
 if (require.main === module) {
   const args = process.argv.slice(2)
-  let start = 26
-  let end = 18
+  let start = 1
+  let end = 28
 
   for (const arg of args) {
     if (arg.startsWith('--start=')) start = parseInt(arg.split('=')[1])

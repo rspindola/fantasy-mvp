@@ -23,11 +23,6 @@ export default function LoginPage() {
     initialState
   )
 
-  const handleFillDemo = (email: string, pass: string) => {
-    setEmailInput(email)
-    setPasswordInput(pass)
-    setAuthMode('password')
-  }
 
   return (
     <main className={styles.container}>
@@ -151,44 +146,6 @@ export default function LoginPage() {
           </form>
         )}
 
-        {/* Demo Accounts Quick-Fill Box */}
-        <div className={styles.demoBox}>
-          <span className={styles.demoBoxTitle}>
-            🧪 Contas de Teste (Preenchimento Rápido)
-          </span>
-
-          <div className={styles.demoRow}>
-            <div className={styles.demoMeta}>
-              <span className={styles.demoRole}>
-                🛡️ Participante (Fúria Rubro-Negra)
-              </span>
-              <span className={styles.demoEmail}>treinador@fantasy.com</span>
-            </div>
-            <button
-              type="button"
-              className={styles.demoFillBtn}
-              onClick={() => handleFillDemo('treinador@fantasy.com', 'password123')}
-            >
-              Preencher
-            </button>
-          </div>
-
-          <div className={styles.demoRow}>
-            <div className={styles.demoMeta}>
-              <span className={styles.demoRole}>
-                👑 Comissário (Galácticos FC)
-              </span>
-              <span className={styles.demoEmail}>rspindolaa@gmail.com</span>
-            </div>
-            <button
-              type="button"
-              className={styles.demoFillBtn}
-              onClick={() => handleFillDemo('rspindolaa@gmail.com', '')}
-            >
-              Preencher
-            </button>
-          </div>
-        </div>
 
         <Link href="/" className={styles.backLink}>
           ← Voltar à página inicial

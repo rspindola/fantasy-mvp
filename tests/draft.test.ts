@@ -102,3 +102,125 @@ describe('Auto-Pick Algorithm (24 Roster Rules)', () => {
     expect(picked?.name).toBe('Rossi')
   })
 })
+
+describe('Draft Pick Authorization (Commissioner Force Pick)', () => {
+  function checkPickPermission(params: {
+    userId: string
+    expectedTeamUserId: string
+    commissionerId: string
+    isAutoPick?: boolean
+  }): boolean {
+    if (params.isAutoPick) return true
+    const isOwner = params.expectedTeamUserId === params.userId
+    const isCommissioner = params.commissionerId === params.userId
+    return isOwner || isCommissioner
+  }
+
+  it('allows the team owner to pick on their turn', () => {
+    expect(
+      checkPickPermission({
+        userId: 'user_team_c',
+        expectedTeamUserId: 'user_team_c',
+        commissionerId: 'user_commish',
+      })
+    ).toBe(true)
+  })
+
+  it('allows the commissioner to pick on behalf of Time C when Time C is unavailable', () => {
+    expect(
+      checkPickPermission({
+        userId: 'user_commish',
+        expectedTeamUserId: 'user_team_c',
+        commissionerId: 'user_commish',
+      })
+    ).toBe(true)
+  })
+
+  it('rejects another random team manager from picking for Time C', () => {
+    expect(
+      checkPickPermission({
+        userId: 'user_team_a',
+        expectedTeamUserId: 'user_team_c',
+        commissionerId: 'user_commish',
+      })
+    ).toBe(false)
+  })
+
+  it('always allows server auto-pick', () => {
+    expect(
+      checkPickPermission({
+        userId: '',
+        expectedTeamUserId: 'user_team_c',
+        commissionerId: 'user_commish',
+        isAutoPick: true,
+      })
+    ).toBe(true)
+  })
+})
+
+describe('Pre-Draft Wishlist Queue Logic', () => {
+  type QueueItem = { playerId: string; priority: number }
+
+  function reorderQueue(queue: QueueItem[], playerId: string, direction: 'UP' | 'DOWN'): QueueItem[] {
+    const list = [...queue].sort((a, b) => a.priority - b.priority)
+    const index = list.findIndex((item) => item.playerId === playerId)
+    if (index === -1) return list
+
+    const targetIndex = direction === 'UP' ? index - 1 : index + 1
+    if (targetIndex < 0 || targetIndex >= list.length) return list
+
+    // Swap priorities
+    const currentPriority = list[index].priority
+    list[index] = { ...list[index], priority: list[targetIndex].priority }
+    list[targetIndex] = { ...list[targetIndex], priority: currentPriority }
+
+    return list.sort((a, b) => a.priority - b.priority)
+  }
+
+  it('moves an item UP in priority (from #2 to #1)', () => {
+    const initial: QueueItem[] = [
+      { playerId: 'p1', priority: 1 },
+      { playerId: 'p2', priority: 2 },
+      { playerId: 'p3', priority: 3 },
+    ]
+
+    const updated = reorderQueue(initial, 'p2', 'UP')
+    expect(updated[0].playerId).toBe('p2')
+    expect(updated[1].playerId).toBe('p1')
+    expect(updated[2].playerId).toBe('p3')
+  })
+
+  it('moves an item DOWN in priority (from #1 to #2)', () => {
+    const initial: QueueItem[] = [
+      { playerId: 'p1', priority: 1 },
+      { playerId: 'p2', priority: 2 },
+      { playerId: 'p3', priority: 3 },
+    ]
+
+    const updated = reorderQueue(initial, 'p1', 'DOWN')
+    expect(updated[0].playerId).toBe('p2')
+    expect(updated[1].playerId).toBe('p1')
+    expect(updated[2].playerId).toBe('p3')
+  })
+
+  it('ignores move UP if item is already at the top (#1)', () => {
+    const initial: QueueItem[] = [
+      { playerId: 'p1', priority: 1 },
+      { playerId: 'p2', priority: 2 },
+    ]
+
+    const updated = reorderQueue(initial, 'p1', 'UP')
+    expect(updated[0].playerId).toBe('p1')
+  })
+
+  it('ignores move DOWN if item is already at the bottom', () => {
+    const initial: QueueItem[] = [
+      { playerId: 'p1', priority: 1 },
+      { playerId: 'p2', priority: 2 },
+    ]
+
+    const updated = reorderQueue(initial, 'p2', 'DOWN')
+    expect(updated[1].playerId).toBe('p2')
+  })
+})
+

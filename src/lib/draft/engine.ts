@@ -71,7 +71,7 @@ export async function makePickEngine(
   // 1. Fetch league status & state
   const { data: league, error: lErr } = await supabase
     .from('leagues')
-    .select('id, status, current_pick, total_picks, is_paused')
+    .select('id, status, current_pick, total_picks, is_paused, commissioner_id')
     .eq('id', leagueId)
     .single()
 
@@ -101,8 +101,11 @@ export async function makePickEngine(
   const expectedTeam = teams.find((t) => t.id === currentSlot.fantasyTeamId)
   if (!expectedTeam) throw new Error('Time não encontrado para este slot.')
 
-  // Unless it's an auto-pick triggered by server, verify that the calling user owns the team
-  if (!isAutoPick && expectedTeam.user_id !== userId) {
+  const isOwner = expectedTeam.user_id === userId
+  const isCommissioner = league.commissioner_id === userId
+
+  // Unless it's an auto-pick, allow team owner OR league commissioner to submit pick
+  if (!isAutoPick && !isOwner && !isCommissioner) {
     throw new Error('Não é a sua vez de escolher.')
   }
 

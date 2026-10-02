@@ -203,6 +203,71 @@ export default function LeagueDetailsPage() {
 
           {league.status === 'open' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div
+                style={{
+                  background:
+                    'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(16, 185, 129, 0.1) 100%)',
+                  border: '1px solid rgba(245, 158, 11, 0.35)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '16px 20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '12px',
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      fontSize: '0.9375rem',
+                      color: 'var(--text-primary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <span>📋 Planejamento Pré-Draft</span>
+                    <span
+                      style={{
+                        fontSize: '0.75rem',
+                        background: 'rgba(245, 158, 11, 0.2)',
+                        color: 'var(--accent-gold)',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        border: '1px solid rgba(245, 158, 11, 0.4)',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Destaque
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.8125rem',
+                      color: 'var(--text-secondary)',
+                      marginTop: '4px',
+                    }}
+                  >
+                    Consulte os scouts dos jogadores da Série A e monte sua Lista de Desejos antes do início do draft.
+                  </div>
+                </div>
+                <Link href={`/league/${league.id}/prep`}>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    style={{
+                      borderColor: 'var(--accent-gold)',
+                      color: 'var(--accent-gold)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    ⭐ Montar Lista de Desejos
+                  </Button>
+                </Link>
+              </div>
+
               {league.isCommissioner ? (
                 <Button
                   size="lg"

@@ -193,6 +193,21 @@ export default function DraftRoomPage() {
               {data.isMyTurn && !data.isPaused && (
                 <span className={styles.turnMyBadge}>⚡ Sua Vez!</span>
               )}
+              {data.isCommissioner && !data.isMyTurn && !data.isPaused && (
+                <span
+                  style={{
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    color: 'var(--accent-gold)',
+                    border: '1px solid rgba(245, 158, 11, 0.4)',
+                    padding: '3px 8px',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  👑 Modo Comissário
+                </span>
+              )}
             </div>
           </div>
         )}
@@ -277,47 +292,115 @@ export default function DraftRoomPage() {
             )}
 
             {/* Selected Player Confirmation Bar */}
-            {selectedPlayer && data.isMyTurn && !data.isPaused && (
-              <div
-                style={{
-                  background: 'var(--accent-green-subtle)',
-                  border: '1px solid var(--border-accent)',
-                  padding: '12px 20px',
-                  borderRadius: 'var(--radius-md)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <div>
-                  <strong>Confirmar escolha: </strong>
-                  {selectedPlayer.name} ({selectedPlayer.position}) —{' '}
-                  {selectedPlayer.clubShortName}
+            {selectedPlayer && !data.isPaused && (
+              data.isMyTurn ? (
+                <div
+                  style={{
+                    background: 'var(--accent-green-subtle)',
+                    border: '1px solid var(--border-accent)',
+                    padding: '12px 20px',
+                    borderRadius: 'var(--radius-md)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                  }}
+                >
+                  <div>
+                    <strong>Confirmar escolha: </strong>
+                    {selectedPlayer.name} ({selectedPlayer.position}) —{' '}
+                    {selectedPlayer.clubShortName}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setModalPlayerId(selectedPlayer.id)}
+                    >
+                      🔍 Ver Ficha
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSelectedPlayer(null)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      isLoading={isPending}
+                      onClick={handleConfirmPick}
+                    >
+                      Confirmar Pick
+                    </Button>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setModalPlayerId(selectedPlayer.id)}
-                  >
-                    🔍 Ver Ficha
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setSelectedPlayer(null)}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    size="sm"
-                    isLoading={isPending}
-                    onClick={handleConfirmPick}
-                  >
-                    Confirmar Pick
-                  </Button>
+              ) : data.isCommissioner ? (
+                <div
+                  style={{
+                    background: 'rgba(245, 158, 11, 0.12)',
+                    border: '1px solid rgba(245, 158, 11, 0.5)',
+                    padding: '14px 20px',
+                    borderRadius: 'var(--radius-md)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          color: 'var(--accent-gold)',
+                          letterSpacing: '0.05em',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        👑 Escolha Assistida pelo Comissário
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.9375rem' }}>
+                      Escolher <strong>{selectedPlayer.name}</strong> ({selectedPlayer.position}) em nome de{' '}
+                      <strong style={{ color: 'var(--accent-gold)' }}>{data.currentTurnTeamName}</strong>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setModalPlayerId(selectedPlayer.id)}
+                    >
+                      🔍 Ver Ficha
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSelectedPlayer(null)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      style={{
+                        background: 'var(--accent-gold)',
+                        color: '#0f172a',
+                        borderColor: 'var(--accent-gold)',
+                        fontWeight: 600,
+                      }}
+                      isLoading={isPending}
+                      onClick={handleConfirmPick}
+                    >
+                      👑 Escolher por {data.currentTurnTeamName}
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ) : null
             )}
 
             {/* Players Grid */}
@@ -325,7 +408,8 @@ export default function DraftRoomPage() {
               {filteredPlayers.map((player) => {
                 const isSelected = selectedPlayer?.id === player.id
                 const inWishlist = wishlistPlayerIds.has(player.id)
-                const canPick = data.isMyTurn && !data.isPaused
+                const canPick = (data.isMyTurn || data.isCommissioner) && !data.isPaused
+                const isCommishPick = !data.isMyTurn && data.isCommissioner
 
                 return (
                   <div
@@ -339,8 +423,8 @@ export default function DraftRoomPage() {
                     style={
                       isSelected
                         ? {
-                            borderColor: 'var(--accent-green)',
-                            background: 'var(--accent-green-subtle)',
+                            borderColor: isCommishPick ? 'var(--accent-gold)' : 'var(--accent-green)',
+                            background: isCommishPick ? 'rgba(245, 158, 11, 0.15)' : 'var(--accent-green-subtle)',
                           }
                         : {}
                     }

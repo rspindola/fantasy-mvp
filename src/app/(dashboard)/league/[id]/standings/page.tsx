@@ -219,7 +219,13 @@ export default function StandingsPage() {
                       </td>
                       <td>
                         <div className={styles.teamCell}>
-                          <span className={styles.teamName}>{row.teamName}</span>
+                          <Link
+                            href={`/league/${leagueId}/team/${row.fantasyTeamId}`}
+                            className={styles.teamLink}
+                            title="Ver elenco completo de 24 atletas"
+                          >
+                            {row.teamName} 🛡️
+                          </Link>
                           <span className={styles.managerName}>Técnico: {row.managerName}</span>
                         </div>
                       </td>
@@ -288,7 +294,13 @@ export default function StandingsPage() {
                         </span>
                       </td>
                       <td>
-                        <span className={styles.teamName}>{row.teamName}</span>
+                        <Link
+                          href={`/league/${leagueId}/team/${row.fantasyTeamId}`}
+                          className={styles.teamLink}
+                          title="Ver elenco completo de 24 atletas"
+                        >
+                          {row.teamName} 🛡️
+                        </Link>
                       </td>
                       <td style={{ textAlign: 'center', color: 'var(--accent-green)' }}>{row.wins}</td>
                       <td style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{row.draws}</td>

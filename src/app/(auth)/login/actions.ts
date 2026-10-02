@@ -8,11 +8,38 @@ export type AuthState = {
   success?: boolean
 }
 
+export async function signInWithPassword(
+  _prevState: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const email = (formData.get('email') as string)?.trim()
+  const password = formData.get('password') as string
+
+  if (!email || !email.includes('@')) {
+    return { error: 'Informe um e-mail válido.' }
+  }
+  if (!password) {
+    return { error: 'Informe sua senha.' }
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+
+  if (error) {
+    return { error: 'E-mail ou senha incorretos. Verifique suas credenciais.' }
+  }
+
+  redirect('/dashboard')
+}
+
 export async function signInWithMagicLink(
   _prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  const email = formData.get('email') as string
+  const email = (formData.get('email') as string)?.trim()
 
   if (!email || !email.includes('@')) {
     return { error: 'Informe um e-mail válido.' }

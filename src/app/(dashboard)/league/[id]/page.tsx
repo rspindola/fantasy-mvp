@@ -16,6 +16,7 @@ export default function LeagueDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [copiedLink, setCopiedLink] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
@@ -32,6 +33,28 @@ export default function LeagueDetailsPage() {
       navigator.clipboard.writeText(league.inviteCode)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  const handleCopyLink = () => {
+    if (typeof window !== 'undefined' && league?.inviteCode) {
+      const url = `${window.location.origin}/join/${league.inviteCode}`
+      navigator.clipboard.writeText(url)
+      setCopiedLink(true)
+      setTimeout(() => setCopiedLink(false), 2000)
+    }
+  }
+
+  const handleShareWhatsApp = () => {
+    if (typeof window !== 'undefined' && league) {
+      const url = `${window.location.origin}/join/${league.inviteCode}`
+      const text = encodeURIComponent(
+        `⚽ Venha jogar na minha liga "${league.name}" no Fantasy Draft Série A!\n\n` +
+          `🏆 Modo: ${league.scoringMode === 'H2H' ? 'Duelos H2H' : 'Pontuação Geral'} | Draft Fechado (jogadores únicos)\n` +
+          `Entre agora pelo link:\n${url}\n\n` +
+          `Ou use o código de convite: *${league.inviteCode}*`
+      )
+      window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank')
     }
   }
 
@@ -94,7 +117,21 @@ export default function LeagueDetailsPage() {
               className={styles.copyButton}
               title="Copiar código de convite"
             >
-              {copied ? '✓ Copiado!' : '📋 Copiar'}
+              {copied ? '✓ Copiado!' : '📋 Código'}
+            </button>
+            <button
+              onClick={handleCopyLink}
+              className={styles.copyButton}
+              title="Copiar link direto de entrada"
+            >
+              {copiedLink ? '✓ Link Copiado!' : '🔗 Link'}
+            </button>
+            <button
+              onClick={handleShareWhatsApp}
+              className={styles.whatsappButton}
+              title="Convidar amigos via WhatsApp"
+            >
+              💬 WhatsApp
             </button>
           </div>
         </div>
@@ -204,20 +241,22 @@ export default function LeagueDetailsPage() {
 
           <div className={styles.teamList}>
             {league.teams.map((t, idx) => (
-              <div
+              <Link
                 key={t.id}
+                href={`/league/${league.id}/team/${t.id}`}
                 className={`${styles.teamRow} ${t.isMe ? styles.teamRowMe : ''}`}
+                title="Clique para ver o elenco completo de 24 atletas"
               >
                 <div className={styles.teamInfo}>
                   <span className={styles.teamName}>
-                    #{idx + 1} {t.name} {t.isMe ? '(Seu Time)' : ''}
+                    #{idx + 1} {t.name} {t.isMe ? '(Seu Time)' : ''} 🛡️
                   </span>
-                  <span className={styles.ownerName}>Técnico: {t.displayName}</span>
+                  <span className={styles.ownerName}>Técnico: {t.displayName} · Ver Elenco →</span>
                 </div>
                 {t.userId === league.commissionerId && (
                   <Badge variant="status">Comissário</Badge>
                 )}
-              </div>
+              </Link>
             ))}
           </div>
         </div>

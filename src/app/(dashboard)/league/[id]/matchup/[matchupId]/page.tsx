@@ -206,8 +206,24 @@ export default function MatchupDetailPage() {
       <div className={styles.teamColumn}>
         <div className={styles.columnHeader}>
           <div>
-            <h2 className={styles.columnTitle}>{team.teamName}</h2>
-            <span className={styles.managerName}>Técnico: {team.managerName}</span>
+            <Link
+              href={`/league/${leagueId}/team/${team.teamId}`}
+              style={{ textDecoration: 'none', color: 'inherit' }}
+              title="Clique para ver o elenco completo de 24 atletas"
+            >
+              <h2 className={styles.columnTitle} style={{ cursor: 'pointer' }}>
+                {team.teamName} 📋
+              </h2>
+            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className={styles.managerName}>Técnico: {team.managerName}</span>
+              <Link
+                href={`/league/${leagueId}/team/${team.teamId}`}
+                style={{ fontSize: '0.75rem', color: 'var(--accent-green)', textDecoration: 'none', fontWeight: 600 }}
+              >
+                · Ver Elenco →
+              </Link>
+            </div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <span className={styles.columnScore}>{team.totalPoints.toFixed(1)} pts</span>

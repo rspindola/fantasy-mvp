@@ -72,15 +72,40 @@
 
 .copyButton {
   background: transparent;
-  border: none;
+  border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 0.875rem;
-  padding: 4px;
+  font-size: 0.8125rem;
+  padding: 4px 8px;
+  transition: all 0.15s ease;
 }
 
 .copyButton:hover {
+  background: var(--bg-card);
   color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.whatsappButton {
+  background: rgba(37, 211, 102, 0.15);
+  border: 1px solid rgba(37, 211, 102, 0.4);
+  color: #4ade80;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.whatsappButton:hover {
+  background: rgba(37, 211, 102, 0.25);
+  border-color: rgba(37, 211, 102, 0.7);
+  transform: translateY(-1px);
 }
 
 .configBadges {
@@ -133,6 +158,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  text-decoration: none;
+  color: inherit;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.teamRow:hover {
+  border-color: var(--border-medium);
+  background: var(--bg-card);
+  transform: translateX(4px);
 }
 
 .teamRowMe {

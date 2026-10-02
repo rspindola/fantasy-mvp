@@ -116,6 +116,7 @@ Tabela oficial usada no MVP. Scouts sem equivalente fiel na API ficam documentad
 | Scout | Pontos | Quem |
 |---|---|---|
 | FS falta sofrida | +0,5 | todos |
+| PC passe completo | +0,1 | todos |
 | PE passe incompleto | −0,1 | todos |
 | A assistência | +4 | todos |
 | FT finalização na trave | +3 | todos |

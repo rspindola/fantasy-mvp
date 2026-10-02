@@ -235,6 +235,15 @@ export function PlayerDetailModal({
 
                     <div className={styles.scoutItem}>
                       <div className={styles.scoutTop}>
+                        <span className={styles.scoutSigla}>PC</span>
+                        <span className={`${styles.scoutPtsVal} ${styles.scoutPtsPositive}`}>+0.1</span>
+                      </div>
+                      <span className={styles.scoutCount}>{data.summary.passesCompleted}</span>
+                      <span className={styles.scoutLabel}>Passes Completos</span>
+                    </div>
+
+                    <div className={styles.scoutItem}>
+                      <div className={styles.scoutTop}>
                         <span className={styles.scoutSigla}>PE</span>
                         <span className={`${styles.scoutPtsVal} ${styles.scoutPtsNegative}`}>-0.1</span>
                       </div>

@@ -287,11 +287,12 @@ export async function fetchAndPopulateRounds(startRound: number, endRound: numbe
           const shotsTotal = stats.shots?.total || 0
           const shotsOffTarget = Math.max(0, shotsTotal - shotsOnTarget)
           const passesTotal = stats.passes?.total || 0
-          const passesAcc = parseInt(stats.passes?.accuracy) || passesTotal
-          const passesFailed = Math.max(
-            0,
-            passesTotal - (passesAcc > 100 ? Math.round((passesTotal * passesAcc) / 100) : passesAcc)
+          const passesAcc = parseInt(stats.passes?.accuracy) || 0
+          const passesCompleted = Math.min(
+            passesTotal,
+            passesAcc > 100 ? Math.round((passesTotal * passesAcc) / 100) : passesAcc
           )
+          const passesFailed = Math.max(0, passesTotal - passesCompleted)
           const offsides = stats.offsides || 0
 
           const computedPoints = calculatePlayerScoring({
@@ -304,6 +305,7 @@ export async function fetchAndPopulateRounds(startRound: number, endRound: numbe
             shotsOffTarget,
             foulsDrawn,
             penaltiesWon,
+            passesCompleted,
             passesFailed,
             offsides,
             penaltiesMissed,
@@ -333,6 +335,7 @@ export async function fetchAndPopulateRounds(startRound: number, endRound: numbe
             goalsConceded,
             penaltiesCommitted,
             foulsDrawn,
+            passesCompleted,
             passesFailed,
             assists,
             shotsOnTarget,
@@ -368,7 +371,7 @@ export async function fetchAndPopulateRounds(startRound: number, endRound: numbe
             INSERT INTO player_fixture_stats (
               player_id, fixture_id, minutes, tackles, fouls_committed,
               yellow_cards, red_cards, clean_sheet, saves, penalty_saves, goals_conceded,
-              penalties_committed, fouls_drawn, passes_failed, assists,
+              penalties_committed, fouls_drawn, passes_completed, passes_failed, assists,
               shots_on_target, shots_off_target, goals, offsides, penalties_missed,
               penalties_won, computed_points
             ) VALUES ${valuePlaceholders.join(', ')}
@@ -384,6 +387,7 @@ export async function fetchAndPopulateRounds(startRound: number, endRound: numbe
               goals_conceded = EXCLUDED.goals_conceded,
               penalties_committed = EXCLUDED.penalties_committed,
               fouls_drawn = EXCLUDED.fouls_drawn,
+              passes_completed = EXCLUDED.passes_completed,
               passes_failed = EXCLUDED.passes_failed,
               assists = EXCLUDED.assists,
               shots_on_target = EXCLUDED.shots_on_target,

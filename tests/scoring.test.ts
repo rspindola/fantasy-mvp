@@ -106,4 +106,35 @@ describe('Cartola FC Scoring Engine', () => {
     expect(result.captainBonus).toBe(5.0)
     expect(result.totalPoints).toBe(28.0) // 10 + 8 + 5 + 5 = 28
   })
+
+  it('calculates passes completed (+0.1) and failed (-0.1)', () => {
+    const scouts: PlayerScouts = {
+      position: 'MEI',
+      minutes: 90,
+      goals: 0,
+      assists: 0,
+      shotsOnWoodwork: 0,
+      shotsOnTarget: 0,
+      shotsOffTarget: 0,
+      foulsDrawn: 0,
+      penaltiesWon: 0,
+      passesCompleted: 30, // 30 * +0.1 = +3.0
+      passesFailed: 5, // 5 * -0.1 = -0.5
+      offsides: 0,
+      penaltiesMissed: 0,
+      cleanSheet: false,
+      saves: 0,
+      penaltySaves: 0,
+      tackles: 0,
+      foulsCommitted: 0,
+      ownGoals: 0,
+      yellowCards: 0,
+      redCards: 0,
+      goalsConceded: 0,
+      penaltiesCommitted: 0,
+    }
+
+    // 3.0 - 0.5 = 2.5
+    expect(calculatePlayerScoring(scouts)).toBe(2.5)
+  })
 })

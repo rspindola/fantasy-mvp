@@ -8,6 +8,7 @@ export interface PlayerScouts {
   shotsOffTarget: number
   foulsDrawn: number
   penaltiesWon: number
+  passesCompleted?: number
   passesFailed: number
   offsides: number
   penaltiesMissed: number
@@ -32,7 +33,8 @@ export const SCOUT_POINTS = {
   FF: 0.8, // Finalização para fora
   FS: 0.5, // Falta sofrida
   PS: 1.0, // Pênalti sofrido
-  PE: -0.1, // Passe incompleto
+  PC: 0.1, // Passe completo / certo
+  PE: -0.1, // Passe incompleto / errado
   I: -0.1, // Impedimento
   PP: -4.0, // Pênalti perdido
 
@@ -46,7 +48,7 @@ export const SCOUT_POINTS = {
   CA: -1.0, // Cartão amarelo
   CV: -3.0, // Cartão vermelho
   GS: -1.0, // Gol sofrido (GOL)
-  PC: -1.0, // Pênalti cometido
+  PEN_C: -1.0, // Pênalti cometido
 }
 
 /**
@@ -65,6 +67,7 @@ export function calculatePlayerScoring(scouts: PlayerScouts): number {
   pts += (scouts.shotsOffTarget || 0) * SCOUT_POINTS.FF
   pts += (scouts.foulsDrawn || 0) * SCOUT_POINTS.FS
   pts += (scouts.penaltiesWon || 0) * SCOUT_POINTS.PS
+  pts += (scouts.passesCompleted || 0) * SCOUT_POINTS.PC
   pts += (scouts.passesFailed || 0) * SCOUT_POINTS.PE
   pts += (scouts.offsides || 0) * SCOUT_POINTS.I
   pts += (scouts.penaltiesMissed || 0) * SCOUT_POINTS.PP
@@ -75,7 +78,7 @@ export function calculatePlayerScoring(scouts: PlayerScouts): number {
   pts += (scouts.ownGoals || 0) * SCOUT_POINTS.GC
   pts += (scouts.yellowCards || 0) * SCOUT_POINTS.CA
   pts += (scouts.redCards || 0) * SCOUT_POINTS.CV
-  pts += (scouts.penaltiesCommitted || 0) * SCOUT_POINTS.PC
+  pts += (scouts.penaltiesCommitted || 0) * SCOUT_POINTS.PEN_C
 
   // Position-specific Defense Scouts
   if (scouts.position === 'GOL') {

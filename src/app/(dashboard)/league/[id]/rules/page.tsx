@@ -197,6 +197,12 @@ export default function LeagueRulesPage() {
                 <td>Todas</td>
               </tr>
               <tr>
+                <td><span className={styles.badgeSigla}>PC</span></td>
+                <td>Passe completo / certo</td>
+                <td style={{ textAlign: 'right' }} className={styles.ptsPositive}>+0.1 pt</td>
+                <td>Todas</td>
+              </tr>
+              <tr>
                 <td><span className={styles.badgeSigla}>PE</span></td>
                 <td>Passe incompleto / errado</td>
                 <td style={{ textAlign: 'right' }} className={styles.ptsNegative}>-0.1 pt</td>
@@ -285,7 +291,7 @@ export default function LeagueRulesPage() {
                 <td>Goleiros</td>
               </tr>
               <tr>
-                <td><span className={styles.badgeSigla}>PC</span></td>
+                <td><span className={styles.badgeSigla}>PEN</span></td>
                 <td>Pênalti cometido</td>
                 <td style={{ textAlign: 'right' }} className={styles.ptsNegative}>-1.0 pt</td>
                 <td>Todas</td>

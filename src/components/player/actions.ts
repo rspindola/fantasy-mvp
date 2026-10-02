@@ -14,6 +14,7 @@ export type PlayerDetailScoutsSummary = {
   shotsOffTarget: number
   shotsOnWoodwork: number
   foulsDrawn: number
+  passesCompleted: number
   passesFailed: number
   penaltiesWon: number
   penaltiesMissed: number
@@ -57,6 +58,7 @@ export type PlayerRoundHistoryItem = {
     foulsCommitted: number
     yellowCards: number
     redCards: number
+    passesCompleted: number
     passesFailed: number
   }
 }
@@ -206,6 +208,7 @@ export async function getPlayerDetailModalData(
     shotsOffTarget: 0,
     shotsOnWoodwork: 0,
     foulsDrawn: 0,
+    passesCompleted: 0,
     passesFailed: 0,
     penaltiesWon: 0,
     penaltiesMissed: 0,
@@ -234,6 +237,7 @@ export async function getPlayerDetailModalData(
     summary.shotsOffTarget += st.shots_off_target ?? 0
     summary.shotsOnWoodwork += st.shots_on_woodwork ?? 0
     summary.foulsDrawn += st.fouls_drawn ?? 0
+    summary.passesCompleted += st.passes_completed ?? 0
     summary.passesFailed += st.passes_failed ?? 0
     summary.penaltiesWon += st.penalties_won ?? 0
     summary.penaltiesMissed += st.penalties_missed ?? 0
@@ -298,6 +302,7 @@ export async function getPlayerDetailModalData(
           foulsCommitted: stat?.fouls_committed ?? 0,
           yellowCards: stat?.yellow_cards ?? 0,
           redCards: stat?.red_cards ?? 0,
+          passesCompleted: stat?.passes_completed ?? 0,
           passesFailed: stat?.passes_failed ?? 0,
         },
       })

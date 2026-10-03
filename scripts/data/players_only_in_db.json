@@ -1,0 +1,5192 @@
+{
+  "results": [
+    {
+      "clubName": "Atletico Paranaense",
+      "shortName": "ATL",
+      "totalDb": 41,
+      "totalTm": 30,
+      "matched": 28,
+      "onlyInDbCount": 13,
+      "onlyInDb": [
+        {
+          "clubName": "Atletico Paranaense",
+          "shortName": "ATL",
+          "name": "Bruno Braga Ramos",
+          "position": "ATA",
+          "minutes": 339,
+          "avg": 2.31,
+          "apiId": 570392
+        },
+        {
+          "clubName": "Atletico Paranaense",
+          "shortName": "ATL",
+          "name": "Daniel",
+          "position": "ATA",
+          "minutes": 584,
+          "avg": 4.72,
+          "apiId": 576771
+        },
+        {
+          "clubName": "Atletico Paranaense",
+          "shortName": "ATL",
+          "name": "Isaac",
+          "position": "ATA",
+          "minutes": 52,
+          "avg": 0.09,
+          "apiId": 404536
+        },
+        {
+          "clubName": "Atletico Paranaense",
+          "shortName": "ATL",
+          "name": "Jorge Luis Rivaldo Pinto",
+          "position": "ATA",
+          "minutes": 70,
+          "avg": 1,
+          "apiId": 393877
+        },
+        {
+          "clubName": "Atletico Paranaense",
+          "shortName": "ATL",
+          "name": "Julimar",
+          "position": "ATA",
+          "minutes": 727,
+          "avg": 4.41,
+          "apiId": 9661
+        },
+        {
+          "clubName": "Atletico Paranaense",
+          "shortName": "ATL",
+          "name": "Luiz Fernando",
+          "position": "ATA",
+          "minutes": 17,
+          "avg": 1.4,
+          "apiId": 10073
+        },
+        {
+          "clubName": "Atletico Paranaense",
+          "shortName": "ATL",
+          "name": "Vitinho",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 545020
+        },
+        {
+          "clubName": "Atletico Paranaense",
+          "shortName": "ATL",
+          "name": "Maksym Voronov",
+          "position": "GOL",
+          "minutes": 339,
+          "avg": 5.02,
+          "apiId": 667859
+        },
+        {
+          "clubName": "Atletico Paranaense",
+          "shortName": "ATL",
+          "name": "Alemao",
+          "position": "LAT",
+          "minutes": 1132,
+          "avg": 3.88,
+          "apiId": 632456
+        },
+        {
+          "clubName": "Atletico Paranaense",
+          "shortName": "ATL",
+          "name": "Diogo Riquelme",
+          "position": "MEI",
+          "minutes": 95,
+          "avg": 1.05,
+          "apiId": 457593
+        },
+        {
+          "clubName": "Atletico Paranaense",
+          "shortName": "ATL",
+          "name": "N. Azambuja",
+          "position": "MEI",
+          "minutes": 780,
+          "avg": 4.5,
+          "apiId": 503271
+        },
+        {
+          "clubName": "Atletico Paranaense",
+          "shortName": "ATL",
+          "name": "Raul",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 10281
+        },
+        {
+          "clubName": "Atletico Paranaense",
+          "shortName": "ATL",
+          "name": "Arthur Monteiro",
+          "position": "ZAG",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 653951
+        }
+      ]
+    },
+    {
+      "clubName": "Atletico-MG",
+      "shortName": "ATL",
+      "totalDb": 42,
+      "totalTm": 32,
+      "matched": 32,
+      "onlyInDbCount": 10,
+      "onlyInDb": [
+        {
+          "clubName": "Atletico-MG",
+          "shortName": "ATL",
+          "name": "Joao Santos",
+          "position": "ATA",
+          "minutes": 1054,
+          "avg": 5.39,
+          "apiId": 659457
+        },
+        {
+          "clubName": "Atletico-MG",
+          "shortName": "ATL",
+          "name": "Iván Román",
+          "position": "LAT",
+          "minutes": 450,
+          "avg": 5.18,
+          "apiId": 404640
+        },
+        {
+          "clubName": "Atletico-MG",
+          "shortName": "ATL",
+          "name": "Luis Chaves",
+          "position": "LAT",
+          "minutes": 1111,
+          "avg": 4.48,
+          "apiId": 615190
+        },
+        {
+          "clubName": "Atletico-MG",
+          "shortName": "ATL",
+          "name": "Samuel",
+          "position": "LAT",
+          "minutes": 433,
+          "avg": 4.11,
+          "apiId": 633527
+        },
+        {
+          "clubName": "Atletico-MG",
+          "shortName": "ATL",
+          "name": "Gutte",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 570399
+        },
+        {
+          "clubName": "Atletico-MG",
+          "shortName": "ATL",
+          "name": "Mateus Jose Iseppe",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 465181
+        },
+        {
+          "clubName": "Atletico-MG",
+          "shortName": "ATL",
+          "name": "Soares Eric",
+          "position": "MEI",
+          "minutes": 475,
+          "avg": 5.44,
+          "apiId": 615197
+        },
+        {
+          "clubName": "Atletico-MG",
+          "shortName": "ATL",
+          "name": "Toledo Igor",
+          "position": "MEI",
+          "minutes": 1063,
+          "avg": 5.33,
+          "apiId": 629376
+        },
+        {
+          "clubName": "Atletico-MG",
+          "shortName": "ATL",
+          "name": "Junior Alonso",
+          "position": "ZAG",
+          "minutes": 917,
+          "avg": 8.53,
+          "apiId": 2499
+        },
+        {
+          "clubName": "Atletico-MG",
+          "shortName": "ATL",
+          "name": "Pedro Lemos",
+          "position": "ZAG",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 675445
+        }
+      ]
+    },
+    {
+      "clubName": "Bahia",
+      "shortName": "BAH",
+      "totalDb": 39,
+      "totalTm": 33,
+      "matched": 31,
+      "onlyInDbCount": 8,
+      "onlyInDb": [
+        {
+          "clubName": "Bahia",
+          "shortName": "BAH",
+          "name": "Çağatay Yılmaz",
+          "position": "ATA",
+          "minutes": 205,
+          "avg": 1.47,
+          "apiId": 525667
+        },
+        {
+          "clubName": "Bahia",
+          "shortName": "BAH",
+          "name": "Caio Suassuna",
+          "position": "ATA",
+          "minutes": 14,
+          "avg": 0.27,
+          "apiId": 607365
+        },
+        {
+          "clubName": "Bahia",
+          "shortName": "BAH",
+          "name": "J. C. Neres dos Santos I.",
+          "position": "GOL",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 657690
+        },
+        {
+          "clubName": "Bahia",
+          "shortName": "BAH",
+          "name": "Rezende",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 157359
+        },
+        {
+          "clubName": "Bahia",
+          "shortName": "BAH",
+          "name": "Sidney",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 407265
+        },
+        {
+          "clubName": "Bahia",
+          "shortName": "BAH",
+          "name": "Wendel Silva",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 454145
+        },
+        {
+          "clubName": "Bahia",
+          "shortName": "BAH",
+          "name": "Gabriel Xavier",
+          "position": "ZAG",
+          "minutes": 438,
+          "avg": 3.86,
+          "apiId": 353728
+        },
+        {
+          "clubName": "Bahia",
+          "shortName": "BAH",
+          "name": "Santiago Ramos Mingo",
+          "position": "ZAG",
+          "minutes": 2121,
+          "avg": 11.61,
+          "apiId": 129880
+        }
+      ]
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "totalDb": 53,
+      "totalTm": 35,
+      "matched": 31,
+      "onlyInDbCount": 22,
+      "onlyInDb": [
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Arthur  Izaque",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 614621
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Chris Ramos",
+          "position": "ATA",
+          "minutes": 25,
+          "avg": 0.58,
+          "apiId": 104792
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Joaquín Correa",
+          "position": "ATA",
+          "minutes": 178,
+          "avg": 1.76,
+          "apiId": 1854
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Nathan Fernandes",
+          "position": "ATA",
+          "minutes": 78,
+          "avg": 1.5,
+          "apiId": 419936
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Cleber",
+          "position": "GOL",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 668274
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Cleber Lucas",
+          "position": "GOL",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 614433
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Léo Linck",
+          "position": "GOL",
+          "minutes": 97,
+          "avg": 0.86,
+          "apiId": 292166
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Neto",
+          "position": "GOL",
+          "minutes": 857,
+          "avg": 4.23,
+          "apiId": 912
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Raul",
+          "position": "GOL",
+          "minutes": 685,
+          "avg": 2.41,
+          "apiId": 80188
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Rhyan",
+          "position": "GOL",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 458374
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Caio Roque",
+          "position": "LAT",
+          "minutes": 122,
+          "avg": 1.25,
+          "apiId": 283837
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Garcia da Silva Neves Herick",
+          "position": "LAT",
+          "minutes": 834,
+          "avg": 4.72,
+          "apiId": 668275
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Kadu Santos",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 613321
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Marquinhos",
+          "position": "LAT",
+          "minutes": 8,
+          "avg": 1.1,
+          "apiId": 544705
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Ythallo",
+          "position": "LAT",
+          "minutes": 45,
+          "avg": 0.79,
+          "apiId": 426627
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Arthur Novaes",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 609493
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Caio Valle",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 506276
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Hugo Goncalves dos Santos Victor",
+          "position": "MEI",
+          "minutes": 1115,
+          "avg": 5.32,
+          "apiId": 668276
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Santiago Rodríguez",
+          "position": "MEI",
+          "minutes": 587,
+          "avg": 4.23,
+          "apiId": 51581
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Wallace II",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 463987
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Bastos",
+          "position": "ZAG",
+          "minutes": 530,
+          "avg": 6.91,
+          "apiId": 1845
+        },
+        {
+          "clubName": "Botafogo",
+          "shortName": "BOT",
+          "name": "Gabriel Abdias",
+          "position": "ZAG",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 561346
+        }
+      ]
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "totalDb": 71,
+      "totalTm": 38,
+      "matched": 41,
+      "onlyInDbCount": 30,
+      "onlyInDb": [
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Alberto",
+          "position": "ATA",
+          "minutes": 336,
+          "avg": 4.22,
+          "apiId": 631260
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Bernardo",
+          "position": "ATA",
+          "minutes": 437,
+          "avg": 5.38,
+          "apiId": 651842
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Gleidson",
+          "position": "ATA",
+          "minutes": 336,
+          "avg": 4.41,
+          "apiId": 634404
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Italo",
+          "position": "ATA",
+          "minutes": 767,
+          "avg": 2.29,
+          "apiId": 410229
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Joao Henrique",
+          "position": "ATA",
+          "minutes": 1123,
+          "avg": 5.6,
+          "apiId": 614597
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Juan Ferreira",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 632958
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Kassio",
+          "position": "ATA",
+          "minutes": 21,
+          "avg": 0.8,
+          "apiId": 634403
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Luciano",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 634427
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Luizao",
+          "position": "ATA",
+          "minutes": 742,
+          "avg": 4.45,
+          "apiId": 631962
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "M. Milani",
+          "position": "ATA",
+          "minutes": 659,
+          "avg": 5.4,
+          "apiId": 632935
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Mailson",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 455321
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Neto Pessoa",
+          "position": "ATA",
+          "minutes": 314,
+          "avg": 2.47,
+          "apiId": 54102
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Perotti",
+          "position": "ATA",
+          "minutes": 25,
+          "avg": 1.13,
+          "apiId": 10220
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "T. Ferreira",
+          "position": "ATA",
+          "minutes": 414,
+          "avg": 5.5,
+          "apiId": 651301
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Kainã",
+          "position": "GOL",
+          "minutes": 1052,
+          "avg": 4.66,
+          "apiId": 402675
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Wellington",
+          "position": "GOL",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 632422
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Bruno Leonardo",
+          "position": "LAT",
+          "minutes": 1335,
+          "avg": 8.8,
+          "apiId": 207758
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Marcos Vinícius",
+          "position": "LAT",
+          "minutes": 588,
+          "avg": 3.84,
+          "apiId": 9629
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Walter Clar",
+          "position": "LAT",
+          "minutes": 777,
+          "avg": 7.38,
+          "apiId": 70793
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Ênio",
+          "position": "MEI",
+          "minutes": 800,
+          "avg": 2.83,
+          "apiId": 197324
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "F. Maciel",
+          "position": "MEI",
+          "minutes": 716,
+          "avg": 4.92,
+          "apiId": 658882
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Higor Meritão",
+          "position": "MEI",
+          "minutes": 625,
+          "avg": 4.12,
+          "apiId": 9212
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Jean Carlos",
+          "position": "MEI",
+          "minutes": 708,
+          "avg": 3.58,
+          "apiId": 77799
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "João Vitor",
+          "position": "MEI",
+          "minutes": 605,
+          "avg": 2.65,
+          "apiId": 237669
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "K. Godoy",
+          "position": "MEI",
+          "minutes": 571,
+          "avg": 4.74,
+          "apiId": 650653
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Kaue Arno",
+          "position": "MEI",
+          "minutes": 667,
+          "avg": 4.15,
+          "apiId": 632420
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Rodrigo",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 631034
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "Wemerson",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 631529
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "I. Gnoatto",
+          "position": "ZAG",
+          "minutes": 402,
+          "avg": 3.64,
+          "apiId": 650652
+        },
+        {
+          "clubName": "Chapecoense-sc",
+          "shortName": "CHA",
+          "name": "M. Kalebe",
+          "position": "ZAG",
+          "minutes": 370,
+          "avg": 3.62,
+          "apiId": 660597
+        }
+      ]
+    },
+    {
+      "clubName": "Corinthians",
+      "shortName": "COR",
+      "totalDb": 39,
+      "totalTm": 35,
+      "matched": 31,
+      "onlyInDbCount": 8,
+      "onlyInDb": [
+        {
+          "clubName": "Corinthians",
+          "shortName": "COR",
+          "name": "Guilherme Inácio",
+          "position": "ATA",
+          "minutes": 364,
+          "avg": 1.43,
+          "apiId": 463979
+        },
+        {
+          "clubName": "Corinthians",
+          "shortName": "COR",
+          "name": "Luiz Fernando",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 662884
+        },
+        {
+          "clubName": "Corinthians",
+          "shortName": "COR",
+          "name": "Nicollas",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 609581
+        },
+        {
+          "clubName": "Corinthians",
+          "shortName": "COR",
+          "name": "João Vitor",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 507381
+        },
+        {
+          "clubName": "Corinthians",
+          "shortName": "COR",
+          "name": "Santos Ribeiro Silva Caua",
+          "position": "LAT",
+          "minutes": 539,
+          "avg": 3.85,
+          "apiId": 675980
+        },
+        {
+          "clubName": "Corinthians",
+          "shortName": "COR",
+          "name": "Luiz Gustavo",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 414353
+        },
+        {
+          "clubName": "Corinthians",
+          "shortName": "COR",
+          "name": "Joao Vitor",
+          "position": "ZAG",
+          "minutes": 966,
+          "avg": 4.79,
+          "apiId": 544700
+        },
+        {
+          "clubName": "Corinthians",
+          "shortName": "COR",
+          "name": "Melo Yago",
+          "position": "ZAG",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 589365
+        }
+      ]
+    },
+    {
+      "clubName": "Coritiba",
+      "shortName": "COR",
+      "totalDb": 46,
+      "totalTm": 33,
+      "matched": 32,
+      "onlyInDbCount": 14,
+      "onlyInDb": [
+        {
+          "clubName": "Coritiba",
+          "shortName": "COR",
+          "name": "Brayan",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 490665
+        },
+        {
+          "clubName": "Coritiba",
+          "shortName": "COR",
+          "name": "D. Alves",
+          "position": "ATA",
+          "minutes": 1,
+          "avg": -0.01,
+          "apiId": 653237
+        },
+        {
+          "clubName": "Coritiba",
+          "shortName": "COR",
+          "name": "Enzo",
+          "position": "ATA",
+          "minutes": 17,
+          "avg": 0.06,
+          "apiId": 504965
+        },
+        {
+          "clubName": "Coritiba",
+          "shortName": "COR",
+          "name": "L. Crepaldi",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 631680
+        },
+        {
+          "clubName": "Coritiba",
+          "shortName": "COR",
+          "name": "Gabriel Leite",
+          "position": "GOL",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 77918
+        },
+        {
+          "clubName": "Coritiba",
+          "shortName": "COR",
+          "name": "Gabriel Ibson",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 680061
+        },
+        {
+          "clubName": "Coritiba",
+          "shortName": "COR",
+          "name": "JoÃ£o Pedro Chermont",
+          "position": "LAT",
+          "minutes": 982,
+          "avg": 5.3,
+          "apiId": 414394
+        },
+        {
+          "clubName": "Coritiba",
+          "shortName": "COR",
+          "name": "João Almeida",
+          "position": "LAT",
+          "minutes": 4,
+          "avg": 0,
+          "apiId": 505579
+        },
+        {
+          "clubName": "Coritiba",
+          "shortName": "COR",
+          "name": "A. Ararat",
+          "position": "MEI",
+          "minutes": 792,
+          "avg": 5.24,
+          "apiId": 468958
+        },
+        {
+          "clubName": "Coritiba",
+          "shortName": "COR",
+          "name": "Fernando Sobral",
+          "position": "MEI",
+          "minutes": 116,
+          "avg": 0.33,
+          "apiId": 80187
+        },
+        {
+          "clubName": "Coritiba",
+          "shortName": "COR",
+          "name": "Jean Gabriel",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 425077
+        },
+        {
+          "clubName": "Coritiba",
+          "shortName": "COR",
+          "name": "Khensane",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 631771
+        },
+        {
+          "clubName": "Coritiba",
+          "shortName": "COR",
+          "name": "Willian Oliveira",
+          "position": "MEI",
+          "minutes": 483,
+          "avg": 2.34,
+          "apiId": 9208
+        },
+        {
+          "clubName": "Coritiba",
+          "shortName": "COR",
+          "name": "Felipe Guimarães",
+          "position": "ZAG",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 472464
+        }
+      ]
+    },
+    {
+      "clubName": "Cruzeiro",
+      "shortName": "CRU",
+      "totalDb": 42,
+      "totalTm": 32,
+      "matched": 30,
+      "onlyInDbCount": 12,
+      "onlyInDb": [
+        {
+          "clubName": "Cruzeiro",
+          "shortName": "CRU",
+          "name": "Chico da Costa",
+          "position": "ATA",
+          "minutes": 213,
+          "avg": 0.91,
+          "apiId": 36312
+        },
+        {
+          "clubName": "Cruzeiro",
+          "shortName": "CRU",
+          "name": "João Gabriel e Costa Cesco",
+          "position": "ATA",
+          "minutes": 241,
+          "avg": 2.57,
+          "apiId": 368096
+        },
+        {
+          "clubName": "Cruzeiro",
+          "shortName": "CRU",
+          "name": "R. Lelis",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 610497
+        },
+        {
+          "clubName": "Cruzeiro",
+          "shortName": "CRU",
+          "name": "Eraclito Marcelo",
+          "position": "GOL",
+          "minutes": 867,
+          "avg": 5.13,
+          "apiId": 631005
+        },
+        {
+          "clubName": "Cruzeiro",
+          "shortName": "CRU",
+          "name": "Vitor Lamounier",
+          "position": "GOL",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 522974
+        },
+        {
+          "clubName": "Cruzeiro",
+          "shortName": "CRU",
+          "name": "Janderson",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 409849
+        },
+        {
+          "clubName": "Cruzeiro",
+          "shortName": "CRU",
+          "name": "Kaiki",
+          "position": "LAT",
+          "minutes": 1449,
+          "avg": 13.09,
+          "apiId": 309792
+        },
+        {
+          "clubName": "Cruzeiro",
+          "shortName": "CRU",
+          "name": "Christian",
+          "position": "MEI",
+          "minutes": 1257,
+          "avg": 8.94,
+          "apiId": 67204
+        },
+        {
+          "clubName": "Cruzeiro",
+          "shortName": "CRU",
+          "name": "Murilo Rhikman",
+          "position": "MEI",
+          "minutes": 10,
+          "avg": 1.35,
+          "apiId": 465169
+        },
+        {
+          "clubName": "Cruzeiro",
+          "shortName": "CRU",
+          "name": "Rhuan Gabriel",
+          "position": "MEI",
+          "minutes": 20,
+          "avg": 0.22,
+          "apiId": 554485
+        },
+        {
+          "clubName": "Cruzeiro",
+          "shortName": "CRU",
+          "name": "Bruno Alves",
+          "position": "ZAG",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 465175
+        },
+        {
+          "clubName": "Cruzeiro",
+          "shortName": "CRU",
+          "name": "Kauã Prates",
+          "position": "ZAG",
+          "minutes": 15,
+          "avg": 0.03,
+          "apiId": 507692
+        }
+      ]
+    },
+    {
+      "clubName": "Flamengo",
+      "shortName": "FLA",
+      "totalDb": 40,
+      "totalTm": 27,
+      "matched": 26,
+      "onlyInDbCount": 14,
+      "onlyInDb": [
+        {
+          "clubName": "Flamengo",
+          "shortName": "FLA",
+          "name": "Alan",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 589367
+        },
+        {
+          "clubName": "Flamengo",
+          "shortName": "FLA",
+          "name": "Douglas Costa Telles",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 586025
+        },
+        {
+          "clubName": "Flamengo",
+          "shortName": "FLA",
+          "name": "J. S. Miranda",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 613324
+        },
+        {
+          "clubName": "Flamengo",
+          "shortName": "FLA",
+          "name": "Daniel Carvalho",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 634767
+        },
+        {
+          "clubName": "Flamengo",
+          "shortName": "FLA",
+          "name": "João Victor Cunha",
+          "position": "LAT",
+          "minutes": 71,
+          "avg": 2.48,
+          "apiId": 449253
+        },
+        {
+          "clubName": "Flamengo",
+          "shortName": "FLA",
+          "name": "Caio Andrade",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 511757
+        },
+        {
+          "clubName": "Flamengo",
+          "shortName": "FLA",
+          "name": "Guilherme Gomes",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 454555
+        },
+        {
+          "clubName": "Flamengo",
+          "shortName": "FLA",
+          "name": "Joshua",
+          "position": "MEI",
+          "minutes": 9,
+          "avg": 0.05,
+          "apiId": 544685
+        },
+        {
+          "clubName": "Flamengo",
+          "shortName": "FLA",
+          "name": "L. Mariano",
+          "position": "MEI",
+          "minutes": 639,
+          "avg": 4.78,
+          "apiId": 644618
+        },
+        {
+          "clubName": "Flamengo",
+          "shortName": "FLA",
+          "name": "Lorran",
+          "position": "MEI",
+          "minutes": 125,
+          "avg": 2.46,
+          "apiId": 403300
+        },
+        {
+          "clubName": "Flamengo",
+          "shortName": "FLA",
+          "name": "Luiz Felipe",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 510574
+        },
+        {
+          "clubName": "Flamengo",
+          "shortName": "FLA",
+          "name": "Pablo Lucio",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 505531
+        },
+        {
+          "clubName": "Flamengo",
+          "shortName": "FLA",
+          "name": "Daniel Sales",
+          "position": "ZAG",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 403299
+        },
+        {
+          "clubName": "Flamengo",
+          "shortName": "FLA",
+          "name": "Johnny Góes",
+          "position": "ZAG",
+          "minutes": 22,
+          "avg": 0.12,
+          "apiId": 512740
+        }
+      ]
+    },
+    {
+      "clubName": "Fluminense",
+      "shortName": "FLU",
+      "totalDb": 42,
+      "totalTm": 36,
+      "matched": 33,
+      "onlyInDbCount": 9,
+      "onlyInDb": [
+        {
+          "clubName": "Fluminense",
+          "shortName": "FLU",
+          "name": "Keven Samuel",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 519809
+        },
+        {
+          "clubName": "Fluminense",
+          "shortName": "FLU",
+          "name": "Santiago Moreno",
+          "position": "ATA",
+          "minutes": 44,
+          "avg": 0.12,
+          "apiId": 115532
+        },
+        {
+          "clubName": "Fluminense",
+          "shortName": "FLU",
+          "name": "Gustavo Felix",
+          "position": "GOL",
+          "minutes": 841,
+          "avg": 4.66,
+          "apiId": 667869
+        },
+        {
+          "clubName": "Fluminense",
+          "shortName": "FLU",
+          "name": "Davi Duarte",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 505398
+        },
+        {
+          "clubName": "Fluminense",
+          "shortName": "FLU",
+          "name": "Vagno",
+          "position": "LAT",
+          "minutes": 481,
+          "avg": 4.42,
+          "apiId": 519811
+        },
+        {
+          "clubName": "Fluminense",
+          "shortName": "FLU",
+          "name": "Andrey",
+          "position": "MEI",
+          "minutes": 1070,
+          "avg": 4.87,
+          "apiId": 675979
+        },
+        {
+          "clubName": "Fluminense",
+          "shortName": "FLU",
+          "name": "Facundo Bernal",
+          "position": "MEI",
+          "minutes": 569,
+          "avg": 4.88,
+          "apiId": 316519
+        },
+        {
+          "clubName": "Fluminense",
+          "shortName": "FLU",
+          "name": "Ruan",
+          "position": "MEI",
+          "minutes": 323,
+          "avg": 4.99,
+          "apiId": 667326
+        },
+        {
+          "clubName": "Fluminense",
+          "shortName": "FLU",
+          "name": "Sales Ruan",
+          "position": "MEI",
+          "minutes": 382,
+          "avg": 5.04,
+          "apiId": 681309
+        }
+      ]
+    },
+    {
+      "clubName": "Gremio",
+      "shortName": "GRE",
+      "totalDb": 44,
+      "totalTm": 34,
+      "matched": 33,
+      "onlyInDbCount": 11,
+      "onlyInDb": [
+        {
+          "clubName": "Gremio",
+          "shortName": "GRE",
+          "name": "Alexander Aravena",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 201908
+        },
+        {
+          "clubName": "Gremio",
+          "shortName": "GRE",
+          "name": "André Henrique",
+          "position": "ATA",
+          "minutes": 118,
+          "avg": 0.83,
+          "apiId": 237847
+        },
+        {
+          "clubName": "Gremio",
+          "shortName": "GRE",
+          "name": "Gabriel Mec",
+          "position": "ATA",
+          "minutes": 747,
+          "avg": 3.69,
+          "apiId": 507527
+        },
+        {
+          "clubName": "Gremio",
+          "shortName": "GRE",
+          "name": "V. Ramon",
+          "position": "LAT",
+          "minutes": 30,
+          "avg": 1.1,
+          "apiId": 607376
+        },
+        {
+          "clubName": "Gremio",
+          "shortName": "GRE",
+          "name": "Bernardo Zortea",
+          "position": "MEI",
+          "minutes": 92,
+          "avg": 0.81,
+          "apiId": 510554
+        },
+        {
+          "clubName": "Gremio",
+          "shortName": "GRE",
+          "name": "Franco Cristaldo",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 6546
+        },
+        {
+          "clubName": "Gremio",
+          "shortName": "GRE",
+          "name": "Jefinho",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 634340
+        },
+        {
+          "clubName": "Gremio",
+          "shortName": "GRE",
+          "name": "L. Pérez",
+          "position": "MEI",
+          "minutes": 736,
+          "avg": 4.99,
+          "apiId": 408342
+        },
+        {
+          "clubName": "Gremio",
+          "shortName": "GRE",
+          "name": "Miguel Monsalve",
+          "position": "MEI",
+          "minutes": 334,
+          "avg": 1.6,
+          "apiId": 277771
+        },
+        {
+          "clubName": "Gremio",
+          "shortName": "GRE",
+          "name": "Willian",
+          "position": "MEI",
+          "minutes": 395,
+          "avg": 2.35,
+          "apiId": 2294
+        },
+        {
+          "clubName": "Gremio",
+          "shortName": "GRE",
+          "name": "Viery",
+          "position": "ZAG",
+          "minutes": 1220,
+          "avg": 11.43,
+          "apiId": 424277
+        }
+      ]
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "totalDb": 44,
+      "totalTm": 31,
+      "matched": 29,
+      "onlyInDbCount": 15,
+      "onlyInDb": [
+        {
+          "clubName": "Internacional",
+          "shortName": "INT",
+          "name": "Bruno Tabata",
+          "position": "ATA",
+          "minutes": 197,
+          "avg": 1.11,
+          "apiId": 41368
+        },
+        {
+          "clubName": "Internacional",
+          "shortName": "INT",
+          "name": "F. Zechmeister",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 609467
+        },
+        {
+          "clubName": "Internacional",
+          "shortName": "INT",
+          "name": "J. Bezerra",
+          "position": "ATA",
+          "minutes": 23,
+          "avg": 0.19,
+          "apiId": 609580
+        },
+        {
+          "clubName": "Internacional",
+          "shortName": "INT",
+          "name": "Rafael Borré",
+          "position": "ATA",
+          "minutes": 1096,
+          "avg": 4.52,
+          "apiId": 6011
+        },
+        {
+          "clubName": "Internacional",
+          "shortName": "INT",
+          "name": "Victor Joao",
+          "position": "ATA",
+          "minutes": 33,
+          "avg": -0.11,
+          "apiId": 633284
+        },
+        {
+          "clubName": "Internacional",
+          "shortName": "INT",
+          "name": "Felipe",
+          "position": "GOL",
+          "minutes": 705,
+          "avg": 4.49,
+          "apiId": 664879
+        },
+        {
+          "clubName": "Internacional",
+          "shortName": "INT",
+          "name": "Alisson",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 577746
+        },
+        {
+          "clubName": "Internacional",
+          "shortName": "INT",
+          "name": "Clayton Sampaio",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 279579
+        },
+        {
+          "clubName": "Internacional",
+          "shortName": "INT",
+          "name": "Pedro Kauã",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 463956
+        },
+        {
+          "clubName": "Internacional",
+          "shortName": "INT",
+          "name": "Alan Rodríguez",
+          "position": "MEI",
+          "minutes": 251,
+          "avg": 0.98,
+          "apiId": 51468
+        },
+        {
+          "clubName": "Internacional",
+          "shortName": "INT",
+          "name": "B. Arhin",
+          "position": "MEI",
+          "minutes": 1,
+          "avg": -0.03,
+          "apiId": 610495
+        },
+        {
+          "clubName": "Internacional",
+          "shortName": "INT",
+          "name": "Gabriel Vinicius",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 661196
+        },
+        {
+          "clubName": "Internacional",
+          "shortName": "INT",
+          "name": "Gustavo Prado",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 415051
+        },
+        {
+          "clubName": "Internacional",
+          "shortName": "INT",
+          "name": "Joao Gabriel Kempes Goncalves",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 633310
+        },
+        {
+          "clubName": "Internacional",
+          "shortName": "INT",
+          "name": "L. F. de Morais Francisco",
+          "position": "ZAG",
+          "minutes": 54,
+          "avg": 0.85,
+          "apiId": 660739
+        }
+      ]
+    },
+    {
+      "clubName": "Mirassol",
+      "shortName": "MIR",
+      "totalDb": 42,
+      "totalTm": 33,
+      "matched": 33,
+      "onlyInDbCount": 9,
+      "onlyInDb": [
+        {
+          "clubName": "Mirassol",
+          "shortName": "MIR",
+          "name": "Everton Galdino",
+          "position": "ATA",
+          "minutes": 277,
+          "avg": 0.78,
+          "apiId": 54235
+        },
+        {
+          "clubName": "Mirassol",
+          "shortName": "MIR",
+          "name": "Nathan Fogaça",
+          "position": "ATA",
+          "minutes": 372,
+          "avg": 3.05,
+          "apiId": 9371
+        },
+        {
+          "clubName": "Mirassol",
+          "shortName": "MIR",
+          "name": "Rodrigo",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 162684
+        },
+        {
+          "clubName": "Mirassol",
+          "shortName": "MIR",
+          "name": "Rodrigues",
+          "position": "LAT",
+          "minutes": 56,
+          "avg": 0.87,
+          "apiId": 10488
+        },
+        {
+          "clubName": "Mirassol",
+          "shortName": "MIR",
+          "name": "José Aldo",
+          "position": "MEI",
+          "minutes": 1243,
+          "avg": 7.06,
+          "apiId": 133183
+        },
+        {
+          "clubName": "Mirassol",
+          "shortName": "MIR",
+          "name": "Lucas Mugni",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 65837
+        },
+        {
+          "clubName": "Mirassol",
+          "shortName": "MIR",
+          "name": "Yuri",
+          "position": "MEI",
+          "minutes": 344,
+          "avg": 2.39,
+          "apiId": 10030
+        },
+        {
+          "clubName": "Mirassol",
+          "shortName": "MIR",
+          "name": "Igor Cariús",
+          "position": "ZAG",
+          "minutes": 46,
+          "avg": 1.5,
+          "apiId": 9789
+        },
+        {
+          "clubName": "Mirassol",
+          "shortName": "MIR",
+          "name": "Luiz Otávio",
+          "position": "ZAG",
+          "minutes": 11,
+          "avg": 2,
+          "apiId": 9198
+        }
+      ]
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "totalDb": 41,
+      "totalTm": 27,
+      "matched": 25,
+      "onlyInDbCount": 16,
+      "onlyInDb": [
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "Eduardo",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 570417
+        },
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "Heittor",
+          "position": "ATA",
+          "minutes": 39,
+          "avg": 0.35,
+          "apiId": 575324
+        },
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "Luighi Hanri",
+          "position": "ATA",
+          "minutes": 167,
+          "avg": 0.66,
+          "apiId": 449244
+        },
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "M. C. Bilong",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 669472
+        },
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "Riquelme Fillipi",
+          "position": "ATA",
+          "minutes": 90,
+          "avg": 0.54,
+          "apiId": 414357
+        },
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "Aranha",
+          "position": "GOL",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 464019
+        },
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "K. Lima",
+          "position": "GOL",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 580796
+        },
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "Kaique",
+          "position": "GOL",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 348897
+        },
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "M. Kone",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 646348
+        },
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "Allan",
+          "position": "MEI",
+          "minutes": 1554,
+          "avg": 7.62,
+          "apiId": 425714
+        },
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "Erick Machado",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 512522
+        },
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "Luis Felipe",
+          "position": "MEI",
+          "minutes": 89,
+          "avg": 0.07,
+          "apiId": 574837
+        },
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "Rafael Coutinho",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 464021
+        },
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "Raphael Veiga",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 9920
+        },
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "Victor Gabriel",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 172327
+        },
+        {
+          "clubName": "Palmeiras",
+          "shortName": "PAL",
+          "name": "Lucas Andre",
+          "position": "ZAG",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 630907
+        }
+      ]
+    },
+    {
+      "clubName": "RB Bragantino",
+      "shortName": "BRA",
+      "totalDb": 42,
+      "totalTm": 36,
+      "matched": 29,
+      "onlyInDbCount": 13,
+      "onlyInDb": [
+        {
+          "clubName": "RB Bragantino",
+          "shortName": "BRA",
+          "name": "Filipe Rios",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 631037
+        },
+        {
+          "clubName": "RB Bragantino",
+          "shortName": "BRA",
+          "name": "Jhuan Nunes Coelho",
+          "position": "ATA",
+          "minutes": 21,
+          "avg": 1.03,
+          "apiId": 631038
+        },
+        {
+          "clubName": "RB Bragantino",
+          "shortName": "BRA",
+          "name": "Vinicius",
+          "position": "ATA",
+          "minutes": 613,
+          "avg": 1.65,
+          "apiId": 431417
+        },
+        {
+          "clubName": "RB Bragantino",
+          "shortName": "BRA",
+          "name": "A. Sant&apos;Anna",
+          "position": "LAT",
+          "minutes": 906,
+          "avg": 8.84,
+          "apiId": 51571
+        },
+        {
+          "clubName": "RB Bragantino",
+          "shortName": "BRA",
+          "name": "Breno",
+          "position": "LAT",
+          "minutes": 18,
+          "avg": 0.38,
+          "apiId": 570422
+        },
+        {
+          "clubName": "RB Bragantino",
+          "shortName": "BRA",
+          "name": "Ryan Tavares",
+          "position": "LAT",
+          "minutes": 258,
+          "avg": 3.77,
+          "apiId": 638355
+        },
+        {
+          "clubName": "RB Bragantino",
+          "shortName": "BRA",
+          "name": "W. Vivas",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 565735
+        },
+        {
+          "clubName": "RB Bragantino",
+          "shortName": "BRA",
+          "name": "Gustavinho",
+          "position": "MEI",
+          "minutes": 731,
+          "avg": 3.1,
+          "apiId": 403951
+        },
+        {
+          "clubName": "RB Bragantino",
+          "shortName": "BRA",
+          "name": "Marcos",
+          "position": "MEI",
+          "minutes": 353,
+          "avg": 5.15,
+          "apiId": 664884
+        },
+        {
+          "clubName": "RB Bragantino",
+          "shortName": "BRA",
+          "name": "Marquinhos",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 432480
+        },
+        {
+          "clubName": "RB Bragantino",
+          "shortName": "BRA",
+          "name": "Yuri",
+          "position": "MEI",
+          "minutes": 39,
+          "avg": 1.02,
+          "apiId": 505877
+        },
+        {
+          "clubName": "RB Bragantino",
+          "shortName": "BRA",
+          "name": "Yuri Leles",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 625329
+        },
+        {
+          "clubName": "RB Bragantino",
+          "shortName": "BRA",
+          "name": "Pedro Henrique",
+          "position": "ZAG",
+          "minutes": 1300,
+          "avg": 6.89,
+          "apiId": 10235
+        }
+      ]
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "totalDb": 46,
+      "totalTm": 33,
+      "matched": 30,
+      "onlyInDbCount": 16,
+      "onlyInDb": [
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "Carlinhos",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 70297
+        },
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "Diego Hernández",
+          "position": "ATA",
+          "minutes": 178,
+          "avg": 1.54,
+          "apiId": 269374
+        },
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "João Pedro Silva",
+          "position": "ATA",
+          "minutes": 301,
+          "avg": 0.88,
+          "apiId": 96450
+        },
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "Nicolás Ferreira",
+          "position": "ATA",
+          "minutes": 20,
+          "avg": 0.1,
+          "apiId": 352930
+        },
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "Rafael Monti",
+          "position": "ATA",
+          "minutes": 20,
+          "avg": 0,
+          "apiId": 64175
+        },
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "Braian Cufré",
+          "position": "LAT",
+          "minutes": 38,
+          "avg": 0.28,
+          "apiId": 6048
+        },
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "Jorge",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 9985
+        },
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "Sávio",
+          "position": "LAT",
+          "minutes": 201,
+          "avg": 9.53,
+          "apiId": 9828
+        },
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "Thalisson Gabriel",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 308601
+        },
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "David Francisco",
+          "position": "MEI",
+          "minutes": 354,
+          "avg": 1.07,
+          "apiId": 355193
+        },
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "Dodô",
+          "position": "MEI",
+          "minutes": 23,
+          "avg": 1.8,
+          "apiId": 10428
+        },
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "Giovanni Pavani",
+          "position": "MEI",
+          "minutes": 49,
+          "avg": 0.5,
+          "apiId": 159960
+        },
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "José Welison",
+          "position": "MEI",
+          "minutes": 1575,
+          "avg": 5.93,
+          "apiId": 9882
+        },
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "Víctor Cantillo",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 13580
+        },
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "Kayky Almeida",
+          "position": "ZAG",
+          "minutes": 521,
+          "avg": 6.78,
+          "apiId": 404539
+        },
+        {
+          "clubName": "Remo",
+          "shortName": "REM",
+          "name": "William Klaus",
+          "position": "ZAG",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 10380
+        }
+      ]
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "totalDb": 48,
+      "totalTm": 38,
+      "matched": 33,
+      "onlyInDbCount": 15,
+      "onlyInDb": [
+        {
+          "clubName": "Santos",
+          "shortName": "SAN",
+          "name": "D. Fernandes",
+          "position": "ATA",
+          "minutes": 49,
+          "avg": 0.53,
+          "apiId": 609619
+        },
+        {
+          "clubName": "Santos",
+          "shortName": "SAN",
+          "name": "Lautaro Díaz",
+          "position": "ATA",
+          "minutes": 262,
+          "avg": 1.37,
+          "apiId": 64172
+        },
+        {
+          "clubName": "Santos",
+          "shortName": "SAN",
+          "name": "Robinho Júnior",
+          "position": "ATA",
+          "minutes": 51,
+          "avg": 0.32,
+          "apiId": 197500
+        },
+        {
+          "clubName": "Santos",
+          "shortName": "SAN",
+          "name": "Joao Lucio",
+          "position": "GOL",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 606900
+        },
+        {
+          "clubName": "Santos",
+          "shortName": "SAN",
+          "name": "Adonis Frías",
+          "position": "LAT",
+          "minutes": 785,
+          "avg": 6.16,
+          "apiId": 5872
+        },
+        {
+          "clubName": "Santos",
+          "shortName": "SAN",
+          "name": "João Basso",
+          "position": "LAT",
+          "minutes": 53,
+          "avg": 4.07,
+          "apiId": 41609
+        },
+        {
+          "clubName": "Santos",
+          "shortName": "SAN",
+          "name": "Rafael Gonzaga",
+          "position": "LAT",
+          "minutes": 45,
+          "avg": 1.45,
+          "apiId": 609540
+        },
+        {
+          "clubName": "Santos",
+          "shortName": "SAN",
+          "name": "Vinicius Rodrigues Lira",
+          "position": "LAT",
+          "minutes": 358,
+          "avg": 7.13,
+          "apiId": 507379
+        },
+        {
+          "clubName": "Santos",
+          "shortName": "SAN",
+          "name": "Gustavo Henrique Pereira",
+          "position": "MEI",
+          "minutes": 1001,
+          "avg": 6.27,
+          "apiId": 506480
+        },
+        {
+          "clubName": "Santos",
+          "shortName": "SAN",
+          "name": "M. Terceros",
+          "position": "MEI",
+          "minutes": 497,
+          "avg": 3.02,
+          "apiId": 345756
+        },
+        {
+          "clubName": "Santos",
+          "shortName": "SAN",
+          "name": "Pedro Assis",
+          "position": "MEI",
+          "minutes": 420,
+          "avg": 4.02,
+          "apiId": 631334
+        },
+        {
+          "clubName": "Santos",
+          "shortName": "SAN",
+          "name": "Tomás Rincón",
+          "position": "MEI",
+          "minutes": 19,
+          "avg": -0.13,
+          "apiId": 2452
+        },
+        {
+          "clubName": "Santos",
+          "shortName": "SAN",
+          "name": "Zé Rafael",
+          "position": "MEI",
+          "minutes": 174,
+          "avg": 3.6,
+          "apiId": 9932
+        },
+        {
+          "clubName": "Santos",
+          "shortName": "SAN",
+          "name": "Mayke",
+          "position": "ZAG",
+          "minutes": 220,
+          "avg": 2.58,
+          "apiId": 9917
+        },
+        {
+          "clubName": "Santos",
+          "shortName": "SAN",
+          "name": "S. Pierri",
+          "position": "ZAG",
+          "minutes": 53,
+          "avg": 0.61,
+          "apiId": 609523
+        }
+      ]
+    },
+    {
+      "clubName": "Sao Paulo",
+      "shortName": "SAO",
+      "totalDb": 46,
+      "totalTm": 40,
+      "matched": 36,
+      "onlyInDbCount": 10,
+      "onlyInDb": [
+        {
+          "clubName": "Sao Paulo",
+          "shortName": "SAO",
+          "name": "Gonzalo Tapia",
+          "position": "ATA",
+          "minutes": 304,
+          "avg": 0.88,
+          "apiId": 201909
+        },
+        {
+          "clubName": "Sao Paulo",
+          "shortName": "SAO",
+          "name": "P. dos Santos",
+          "position": "ATA",
+          "minutes": 99,
+          "avg": 0.18,
+          "apiId": 607350
+        },
+        {
+          "clubName": "Sao Paulo",
+          "shortName": "SAO",
+          "name": "Alan Javier Franco",
+          "position": "LAT",
+          "minutes": 1085,
+          "avg": 10.63,
+          "apiId": 6083
+        },
+        {
+          "clubName": "Sao Paulo",
+          "shortName": "SAO",
+          "name": "Dória",
+          "position": "LAT",
+          "minutes": 234,
+          "avg": 2.74,
+          "apiId": 35777
+        },
+        {
+          "clubName": "Sao Paulo",
+          "shortName": "SAO",
+          "name": "Hugo Leonardo",
+          "position": "LAT",
+          "minutes": 18,
+          "avg": 0.13,
+          "apiId": 633532
+        },
+        {
+          "clubName": "Sao Paulo",
+          "shortName": "SAO",
+          "name": "Maik",
+          "position": "LAT",
+          "minutes": 369,
+          "avg": 5.18,
+          "apiId": 505991
+        },
+        {
+          "clubName": "Sao Paulo",
+          "shortName": "SAO",
+          "name": "Moreira",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 352994
+        },
+        {
+          "clubName": "Sao Paulo",
+          "shortName": "SAO",
+          "name": "D. Ferreira",
+          "position": "MEI",
+          "minutes": 244,
+          "avg": 1.58,
+          "apiId": 612911
+        },
+        {
+          "clubName": "Sao Paulo",
+          "shortName": "SAO",
+          "name": "Felipe Negrucci",
+          "position": "MEI",
+          "minutes": 10,
+          "avg": -0.08,
+          "apiId": 415147
+        },
+        {
+          "clubName": "Sao Paulo",
+          "shortName": "SAO",
+          "name": "Luan Santos",
+          "position": "MEI",
+          "minutes": 110,
+          "avg": 0.4,
+          "apiId": 9957
+        }
+      ]
+    },
+    {
+      "clubName": "Vasco DA Gama",
+      "shortName": "VAS",
+      "totalDb": 48,
+      "totalTm": 38,
+      "matched": 34,
+      "onlyInDbCount": 14,
+      "onlyInDb": [
+        {
+          "clubName": "Vasco DA Gama",
+          "shortName": "VAS",
+          "name": "Andrey",
+          "position": "ATA",
+          "minutes": 28,
+          "avg": 2.7,
+          "apiId": 505407
+        },
+        {
+          "clubName": "Vasco DA Gama",
+          "shortName": "VAS",
+          "name": "Bruno Lopes",
+          "position": "ATA",
+          "minutes": 21,
+          "avg": 0.85,
+          "apiId": 454139
+        },
+        {
+          "clubName": "Vasco DA Gama",
+          "shortName": "VAS",
+          "name": "Gabriel Souza",
+          "position": "ATA",
+          "minutes": 29,
+          "avg": 0.13,
+          "apiId": 404752
+        },
+        {
+          "clubName": "Vasco DA Gama",
+          "shortName": "VAS",
+          "name": "Joao Vitor",
+          "position": "ATA",
+          "minutes": 1196,
+          "avg": 4.36,
+          "apiId": 607352
+        },
+        {
+          "clubName": "Vasco DA Gama",
+          "shortName": "VAS",
+          "name": "João Vitor Silva",
+          "position": "ATA",
+          "minutes": 123,
+          "avg": 1.95,
+          "apiId": 609598
+        },
+        {
+          "clubName": "Vasco DA Gama",
+          "shortName": "VAS",
+          "name": "Matheus França",
+          "position": "ATA",
+          "minutes": 76,
+          "avg": 0.21,
+          "apiId": 311157
+        },
+        {
+          "clubName": "Vasco DA Gama",
+          "shortName": "VAS",
+          "name": "Bruno Andre",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 588652
+        },
+        {
+          "clubName": "Vasco DA Gama",
+          "shortName": "VAS",
+          "name": "Guimaraes Gustavo",
+          "position": "MEI",
+          "minutes": 879,
+          "avg": 4.72,
+          "apiId": 615186
+        },
+        {
+          "clubName": "Vasco DA Gama",
+          "shortName": "VAS",
+          "name": "Hugo Moura",
+          "position": "MEI",
+          "minutes": 596,
+          "avg": 3.58,
+          "apiId": 10170
+        },
+        {
+          "clubName": "Vasco DA Gama",
+          "shortName": "VAS",
+          "name": "JP",
+          "position": "MEI",
+          "minutes": 45,
+          "avg": 0.15,
+          "apiId": 454138
+        },
+        {
+          "clubName": "Vasco DA Gama",
+          "shortName": "VAS",
+          "name": "Samuel",
+          "position": "MEI",
+          "minutes": 1181,
+          "avg": 4.26,
+          "apiId": 606272
+        },
+        {
+          "clubName": "Vasco DA Gama",
+          "shortName": "VAS",
+          "name": "Alison",
+          "position": "ZAG",
+          "minutes": 382,
+          "avg": 3.56,
+          "apiId": 505138
+        },
+        {
+          "clubName": "Vasco DA Gama",
+          "shortName": "VAS",
+          "name": "Avellar",
+          "position": "ZAG",
+          "minutes": 47,
+          "avg": 0.59,
+          "apiId": 505408
+        },
+        {
+          "clubName": "Vasco DA Gama",
+          "shortName": "VAS",
+          "name": "Breno Vereza",
+          "position": "ZAG",
+          "minutes": 1170,
+          "avg": 4.76,
+          "apiId": 516810
+        }
+      ]
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "totalDb": 54,
+      "totalTm": 36,
+      "matched": 36,
+      "onlyInDbCount": 18,
+      "onlyInDb": [
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Aitor Cantalapiedra",
+          "position": "ATA",
+          "minutes": 349,
+          "avg": 1.5,
+          "apiId": 36848
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Lawan",
+          "position": "ATA",
+          "minutes": 12,
+          "avg": -0.65,
+          "apiId": 460537
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Luis Miguel",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 457555
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Renzo López",
+          "position": "ATA",
+          "minutes": 161,
+          "avg": 0.1,
+          "apiId": 11490
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Wendell Sacramento",
+          "position": "ATA",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 464022
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Gabriel",
+          "position": "GOL",
+          "minutes": 360,
+          "avg": 0.06,
+          "apiId": 31384
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Gean",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 515578
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Hiago Costa",
+          "position": "LAT",
+          "minutes": 1056,
+          "avg": 3.98,
+          "apiId": 654294
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Kauan",
+          "position": "LAT",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 507322
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Neris",
+          "position": "LAT",
+          "minutes": 187,
+          "avg": 2.65,
+          "apiId": 41299
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Cauan de Jesus Farias",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 635198
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Edenilson",
+          "position": "MEI",
+          "minutes": 405,
+          "avg": 1.34,
+          "apiId": 456004
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "José Breno",
+          "position": "MEI",
+          "minutes": 27,
+          "avg": 0.3,
+          "apiId": 457041
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Pablo Santos",
+          "position": "MEI",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 404404
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Ronald",
+          "position": "MEI",
+          "minutes": 170,
+          "avg": 0.64,
+          "apiId": 64363
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Claudinho",
+          "position": "ZAG",
+          "minutes": 127,
+          "avg": 5.67,
+          "apiId": 135136
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Kauan Vitor",
+          "position": "ZAG",
+          "minutes": 777,
+          "avg": 4.27,
+          "apiId": 515580
+        },
+        {
+          "clubName": "Vitoria",
+          "shortName": "VIT",
+          "name": "Wanderson",
+          "position": "ZAG",
+          "minutes": 0,
+          "avg": 0,
+          "apiId": 651675
+        }
+      ]
+    }
+  ],
+  "allOnlyInDb": [
+    {
+      "clubName": "Atletico Paranaense",
+      "shortName": "ATL",
+      "name": "Bruno Braga Ramos",
+      "position": "ATA",
+      "minutes": 339,
+      "avg": 2.31,
+      "apiId": 570392
+    },
+    {
+      "clubName": "Atletico Paranaense",
+      "shortName": "ATL",
+      "name": "Daniel",
+      "position": "ATA",
+      "minutes": 584,
+      "avg": 4.72,
+      "apiId": 576771
+    },
+    {
+      "clubName": "Atletico Paranaense",
+      "shortName": "ATL",
+      "name": "Isaac",
+      "position": "ATA",
+      "minutes": 52,
+      "avg": 0.09,
+      "apiId": 404536
+    },
+    {
+      "clubName": "Atletico Paranaense",
+      "shortName": "ATL",
+      "name": "Jorge Luis Rivaldo Pinto",
+      "position": "ATA",
+      "minutes": 70,
+      "avg": 1,
+      "apiId": 393877
+    },
+    {
+      "clubName": "Atletico Paranaense",
+      "shortName": "ATL",
+      "name": "Julimar",
+      "position": "ATA",
+      "minutes": 727,
+      "avg": 4.41,
+      "apiId": 9661
+    },
+    {
+      "clubName": "Atletico Paranaense",
+      "shortName": "ATL",
+      "name": "Luiz Fernando",
+      "position": "ATA",
+      "minutes": 17,
+      "avg": 1.4,
+      "apiId": 10073
+    },
+    {
+      "clubName": "Atletico Paranaense",
+      "shortName": "ATL",
+      "name": "Vitinho",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 545020
+    },
+    {
+      "clubName": "Atletico Paranaense",
+      "shortName": "ATL",
+      "name": "Maksym Voronov",
+      "position": "GOL",
+      "minutes": 339,
+      "avg": 5.02,
+      "apiId": 667859
+    },
+    {
+      "clubName": "Atletico Paranaense",
+      "shortName": "ATL",
+      "name": "Alemao",
+      "position": "LAT",
+      "minutes": 1132,
+      "avg": 3.88,
+      "apiId": 632456
+    },
+    {
+      "clubName": "Atletico Paranaense",
+      "shortName": "ATL",
+      "name": "Diogo Riquelme",
+      "position": "MEI",
+      "minutes": 95,
+      "avg": 1.05,
+      "apiId": 457593
+    },
+    {
+      "clubName": "Atletico Paranaense",
+      "shortName": "ATL",
+      "name": "N. Azambuja",
+      "position": "MEI",
+      "minutes": 780,
+      "avg": 4.5,
+      "apiId": 503271
+    },
+    {
+      "clubName": "Atletico Paranaense",
+      "shortName": "ATL",
+      "name": "Raul",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 10281
+    },
+    {
+      "clubName": "Atletico Paranaense",
+      "shortName": "ATL",
+      "name": "Arthur Monteiro",
+      "position": "ZAG",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 653951
+    },
+    {
+      "clubName": "Atletico-MG",
+      "shortName": "ATL",
+      "name": "Joao Santos",
+      "position": "ATA",
+      "minutes": 1054,
+      "avg": 5.39,
+      "apiId": 659457
+    },
+    {
+      "clubName": "Atletico-MG",
+      "shortName": "ATL",
+      "name": "Iván Román",
+      "position": "LAT",
+      "minutes": 450,
+      "avg": 5.18,
+      "apiId": 404640
+    },
+    {
+      "clubName": "Atletico-MG",
+      "shortName": "ATL",
+      "name": "Luis Chaves",
+      "position": "LAT",
+      "minutes": 1111,
+      "avg": 4.48,
+      "apiId": 615190
+    },
+    {
+      "clubName": "Atletico-MG",
+      "shortName": "ATL",
+      "name": "Samuel",
+      "position": "LAT",
+      "minutes": 433,
+      "avg": 4.11,
+      "apiId": 633527
+    },
+    {
+      "clubName": "Atletico-MG",
+      "shortName": "ATL",
+      "name": "Gutte",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 570399
+    },
+    {
+      "clubName": "Atletico-MG",
+      "shortName": "ATL",
+      "name": "Mateus Jose Iseppe",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 465181
+    },
+    {
+      "clubName": "Atletico-MG",
+      "shortName": "ATL",
+      "name": "Soares Eric",
+      "position": "MEI",
+      "minutes": 475,
+      "avg": 5.44,
+      "apiId": 615197
+    },
+    {
+      "clubName": "Atletico-MG",
+      "shortName": "ATL",
+      "name": "Toledo Igor",
+      "position": "MEI",
+      "minutes": 1063,
+      "avg": 5.33,
+      "apiId": 629376
+    },
+    {
+      "clubName": "Atletico-MG",
+      "shortName": "ATL",
+      "name": "Junior Alonso",
+      "position": "ZAG",
+      "minutes": 917,
+      "avg": 8.53,
+      "apiId": 2499
+    },
+    {
+      "clubName": "Atletico-MG",
+      "shortName": "ATL",
+      "name": "Pedro Lemos",
+      "position": "ZAG",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 675445
+    },
+    {
+      "clubName": "Bahia",
+      "shortName": "BAH",
+      "name": "Çağatay Yılmaz",
+      "position": "ATA",
+      "minutes": 205,
+      "avg": 1.47,
+      "apiId": 525667
+    },
+    {
+      "clubName": "Bahia",
+      "shortName": "BAH",
+      "name": "Caio Suassuna",
+      "position": "ATA",
+      "minutes": 14,
+      "avg": 0.27,
+      "apiId": 607365
+    },
+    {
+      "clubName": "Bahia",
+      "shortName": "BAH",
+      "name": "J. C. Neres dos Santos I.",
+      "position": "GOL",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 657690
+    },
+    {
+      "clubName": "Bahia",
+      "shortName": "BAH",
+      "name": "Rezende",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 157359
+    },
+    {
+      "clubName": "Bahia",
+      "shortName": "BAH",
+      "name": "Sidney",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 407265
+    },
+    {
+      "clubName": "Bahia",
+      "shortName": "BAH",
+      "name": "Wendel Silva",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 454145
+    },
+    {
+      "clubName": "Bahia",
+      "shortName": "BAH",
+      "name": "Gabriel Xavier",
+      "position": "ZAG",
+      "minutes": 438,
+      "avg": 3.86,
+      "apiId": 353728
+    },
+    {
+      "clubName": "Bahia",
+      "shortName": "BAH",
+      "name": "Santiago Ramos Mingo",
+      "position": "ZAG",
+      "minutes": 2121,
+      "avg": 11.61,
+      "apiId": 129880
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Arthur  Izaque",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 614621
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Chris Ramos",
+      "position": "ATA",
+      "minutes": 25,
+      "avg": 0.58,
+      "apiId": 104792
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Joaquín Correa",
+      "position": "ATA",
+      "minutes": 178,
+      "avg": 1.76,
+      "apiId": 1854
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Nathan Fernandes",
+      "position": "ATA",
+      "minutes": 78,
+      "avg": 1.5,
+      "apiId": 419936
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Cleber",
+      "position": "GOL",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 668274
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Cleber Lucas",
+      "position": "GOL",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 614433
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Léo Linck",
+      "position": "GOL",
+      "minutes": 97,
+      "avg": 0.86,
+      "apiId": 292166
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Neto",
+      "position": "GOL",
+      "minutes": 857,
+      "avg": 4.23,
+      "apiId": 912
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Raul",
+      "position": "GOL",
+      "minutes": 685,
+      "avg": 2.41,
+      "apiId": 80188
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Rhyan",
+      "position": "GOL",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 458374
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Caio Roque",
+      "position": "LAT",
+      "minutes": 122,
+      "avg": 1.25,
+      "apiId": 283837
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Garcia da Silva Neves Herick",
+      "position": "LAT",
+      "minutes": 834,
+      "avg": 4.72,
+      "apiId": 668275
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Kadu Santos",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 613321
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Marquinhos",
+      "position": "LAT",
+      "minutes": 8,
+      "avg": 1.1,
+      "apiId": 544705
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Ythallo",
+      "position": "LAT",
+      "minutes": 45,
+      "avg": 0.79,
+      "apiId": 426627
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Arthur Novaes",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 609493
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Caio Valle",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 506276
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Hugo Goncalves dos Santos Victor",
+      "position": "MEI",
+      "minutes": 1115,
+      "avg": 5.32,
+      "apiId": 668276
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Santiago Rodríguez",
+      "position": "MEI",
+      "minutes": 587,
+      "avg": 4.23,
+      "apiId": 51581
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Wallace II",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 463987
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Bastos",
+      "position": "ZAG",
+      "minutes": 530,
+      "avg": 6.91,
+      "apiId": 1845
+    },
+    {
+      "clubName": "Botafogo",
+      "shortName": "BOT",
+      "name": "Gabriel Abdias",
+      "position": "ZAG",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 561346
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Alberto",
+      "position": "ATA",
+      "minutes": 336,
+      "avg": 4.22,
+      "apiId": 631260
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Bernardo",
+      "position": "ATA",
+      "minutes": 437,
+      "avg": 5.38,
+      "apiId": 651842
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Gleidson",
+      "position": "ATA",
+      "minutes": 336,
+      "avg": 4.41,
+      "apiId": 634404
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Italo",
+      "position": "ATA",
+      "minutes": 767,
+      "avg": 2.29,
+      "apiId": 410229
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Joao Henrique",
+      "position": "ATA",
+      "minutes": 1123,
+      "avg": 5.6,
+      "apiId": 614597
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Juan Ferreira",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 632958
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Kassio",
+      "position": "ATA",
+      "minutes": 21,
+      "avg": 0.8,
+      "apiId": 634403
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Luciano",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 634427
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Luizao",
+      "position": "ATA",
+      "minutes": 742,
+      "avg": 4.45,
+      "apiId": 631962
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "M. Milani",
+      "position": "ATA",
+      "minutes": 659,
+      "avg": 5.4,
+      "apiId": 632935
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Mailson",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 455321
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Neto Pessoa",
+      "position": "ATA",
+      "minutes": 314,
+      "avg": 2.47,
+      "apiId": 54102
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Perotti",
+      "position": "ATA",
+      "minutes": 25,
+      "avg": 1.13,
+      "apiId": 10220
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "T. Ferreira",
+      "position": "ATA",
+      "minutes": 414,
+      "avg": 5.5,
+      "apiId": 651301
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Kainã",
+      "position": "GOL",
+      "minutes": 1052,
+      "avg": 4.66,
+      "apiId": 402675
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Wellington",
+      "position": "GOL",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 632422
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Bruno Leonardo",
+      "position": "LAT",
+      "minutes": 1335,
+      "avg": 8.8,
+      "apiId": 207758
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Marcos Vinícius",
+      "position": "LAT",
+      "minutes": 588,
+      "avg": 3.84,
+      "apiId": 9629
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Walter Clar",
+      "position": "LAT",
+      "minutes": 777,
+      "avg": 7.38,
+      "apiId": 70793
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Ênio",
+      "position": "MEI",
+      "minutes": 800,
+      "avg": 2.83,
+      "apiId": 197324
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "F. Maciel",
+      "position": "MEI",
+      "minutes": 716,
+      "avg": 4.92,
+      "apiId": 658882
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Higor Meritão",
+      "position": "MEI",
+      "minutes": 625,
+      "avg": 4.12,
+      "apiId": 9212
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Jean Carlos",
+      "position": "MEI",
+      "minutes": 708,
+      "avg": 3.58,
+      "apiId": 77799
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "João Vitor",
+      "position": "MEI",
+      "minutes": 605,
+      "avg": 2.65,
+      "apiId": 237669
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "K. Godoy",
+      "position": "MEI",
+      "minutes": 571,
+      "avg": 4.74,
+      "apiId": 650653
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Kaue Arno",
+      "position": "MEI",
+      "minutes": 667,
+      "avg": 4.15,
+      "apiId": 632420
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Rodrigo",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 631034
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "Wemerson",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 631529
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "I. Gnoatto",
+      "position": "ZAG",
+      "minutes": 402,
+      "avg": 3.64,
+      "apiId": 650652
+    },
+    {
+      "clubName": "Chapecoense-sc",
+      "shortName": "CHA",
+      "name": "M. Kalebe",
+      "position": "ZAG",
+      "minutes": 370,
+      "avg": 3.62,
+      "apiId": 660597
+    },
+    {
+      "clubName": "Corinthians",
+      "shortName": "COR",
+      "name": "Guilherme Inácio",
+      "position": "ATA",
+      "minutes": 364,
+      "avg": 1.43,
+      "apiId": 463979
+    },
+    {
+      "clubName": "Corinthians",
+      "shortName": "COR",
+      "name": "Luiz Fernando",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 662884
+    },
+    {
+      "clubName": "Corinthians",
+      "shortName": "COR",
+      "name": "Nicollas",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 609581
+    },
+    {
+      "clubName": "Corinthians",
+      "shortName": "COR",
+      "name": "João Vitor",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 507381
+    },
+    {
+      "clubName": "Corinthians",
+      "shortName": "COR",
+      "name": "Santos Ribeiro Silva Caua",
+      "position": "LAT",
+      "minutes": 539,
+      "avg": 3.85,
+      "apiId": 675980
+    },
+    {
+      "clubName": "Corinthians",
+      "shortName": "COR",
+      "name": "Luiz Gustavo",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 414353
+    },
+    {
+      "clubName": "Corinthians",
+      "shortName": "COR",
+      "name": "Joao Vitor",
+      "position": "ZAG",
+      "minutes": 966,
+      "avg": 4.79,
+      "apiId": 544700
+    },
+    {
+      "clubName": "Corinthians",
+      "shortName": "COR",
+      "name": "Melo Yago",
+      "position": "ZAG",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 589365
+    },
+    {
+      "clubName": "Coritiba",
+      "shortName": "COR",
+      "name": "Brayan",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 490665
+    },
+    {
+      "clubName": "Coritiba",
+      "shortName": "COR",
+      "name": "D. Alves",
+      "position": "ATA",
+      "minutes": 1,
+      "avg": -0.01,
+      "apiId": 653237
+    },
+    {
+      "clubName": "Coritiba",
+      "shortName": "COR",
+      "name": "Enzo",
+      "position": "ATA",
+      "minutes": 17,
+      "avg": 0.06,
+      "apiId": 504965
+    },
+    {
+      "clubName": "Coritiba",
+      "shortName": "COR",
+      "name": "L. Crepaldi",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 631680
+    },
+    {
+      "clubName": "Coritiba",
+      "shortName": "COR",
+      "name": "Gabriel Leite",
+      "position": "GOL",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 77918
+    },
+    {
+      "clubName": "Coritiba",
+      "shortName": "COR",
+      "name": "Gabriel Ibson",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 680061
+    },
+    {
+      "clubName": "Coritiba",
+      "shortName": "COR",
+      "name": "JoÃ£o Pedro Chermont",
+      "position": "LAT",
+      "minutes": 982,
+      "avg": 5.3,
+      "apiId": 414394
+    },
+    {
+      "clubName": "Coritiba",
+      "shortName": "COR",
+      "name": "João Almeida",
+      "position": "LAT",
+      "minutes": 4,
+      "avg": 0,
+      "apiId": 505579
+    },
+    {
+      "clubName": "Coritiba",
+      "shortName": "COR",
+      "name": "A. Ararat",
+      "position": "MEI",
+      "minutes": 792,
+      "avg": 5.24,
+      "apiId": 468958
+    },
+    {
+      "clubName": "Coritiba",
+      "shortName": "COR",
+      "name": "Fernando Sobral",
+      "position": "MEI",
+      "minutes": 116,
+      "avg": 0.33,
+      "apiId": 80187
+    },
+    {
+      "clubName": "Coritiba",
+      "shortName": "COR",
+      "name": "Jean Gabriel",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 425077
+    },
+    {
+      "clubName": "Coritiba",
+      "shortName": "COR",
+      "name": "Khensane",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 631771
+    },
+    {
+      "clubName": "Coritiba",
+      "shortName": "COR",
+      "name": "Willian Oliveira",
+      "position": "MEI",
+      "minutes": 483,
+      "avg": 2.34,
+      "apiId": 9208
+    },
+    {
+      "clubName": "Coritiba",
+      "shortName": "COR",
+      "name": "Felipe Guimarães",
+      "position": "ZAG",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 472464
+    },
+    {
+      "clubName": "Cruzeiro",
+      "shortName": "CRU",
+      "name": "Chico da Costa",
+      "position": "ATA",
+      "minutes": 213,
+      "avg": 0.91,
+      "apiId": 36312
+    },
+    {
+      "clubName": "Cruzeiro",
+      "shortName": "CRU",
+      "name": "João Gabriel e Costa Cesco",
+      "position": "ATA",
+      "minutes": 241,
+      "avg": 2.57,
+      "apiId": 368096
+    },
+    {
+      "clubName": "Cruzeiro",
+      "shortName": "CRU",
+      "name": "R. Lelis",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 610497
+    },
+    {
+      "clubName": "Cruzeiro",
+      "shortName": "CRU",
+      "name": "Eraclito Marcelo",
+      "position": "GOL",
+      "minutes": 867,
+      "avg": 5.13,
+      "apiId": 631005
+    },
+    {
+      "clubName": "Cruzeiro",
+      "shortName": "CRU",
+      "name": "Vitor Lamounier",
+      "position": "GOL",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 522974
+    },
+    {
+      "clubName": "Cruzeiro",
+      "shortName": "CRU",
+      "name": "Janderson",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 409849
+    },
+    {
+      "clubName": "Cruzeiro",
+      "shortName": "CRU",
+      "name": "Kaiki",
+      "position": "LAT",
+      "minutes": 1449,
+      "avg": 13.09,
+      "apiId": 309792
+    },
+    {
+      "clubName": "Cruzeiro",
+      "shortName": "CRU",
+      "name": "Christian",
+      "position": "MEI",
+      "minutes": 1257,
+      "avg": 8.94,
+      "apiId": 67204
+    },
+    {
+      "clubName": "Cruzeiro",
+      "shortName": "CRU",
+      "name": "Murilo Rhikman",
+      "position": "MEI",
+      "minutes": 10,
+      "avg": 1.35,
+      "apiId": 465169
+    },
+    {
+      "clubName": "Cruzeiro",
+      "shortName": "CRU",
+      "name": "Rhuan Gabriel",
+      "position": "MEI",
+      "minutes": 20,
+      "avg": 0.22,
+      "apiId": 554485
+    },
+    {
+      "clubName": "Cruzeiro",
+      "shortName": "CRU",
+      "name": "Bruno Alves",
+      "position": "ZAG",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 465175
+    },
+    {
+      "clubName": "Cruzeiro",
+      "shortName": "CRU",
+      "name": "Kauã Prates",
+      "position": "ZAG",
+      "minutes": 15,
+      "avg": 0.03,
+      "apiId": 507692
+    },
+    {
+      "clubName": "Flamengo",
+      "shortName": "FLA",
+      "name": "Alan",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 589367
+    },
+    {
+      "clubName": "Flamengo",
+      "shortName": "FLA",
+      "name": "Douglas Costa Telles",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 586025
+    },
+    {
+      "clubName": "Flamengo",
+      "shortName": "FLA",
+      "name": "J. S. Miranda",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 613324
+    },
+    {
+      "clubName": "Flamengo",
+      "shortName": "FLA",
+      "name": "Daniel Carvalho",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 634767
+    },
+    {
+      "clubName": "Flamengo",
+      "shortName": "FLA",
+      "name": "João Victor Cunha",
+      "position": "LAT",
+      "minutes": 71,
+      "avg": 2.48,
+      "apiId": 449253
+    },
+    {
+      "clubName": "Flamengo",
+      "shortName": "FLA",
+      "name": "Caio Andrade",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 511757
+    },
+    {
+      "clubName": "Flamengo",
+      "shortName": "FLA",
+      "name": "Guilherme Gomes",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 454555
+    },
+    {
+      "clubName": "Flamengo",
+      "shortName": "FLA",
+      "name": "Joshua",
+      "position": "MEI",
+      "minutes": 9,
+      "avg": 0.05,
+      "apiId": 544685
+    },
+    {
+      "clubName": "Flamengo",
+      "shortName": "FLA",
+      "name": "L. Mariano",
+      "position": "MEI",
+      "minutes": 639,
+      "avg": 4.78,
+      "apiId": 644618
+    },
+    {
+      "clubName": "Flamengo",
+      "shortName": "FLA",
+      "name": "Lorran",
+      "position": "MEI",
+      "minutes": 125,
+      "avg": 2.46,
+      "apiId": 403300
+    },
+    {
+      "clubName": "Flamengo",
+      "shortName": "FLA",
+      "name": "Luiz Felipe",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 510574
+    },
+    {
+      "clubName": "Flamengo",
+      "shortName": "FLA",
+      "name": "Pablo Lucio",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 505531
+    },
+    {
+      "clubName": "Flamengo",
+      "shortName": "FLA",
+      "name": "Daniel Sales",
+      "position": "ZAG",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 403299
+    },
+    {
+      "clubName": "Flamengo",
+      "shortName": "FLA",
+      "name": "Johnny Góes",
+      "position": "ZAG",
+      "minutes": 22,
+      "avg": 0.12,
+      "apiId": 512740
+    },
+    {
+      "clubName": "Fluminense",
+      "shortName": "FLU",
+      "name": "Keven Samuel",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 519809
+    },
+    {
+      "clubName": "Fluminense",
+      "shortName": "FLU",
+      "name": "Santiago Moreno",
+      "position": "ATA",
+      "minutes": 44,
+      "avg": 0.12,
+      "apiId": 115532
+    },
+    {
+      "clubName": "Fluminense",
+      "shortName": "FLU",
+      "name": "Gustavo Felix",
+      "position": "GOL",
+      "minutes": 841,
+      "avg": 4.66,
+      "apiId": 667869
+    },
+    {
+      "clubName": "Fluminense",
+      "shortName": "FLU",
+      "name": "Davi Duarte",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 505398
+    },
+    {
+      "clubName": "Fluminense",
+      "shortName": "FLU",
+      "name": "Vagno",
+      "position": "LAT",
+      "minutes": 481,
+      "avg": 4.42,
+      "apiId": 519811
+    },
+    {
+      "clubName": "Fluminense",
+      "shortName": "FLU",
+      "name": "Andrey",
+      "position": "MEI",
+      "minutes": 1070,
+      "avg": 4.87,
+      "apiId": 675979
+    },
+    {
+      "clubName": "Fluminense",
+      "shortName": "FLU",
+      "name": "Facundo Bernal",
+      "position": "MEI",
+      "minutes": 569,
+      "avg": 4.88,
+      "apiId": 316519
+    },
+    {
+      "clubName": "Fluminense",
+      "shortName": "FLU",
+      "name": "Ruan",
+      "position": "MEI",
+      "minutes": 323,
+      "avg": 4.99,
+      "apiId": 667326
+    },
+    {
+      "clubName": "Fluminense",
+      "shortName": "FLU",
+      "name": "Sales Ruan",
+      "position": "MEI",
+      "minutes": 382,
+      "avg": 5.04,
+      "apiId": 681309
+    },
+    {
+      "clubName": "Gremio",
+      "shortName": "GRE",
+      "name": "Alexander Aravena",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 201908
+    },
+    {
+      "clubName": "Gremio",
+      "shortName": "GRE",
+      "name": "André Henrique",
+      "position": "ATA",
+      "minutes": 118,
+      "avg": 0.83,
+      "apiId": 237847
+    },
+    {
+      "clubName": "Gremio",
+      "shortName": "GRE",
+      "name": "Gabriel Mec",
+      "position": "ATA",
+      "minutes": 747,
+      "avg": 3.69,
+      "apiId": 507527
+    },
+    {
+      "clubName": "Gremio",
+      "shortName": "GRE",
+      "name": "V. Ramon",
+      "position": "LAT",
+      "minutes": 30,
+      "avg": 1.1,
+      "apiId": 607376
+    },
+    {
+      "clubName": "Gremio",
+      "shortName": "GRE",
+      "name": "Bernardo Zortea",
+      "position": "MEI",
+      "minutes": 92,
+      "avg": 0.81,
+      "apiId": 510554
+    },
+    {
+      "clubName": "Gremio",
+      "shortName": "GRE",
+      "name": "Franco Cristaldo",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 6546
+    },
+    {
+      "clubName": "Gremio",
+      "shortName": "GRE",
+      "name": "Jefinho",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 634340
+    },
+    {
+      "clubName": "Gremio",
+      "shortName": "GRE",
+      "name": "L. Pérez",
+      "position": "MEI",
+      "minutes": 736,
+      "avg": 4.99,
+      "apiId": 408342
+    },
+    {
+      "clubName": "Gremio",
+      "shortName": "GRE",
+      "name": "Miguel Monsalve",
+      "position": "MEI",
+      "minutes": 334,
+      "avg": 1.6,
+      "apiId": 277771
+    },
+    {
+      "clubName": "Gremio",
+      "shortName": "GRE",
+      "name": "Willian",
+      "position": "MEI",
+      "minutes": 395,
+      "avg": 2.35,
+      "apiId": 2294
+    },
+    {
+      "clubName": "Gremio",
+      "shortName": "GRE",
+      "name": "Viery",
+      "position": "ZAG",
+      "minutes": 1220,
+      "avg": 11.43,
+      "apiId": 424277
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "name": "Bruno Tabata",
+      "position": "ATA",
+      "minutes": 197,
+      "avg": 1.11,
+      "apiId": 41368
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "name": "F. Zechmeister",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 609467
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "name": "J. Bezerra",
+      "position": "ATA",
+      "minutes": 23,
+      "avg": 0.19,
+      "apiId": 609580
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "name": "Rafael Borré",
+      "position": "ATA",
+      "minutes": 1096,
+      "avg": 4.52,
+      "apiId": 6011
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "name": "Victor Joao",
+      "position": "ATA",
+      "minutes": 33,
+      "avg": -0.11,
+      "apiId": 633284
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "name": "Felipe",
+      "position": "GOL",
+      "minutes": 705,
+      "avg": 4.49,
+      "apiId": 664879
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "name": "Alisson",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 577746
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "name": "Clayton Sampaio",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 279579
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "name": "Pedro Kauã",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 463956
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "name": "Alan Rodríguez",
+      "position": "MEI",
+      "minutes": 251,
+      "avg": 0.98,
+      "apiId": 51468
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "name": "B. Arhin",
+      "position": "MEI",
+      "minutes": 1,
+      "avg": -0.03,
+      "apiId": 610495
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "name": "Gabriel Vinicius",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 661196
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "name": "Gustavo Prado",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 415051
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "name": "Joao Gabriel Kempes Goncalves",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 633310
+    },
+    {
+      "clubName": "Internacional",
+      "shortName": "INT",
+      "name": "L. F. de Morais Francisco",
+      "position": "ZAG",
+      "minutes": 54,
+      "avg": 0.85,
+      "apiId": 660739
+    },
+    {
+      "clubName": "Mirassol",
+      "shortName": "MIR",
+      "name": "Everton Galdino",
+      "position": "ATA",
+      "minutes": 277,
+      "avg": 0.78,
+      "apiId": 54235
+    },
+    {
+      "clubName": "Mirassol",
+      "shortName": "MIR",
+      "name": "Nathan Fogaça",
+      "position": "ATA",
+      "minutes": 372,
+      "avg": 3.05,
+      "apiId": 9371
+    },
+    {
+      "clubName": "Mirassol",
+      "shortName": "MIR",
+      "name": "Rodrigo",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 162684
+    },
+    {
+      "clubName": "Mirassol",
+      "shortName": "MIR",
+      "name": "Rodrigues",
+      "position": "LAT",
+      "minutes": 56,
+      "avg": 0.87,
+      "apiId": 10488
+    },
+    {
+      "clubName": "Mirassol",
+      "shortName": "MIR",
+      "name": "José Aldo",
+      "position": "MEI",
+      "minutes": 1243,
+      "avg": 7.06,
+      "apiId": 133183
+    },
+    {
+      "clubName": "Mirassol",
+      "shortName": "MIR",
+      "name": "Lucas Mugni",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 65837
+    },
+    {
+      "clubName": "Mirassol",
+      "shortName": "MIR",
+      "name": "Yuri",
+      "position": "MEI",
+      "minutes": 344,
+      "avg": 2.39,
+      "apiId": 10030
+    },
+    {
+      "clubName": "Mirassol",
+      "shortName": "MIR",
+      "name": "Igor Cariús",
+      "position": "ZAG",
+      "minutes": 46,
+      "avg": 1.5,
+      "apiId": 9789
+    },
+    {
+      "clubName": "Mirassol",
+      "shortName": "MIR",
+      "name": "Luiz Otávio",
+      "position": "ZAG",
+      "minutes": 11,
+      "avg": 2,
+      "apiId": 9198
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "Eduardo",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 570417
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "Heittor",
+      "position": "ATA",
+      "minutes": 39,
+      "avg": 0.35,
+      "apiId": 575324
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "Luighi Hanri",
+      "position": "ATA",
+      "minutes": 167,
+      "avg": 0.66,
+      "apiId": 449244
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "M. C. Bilong",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 669472
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "Riquelme Fillipi",
+      "position": "ATA",
+      "minutes": 90,
+      "avg": 0.54,
+      "apiId": 414357
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "Aranha",
+      "position": "GOL",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 464019
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "K. Lima",
+      "position": "GOL",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 580796
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "Kaique",
+      "position": "GOL",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 348897
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "M. Kone",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 646348
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "Allan",
+      "position": "MEI",
+      "minutes": 1554,
+      "avg": 7.62,
+      "apiId": 425714
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "Erick Machado",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 512522
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "Luis Felipe",
+      "position": "MEI",
+      "minutes": 89,
+      "avg": 0.07,
+      "apiId": 574837
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "Rafael Coutinho",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 464021
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "Raphael Veiga",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 9920
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "Victor Gabriel",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 172327
+    },
+    {
+      "clubName": "Palmeiras",
+      "shortName": "PAL",
+      "name": "Lucas Andre",
+      "position": "ZAG",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 630907
+    },
+    {
+      "clubName": "RB Bragantino",
+      "shortName": "BRA",
+      "name": "Filipe Rios",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 631037
+    },
+    {
+      "clubName": "RB Bragantino",
+      "shortName": "BRA",
+      "name": "Jhuan Nunes Coelho",
+      "position": "ATA",
+      "minutes": 21,
+      "avg": 1.03,
+      "apiId": 631038
+    },
+    {
+      "clubName": "RB Bragantino",
+      "shortName": "BRA",
+      "name": "Vinicius",
+      "position": "ATA",
+      "minutes": 613,
+      "avg": 1.65,
+      "apiId": 431417
+    },
+    {
+      "clubName": "RB Bragantino",
+      "shortName": "BRA",
+      "name": "A. Sant&apos;Anna",
+      "position": "LAT",
+      "minutes": 906,
+      "avg": 8.84,
+      "apiId": 51571
+    },
+    {
+      "clubName": "RB Bragantino",
+      "shortName": "BRA",
+      "name": "Breno",
+      "position": "LAT",
+      "minutes": 18,
+      "avg": 0.38,
+      "apiId": 570422
+    },
+    {
+      "clubName": "RB Bragantino",
+      "shortName": "BRA",
+      "name": "Ryan Tavares",
+      "position": "LAT",
+      "minutes": 258,
+      "avg": 3.77,
+      "apiId": 638355
+    },
+    {
+      "clubName": "RB Bragantino",
+      "shortName": "BRA",
+      "name": "W. Vivas",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 565735
+    },
+    {
+      "clubName": "RB Bragantino",
+      "shortName": "BRA",
+      "name": "Gustavinho",
+      "position": "MEI",
+      "minutes": 731,
+      "avg": 3.1,
+      "apiId": 403951
+    },
+    {
+      "clubName": "RB Bragantino",
+      "shortName": "BRA",
+      "name": "Marcos",
+      "position": "MEI",
+      "minutes": 353,
+      "avg": 5.15,
+      "apiId": 664884
+    },
+    {
+      "clubName": "RB Bragantino",
+      "shortName": "BRA",
+      "name": "Marquinhos",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 432480
+    },
+    {
+      "clubName": "RB Bragantino",
+      "shortName": "BRA",
+      "name": "Yuri",
+      "position": "MEI",
+      "minutes": 39,
+      "avg": 1.02,
+      "apiId": 505877
+    },
+    {
+      "clubName": "RB Bragantino",
+      "shortName": "BRA",
+      "name": "Yuri Leles",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 625329
+    },
+    {
+      "clubName": "RB Bragantino",
+      "shortName": "BRA",
+      "name": "Pedro Henrique",
+      "position": "ZAG",
+      "minutes": 1300,
+      "avg": 6.89,
+      "apiId": 10235
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "Carlinhos",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 70297
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "Diego Hernández",
+      "position": "ATA",
+      "minutes": 178,
+      "avg": 1.54,
+      "apiId": 269374
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "João Pedro Silva",
+      "position": "ATA",
+      "minutes": 301,
+      "avg": 0.88,
+      "apiId": 96450
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "Nicolás Ferreira",
+      "position": "ATA",
+      "minutes": 20,
+      "avg": 0.1,
+      "apiId": 352930
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "Rafael Monti",
+      "position": "ATA",
+      "minutes": 20,
+      "avg": 0,
+      "apiId": 64175
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "Braian Cufré",
+      "position": "LAT",
+      "minutes": 38,
+      "avg": 0.28,
+      "apiId": 6048
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "Jorge",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 9985
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "Sávio",
+      "position": "LAT",
+      "minutes": 201,
+      "avg": 9.53,
+      "apiId": 9828
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "Thalisson Gabriel",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 308601
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "David Francisco",
+      "position": "MEI",
+      "minutes": 354,
+      "avg": 1.07,
+      "apiId": 355193
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "Dodô",
+      "position": "MEI",
+      "minutes": 23,
+      "avg": 1.8,
+      "apiId": 10428
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "Giovanni Pavani",
+      "position": "MEI",
+      "minutes": 49,
+      "avg": 0.5,
+      "apiId": 159960
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "José Welison",
+      "position": "MEI",
+      "minutes": 1575,
+      "avg": 5.93,
+      "apiId": 9882
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "Víctor Cantillo",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 13580
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "Kayky Almeida",
+      "position": "ZAG",
+      "minutes": 521,
+      "avg": 6.78,
+      "apiId": 404539
+    },
+    {
+      "clubName": "Remo",
+      "shortName": "REM",
+      "name": "William Klaus",
+      "position": "ZAG",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 10380
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "name": "D. Fernandes",
+      "position": "ATA",
+      "minutes": 49,
+      "avg": 0.53,
+      "apiId": 609619
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "name": "Lautaro Díaz",
+      "position": "ATA",
+      "minutes": 262,
+      "avg": 1.37,
+      "apiId": 64172
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "name": "Robinho Júnior",
+      "position": "ATA",
+      "minutes": 51,
+      "avg": 0.32,
+      "apiId": 197500
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "name": "Joao Lucio",
+      "position": "GOL",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 606900
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "name": "Adonis Frías",
+      "position": "LAT",
+      "minutes": 785,
+      "avg": 6.16,
+      "apiId": 5872
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "name": "João Basso",
+      "position": "LAT",
+      "minutes": 53,
+      "avg": 4.07,
+      "apiId": 41609
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "name": "Rafael Gonzaga",
+      "position": "LAT",
+      "minutes": 45,
+      "avg": 1.45,
+      "apiId": 609540
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "name": "Vinicius Rodrigues Lira",
+      "position": "LAT",
+      "minutes": 358,
+      "avg": 7.13,
+      "apiId": 507379
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "name": "Gustavo Henrique Pereira",
+      "position": "MEI",
+      "minutes": 1001,
+      "avg": 6.27,
+      "apiId": 506480
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "name": "M. Terceros",
+      "position": "MEI",
+      "minutes": 497,
+      "avg": 3.02,
+      "apiId": 345756
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "name": "Pedro Assis",
+      "position": "MEI",
+      "minutes": 420,
+      "avg": 4.02,
+      "apiId": 631334
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "name": "Tomás Rincón",
+      "position": "MEI",
+      "minutes": 19,
+      "avg": -0.13,
+      "apiId": 2452
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "name": "Zé Rafael",
+      "position": "MEI",
+      "minutes": 174,
+      "avg": 3.6,
+      "apiId": 9932
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "name": "Mayke",
+      "position": "ZAG",
+      "minutes": 220,
+      "avg": 2.58,
+      "apiId": 9917
+    },
+    {
+      "clubName": "Santos",
+      "shortName": "SAN",
+      "name": "S. Pierri",
+      "position": "ZAG",
+      "minutes": 53,
+      "avg": 0.61,
+      "apiId": 609523
+    },
+    {
+      "clubName": "Sao Paulo",
+      "shortName": "SAO",
+      "name": "Gonzalo Tapia",
+      "position": "ATA",
+      "minutes": 304,
+      "avg": 0.88,
+      "apiId": 201909
+    },
+    {
+      "clubName": "Sao Paulo",
+      "shortName": "SAO",
+      "name": "P. dos Santos",
+      "position": "ATA",
+      "minutes": 99,
+      "avg": 0.18,
+      "apiId": 607350
+    },
+    {
+      "clubName": "Sao Paulo",
+      "shortName": "SAO",
+      "name": "Alan Javier Franco",
+      "position": "LAT",
+      "minutes": 1085,
+      "avg": 10.63,
+      "apiId": 6083
+    },
+    {
+      "clubName": "Sao Paulo",
+      "shortName": "SAO",
+      "name": "Dória",
+      "position": "LAT",
+      "minutes": 234,
+      "avg": 2.74,
+      "apiId": 35777
+    },
+    {
+      "clubName": "Sao Paulo",
+      "shortName": "SAO",
+      "name": "Hugo Leonardo",
+      "position": "LAT",
+      "minutes": 18,
+      "avg": 0.13,
+      "apiId": 633532
+    },
+    {
+      "clubName": "Sao Paulo",
+      "shortName": "SAO",
+      "name": "Maik",
+      "position": "LAT",
+      "minutes": 369,
+      "avg": 5.18,
+      "apiId": 505991
+    },
+    {
+      "clubName": "Sao Paulo",
+      "shortName": "SAO",
+      "name": "Moreira",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 352994
+    },
+    {
+      "clubName": "Sao Paulo",
+      "shortName": "SAO",
+      "name": "D. Ferreira",
+      "position": "MEI",
+      "minutes": 244,
+      "avg": 1.58,
+      "apiId": 612911
+    },
+    {
+      "clubName": "Sao Paulo",
+      "shortName": "SAO",
+      "name": "Felipe Negrucci",
+      "position": "MEI",
+      "minutes": 10,
+      "avg": -0.08,
+      "apiId": 415147
+    },
+    {
+      "clubName": "Sao Paulo",
+      "shortName": "SAO",
+      "name": "Luan Santos",
+      "position": "MEI",
+      "minutes": 110,
+      "avg": 0.4,
+      "apiId": 9957
+    },
+    {
+      "clubName": "Vasco DA Gama",
+      "shortName": "VAS",
+      "name": "Andrey",
+      "position": "ATA",
+      "minutes": 28,
+      "avg": 2.7,
+      "apiId": 505407
+    },
+    {
+      "clubName": "Vasco DA Gama",
+      "shortName": "VAS",
+      "name": "Bruno Lopes",
+      "position": "ATA",
+      "minutes": 21,
+      "avg": 0.85,
+      "apiId": 454139
+    },
+    {
+      "clubName": "Vasco DA Gama",
+      "shortName": "VAS",
+      "name": "Gabriel Souza",
+      "position": "ATA",
+      "minutes": 29,
+      "avg": 0.13,
+      "apiId": 404752
+    },
+    {
+      "clubName": "Vasco DA Gama",
+      "shortName": "VAS",
+      "name": "Joao Vitor",
+      "position": "ATA",
+      "minutes": 1196,
+      "avg": 4.36,
+      "apiId": 607352
+    },
+    {
+      "clubName": "Vasco DA Gama",
+      "shortName": "VAS",
+      "name": "João Vitor Silva",
+      "position": "ATA",
+      "minutes": 123,
+      "avg": 1.95,
+      "apiId": 609598
+    },
+    {
+      "clubName": "Vasco DA Gama",
+      "shortName": "VAS",
+      "name": "Matheus França",
+      "position": "ATA",
+      "minutes": 76,
+      "avg": 0.21,
+      "apiId": 311157
+    },
+    {
+      "clubName": "Vasco DA Gama",
+      "shortName": "VAS",
+      "name": "Bruno Andre",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 588652
+    },
+    {
+      "clubName": "Vasco DA Gama",
+      "shortName": "VAS",
+      "name": "Guimaraes Gustavo",
+      "position": "MEI",
+      "minutes": 879,
+      "avg": 4.72,
+      "apiId": 615186
+    },
+    {
+      "clubName": "Vasco DA Gama",
+      "shortName": "VAS",
+      "name": "Hugo Moura",
+      "position": "MEI",
+      "minutes": 596,
+      "avg": 3.58,
+      "apiId": 10170
+    },
+    {
+      "clubName": "Vasco DA Gama",
+      "shortName": "VAS",
+      "name": "JP",
+      "position": "MEI",
+      "minutes": 45,
+      "avg": 0.15,
+      "apiId": 454138
+    },
+    {
+      "clubName": "Vasco DA Gama",
+      "shortName": "VAS",
+      "name": "Samuel",
+      "position": "MEI",
+      "minutes": 1181,
+      "avg": 4.26,
+      "apiId": 606272
+    },
+    {
+      "clubName": "Vasco DA Gama",
+      "shortName": "VAS",
+      "name": "Alison",
+      "position": "ZAG",
+      "minutes": 382,
+      "avg": 3.56,
+      "apiId": 505138
+    },
+    {
+      "clubName": "Vasco DA Gama",
+      "shortName": "VAS",
+      "name": "Avellar",
+      "position": "ZAG",
+      "minutes": 47,
+      "avg": 0.59,
+      "apiId": 505408
+    },
+    {
+      "clubName": "Vasco DA Gama",
+      "shortName": "VAS",
+      "name": "Breno Vereza",
+      "position": "ZAG",
+      "minutes": 1170,
+      "avg": 4.76,
+      "apiId": 516810
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Aitor Cantalapiedra",
+      "position": "ATA",
+      "minutes": 349,
+      "avg": 1.5,
+      "apiId": 36848
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Lawan",
+      "position": "ATA",
+      "minutes": 12,
+      "avg": -0.65,
+      "apiId": 460537
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Luis Miguel",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 457555
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Renzo López",
+      "position": "ATA",
+      "minutes": 161,
+      "avg": 0.1,
+      "apiId": 11490
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Wendell Sacramento",
+      "position": "ATA",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 464022
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Gabriel",
+      "position": "GOL",
+      "minutes": 360,
+      "avg": 0.06,
+      "apiId": 31384
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Gean",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 515578
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Hiago Costa",
+      "position": "LAT",
+      "minutes": 1056,
+      "avg": 3.98,
+      "apiId": 654294
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Kauan",
+      "position": "LAT",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 507322
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Neris",
+      "position": "LAT",
+      "minutes": 187,
+      "avg": 2.65,
+      "apiId": 41299
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Cauan de Jesus Farias",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 635198
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Edenilson",
+      "position": "MEI",
+      "minutes": 405,
+      "avg": 1.34,
+      "apiId": 456004
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "José Breno",
+      "position": "MEI",
+      "minutes": 27,
+      "avg": 0.3,
+      "apiId": 457041
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Pablo Santos",
+      "position": "MEI",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 404404
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Ronald",
+      "position": "MEI",
+      "minutes": 170,
+      "avg": 0.64,
+      "apiId": 64363
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Claudinho",
+      "position": "ZAG",
+      "minutes": 127,
+      "avg": 5.67,
+      "apiId": 135136
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Kauan Vitor",
+      "position": "ZAG",
+      "minutes": 777,
+      "avg": 4.27,
+      "apiId": 515580
+    },
+    {
+      "clubName": "Vitoria",
+      "shortName": "VIT",
+      "name": "Wanderson",
+      "position": "ZAG",
+      "minutes": 0,
+      "avg": 0,
+      "apiId": 651675
+    }
+  ]
+}

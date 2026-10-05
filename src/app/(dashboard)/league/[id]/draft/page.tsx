@@ -218,6 +218,21 @@ export default function DraftRoomPage() {
     return () => clearInterval(interval)
   }, [data?.status, leagueId])
 
+  // Group picks by round, ordered from oldest to newest (Round 1, Round 2, ...)
+  const picksByRound = useMemo(() => {
+    if (!data?.recentPicks || data.recentPicks.length === 0) return []
+    const groups: { [round: number]: typeof data.recentPicks } = {}
+    for (const pick of data.recentPicks) {
+      if (!groups[pick.round]) {
+        groups[pick.round] = []
+      }
+      groups[pick.round].push(pick)
+    }
+    return Object.entries(groups)
+      .map(([roundStr, picks]) => [Number(roundStr), picks] as const)
+      .sort(([a], [b]) => a - b)
+  }, [data?.recentPicks])
+
   const notifyDraftUpdate = () => {
     try {
       channelRef.current?.send({
@@ -339,21 +354,6 @@ export default function DraftRoomPage() {
   })
 
   const wishlistPlayerIds = new Set(data.myWishlist.map((w) => w.playerId))
-
-  // Group picks by round, ordered from oldest to newest (Round 1, Round 2, ...)
-  const picksByRound = useMemo(() => {
-    if (!data?.recentPicks || data.recentPicks.length === 0) return []
-    const groups: { [round: number]: typeof data.recentPicks } = {}
-    for (const pick of data.recentPicks) {
-      if (!groups[pick.round]) {
-        groups[pick.round] = []
-      }
-      groups[pick.round].push(pick)
-    }
-    return Object.entries(groups)
-      .map(([roundStr, picks]) => [Number(roundStr), picks] as const)
-      .sort(([a], [b]) => a - b)
-  }, [data?.recentPicks])
 
   return (
     <div className={styles.container}>

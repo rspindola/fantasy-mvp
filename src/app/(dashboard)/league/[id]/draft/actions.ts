@@ -32,15 +32,33 @@ export type DraftStateData = {
     teamName: string
     isMyTurn: boolean
   }[]
+  allPicks: {
+    pickNumber: number
+    round: number
+    teamId: string
+    teamName: string
+    isMyTurn: boolean
+    playerName?: string
+    playerPosition?: string
+  }[]
+  clubs: {
+    id: string
+    name: string
+    shortName: string
+    logoUrl: string | null
+  }[]
   availablePlayers: {
     id: string
     name: string
     position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'
+    clubId: string
     clubName: string
     clubShortName: string
-    logoUrl: string | null
+    clubLogoUrl: string | null
+    photoUrl: string | null
     avgPoints: number
     totalMinutes: number
+    interestCount: number
   }[]
   myRoster: {
     id: string
@@ -150,18 +168,48 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
     }
   }
 
-  // Fetch available real players from catalog
+  // Fetch teams in this league to calculate interest count
+  const teamIds = teams.map((t) => t.id)
+  const interestMap: Record<string, number> = {}
+  if (teamIds.length > 0) {
+    const { data: leagueQueues } = await supabase
+      .from('draft_queues')
+      .select('player_id, fantasy_team_id')
+      .in('fantasy_team_id', teamIds)
+
+    for (const q of leagueQueues || []) {
+      interestMap[q.player_id] = (interestMap[q.player_id] || 0) + 1
+    }
+  }
+
+  // Fetch clubs for filter
+  const { data: clubsData } = await supabase
+    .from('real_clubs')
+    .select('id, name, short_name, logo_url')
+    .order('name', { ascending: true })
+
+  const clubs = (clubsData || []).map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    shortName: c.short_name,
+    logoUrl: c.logo_url ?? null,
+  }))
+
+  // Fetch available real players from catalog ordered by avg_points desc
   const { data: players } = await supabase
     .from('real_players')
     .select(`
       id,
       name,
       position,
+      photo_url,
+      avg_points,
       total_minutes,
-      club:real_clubs(name, short_name, logo_url)
+      club_id,
+      club:real_clubs(id, name, short_name, logo_url)
     `)
     .eq('is_active', true)
-    .order('name', { ascending: true })
+    .order('avg_points', { ascending: false, nullsFirst: false })
     .limit(1000)
 
   // Filter out already draft picks and map available
@@ -171,11 +219,14 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
       id: p.id,
       name: p.name,
       position: p.position as any,
+      clubId: p.club?.id ?? p.club_id ?? '',
       clubName: p.club?.name ?? '',
       clubShortName: p.club?.short_name ?? '',
-      logoUrl: p.club?.logo_url ?? null,
-      avgPoints: 0,
+      clubLogoUrl: p.club?.logo_url ?? null,
+      photoUrl: p.photo_url ?? null,
+      avgPoints: Number(p.avg_points ?? 0),
       totalMinutes: p.total_minutes ?? 0,
+      interestCount: interestMap[p.id] ?? 0,
     }))
 
   const recentPicks = (picks || []).slice(0, 30).map((p: any) => ({
@@ -189,21 +240,33 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
 
   const teamMap = new Map(teams.map((t) => [t.id, t]))
 
-  const upcomingPicks =
-    league.status === 'drafting'
-      ? snakeSlots
-          .filter((s) => s.pickNumber >= currentPickNum && s.pickNumber < currentPickNum + 8)
-          .map((s) => {
-            const t = teamMap.get(s.fantasyTeamId)
-            return {
-              pickNumber: s.pickNumber,
-              round: s.round,
-              teamId: s.fantasyTeamId,
-              teamName: t?.name ?? 'Time',
-              isMyTurn: s.fantasyTeamId === myTeam?.id,
-            }
-          })
-      : []
+  const picksByNumber = new Map(
+    (picks || []).map((p: any) => [
+      p.pick_number,
+      {
+        playerName: p.player?.name,
+        playerPosition: p.player?.position,
+      },
+    ])
+  )
+
+  const allPicks = snakeSlots.map((s) => {
+    const t = teamMap.get(s.fantasyTeamId)
+    const picked = picksByNumber.get(s.pickNumber)
+    return {
+      pickNumber: s.pickNumber,
+      round: s.round,
+      teamId: s.fantasyTeamId,
+      teamName: t?.name ?? 'Time',
+      isMyTurn: s.fantasyTeamId === myTeam?.id,
+      playerName: picked?.playerName,
+      playerPosition: picked?.playerPosition,
+    }
+  })
+
+  const upcomingPicks = allPicks.filter(
+    (s) => s.pickNumber >= currentPickNum && s.pickNumber < currentPickNum + 10
+  )
 
   const draftOrder = teams
     .filter((t) => t.draft_order !== null)
@@ -230,6 +293,8 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
     isMyTurn: turnTeam?.id === myTeam?.id,
     draftOrder,
     upcomingPicks,
+    allPicks,
+    clubs,
     availablePlayers,
     myRoster,
     myWishlist,

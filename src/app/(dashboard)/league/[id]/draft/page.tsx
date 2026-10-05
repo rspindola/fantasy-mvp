@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import {
@@ -28,10 +28,28 @@ export default function DraftRoomPage() {
   const [modalPlayerId, setModalPlayerId] = useState<string | null>(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [posFilter, setPosFilter] = useState<string>('TODOS')
+  const [clubFilter, setClubFilter] = useState<string>('TODOS')
+  const [isClubDropdownOpen, setIsClubDropdownOpen] = useState(false)
+  const [userSelectedRound, setUserSelectedRound] = useState<number | null>(null)
   const [search, setSearch] = useState('')
   const [selectedPlayer, setSelectedPlayer] = useState<any | null>(null)
   const [isPending, startTransition] = useTransition()
   const [pickError, setPickError] = useState<string | null>(null)
+
+  const clubDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        clubDropdownRef.current &&
+        !clubDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsClubDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const loadData = () => {
     if (leagueId) {
@@ -158,11 +176,22 @@ export default function DraftRoomPage() {
 
   const isCompleted = data.status === 'active' || (data.totalPicks > 0 && data.currentPick > data.totalPicks)
 
+  const currentRound = data.totalPicks > 0
+    ? Math.min(24, Math.max(1, Math.ceil(data.currentPick / (data.totalPicks / 24 || 1))))
+    : 1
+  const activeRound = userSelectedRound ?? currentRound
+  const roundPicks = (data.allPicks || []).filter((p) => p.round === activeRound)
+  const selectedClub = data.clubs?.find((c) => c.id === clubFilter)
+
   const filteredPlayers = data.availablePlayers.filter((p) => {
     const matchesPos = posFilter === 'TODOS' || p.position === posFilter
+    const matchesClub = clubFilter === 'TODOS' || p.clubId === clubFilter
     const matchesSearch =
-      search === '' || p.name.toLowerCase().includes(search.toLowerCase())
-    return matchesPos && matchesSearch
+      search === '' ||
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.clubName.toLowerCase().includes(search.toLowerCase()) ||
+      p.clubShortName.toLowerCase().includes(search.toLowerCase())
+    return matchesPos && matchesClub && matchesSearch
   })
 
   const wishlistPlayerIds = new Set(data.myWishlist.map((w) => w.playerId))
@@ -254,38 +283,119 @@ export default function DraftRoomPage() {
         </div>
       )}
 
-      {/* Snake Upcoming Order Bar */}
-      {data.status === 'drafting' && data.upcomingPicks.length > 0 && (
+      {/* Snake Upcoming Order Bar (Separated by Rounds with Full 24-Round Navigation) */}
+      {data.status === 'drafting' && data.allPicks && data.allPicks.length > 0 && (
         <div className={styles.snakeBar}>
           <div className={styles.snakeBarHeader}>
-            <span className={styles.snakeBarTitle}>🔄 Ordem das Próximas Escolhas (Snake):</span>
-            <button
-              type="button"
-              onClick={() => setShowOrderModal(true)}
-              className={styles.viewOrderBtn}
-            >
-              📋 Ver Ordem de Todos os Times
-            </button>
-          </div>
-          <div className={styles.snakeTrack}>
-            {data.upcomingPicks.map((p, idx) => (
-              <div
-                key={p.pickNumber}
-                className={`${styles.snakeCard} ${
-                  idx === 0 ? styles.snakeCardCurrent : ''
-                } ${p.isMyTurn ? styles.snakeCardMine : ''}`}
+            <div className={styles.snakeBarTitle}>
+              <span>🔄 Grade de Escolhas (Snake)</span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-gold)' }}>
+                • Rodada {activeRound} de 24
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {activeRound !== currentRound && (
+                <button
+                  type="button"
+                  onClick={() => setUserSelectedRound(currentRound)}
+                  className={styles.currentRoundJumpBtn}
+                >
+                  ⚡ Ir para Rodada Atual (R{currentRound})
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowOrderModal(true)}
+                className={styles.viewOrderBtn}
               >
-                <div className={styles.snakeCardTop}>
-                  <span className={styles.snakePickNum}>Pick #{p.pickNumber}</span>
-                  <span className={styles.snakeRound}>R{p.round}</span>
+                📋 Ordem do Sorteio
+              </button>
+            </div>
+          </div>
+
+          {/* Round Navigation Row */}
+          <div className={styles.roundNavRow}>
+            <div className={styles.roundTitleBox}>
+              <button
+                type="button"
+                disabled={activeRound <= 1}
+                onClick={() => setUserSelectedRound(Math.max(1, activeRound - 1))}
+                className={styles.roundArrowBtn}
+                title="Rodada anterior"
+              >
+                ◀ R{Math.max(1, activeRound - 1)}
+              </button>
+              <button
+                type="button"
+                disabled={activeRound >= 24}
+                onClick={() => setUserSelectedRound(Math.min(24, activeRound + 1))}
+                className={styles.roundArrowBtn}
+                title="Próxima rodada"
+              >
+                R{Math.min(24, activeRound + 1)} ▶
+              </button>
+            </div>
+
+            <div className={styles.roundPillsTrack}>
+              {Array.from({ length: 24 }, (_, i) => i + 1).map((r) => {
+                const isActive = r === activeRound
+                const isCurrent = r === currentRound
+                return (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setUserSelectedRound(r)}
+                    className={`${styles.roundPill} ${isActive ? styles.roundPillActive : ''} ${
+                      isCurrent && !isActive ? styles.roundPillHasCurrent : ''
+                    }`}
+                    title={`Rodada ${r}${isCurrent ? ' (Em andamento)' : ''}`}
+                  >
+                    <span>R{r}</span>
+                    {isCurrent && !isActive && <span style={{ color: 'var(--accent-gold)' }}>●</span>}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Picks for Active Round */}
+          <div className={styles.snakeTrack}>
+            {roundPicks.map((p) => {
+              const isCurrent = p.pickNumber === data.currentPick
+              const isCompleted = p.pickNumber < data.currentPick || !!p.playerName
+
+              return (
+                <div
+                  key={p.pickNumber}
+                  className={`${styles.snakeCard} ${
+                    isCurrent ? styles.snakeCardCurrent : ''
+                  } ${p.isMyTurn ? styles.snakeCardMine : ''} ${
+                    isCompleted ? styles.snakeCardCompleted : ''
+                  }`}
+                >
+                  <div className={styles.snakeCardTop}>
+                    <span className={styles.snakePickNum}>Pick #{p.pickNumber}</span>
+                    <span className={styles.snakeRound}>R{p.round}</span>
+                  </div>
+                  <div className={styles.snakeTeamName} title={p.teamName}>
+                    {p.teamName}
+                  </div>
+                  {isCurrent ? (
+                    <span className={styles.snakeCurrentTag}>● Escolhendo Agora</span>
+                  ) : p.playerName ? (
+                    <div className={styles.snakePickedPlayer} title={`${p.playerName} (${p.playerPosition})`}>
+                      <span>✅</span>
+                      <strong>{p.playerName}</strong>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{p.playerPosition}</span>
+                    </div>
+                  ) : p.isMyTurn ? (
+                    <span className={styles.snakeMineTag}>⭐ Seu Time</span>
+                  ) : (
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>Aguardando</span>
+                  )}
                 </div>
-                <div className={styles.snakeTeamName} title={p.teamName}>
-                  {p.teamName}
-                </div>
-                {idx === 0 && <span className={styles.snakeCurrentTag}>● Escolhendo</span>}
-                {idx > 0 && p.isMyTurn && <span className={styles.snakeMineTag}>⭐ Você</span>}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
@@ -327,12 +437,14 @@ export default function DraftRoomPage() {
         <div className={styles.grid}>
           {/* Main Player Board */}
           <div className={styles.boardArea}>
-            {/* Filters */}
+            {/* Filters Row */}
             <div className={styles.filterRow}>
+              {/* Position Filters */}
               <div className={styles.posFilters}>
                 {['TODOS', 'GOL', 'LAT', 'ZAG', 'MEI', 'ATA'].map((pos) => (
                   <button
                     key={pos}
+                    type="button"
                     onClick={() => setPosFilter(pos)}
                     className={`${styles.posBtn} ${
                       posFilter === pos ? styles.posBtnActive : ''
@@ -343,13 +455,118 @@ export default function DraftRoomPage() {
                 ))}
               </div>
 
-              <input
-                type="text"
-                placeholder="🔍 Buscar jogador..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className={styles.searchInput}
-              />
+              {/* Secondary Filters: Club Dropdown & Search */}
+              <div className={styles.secondaryFilters}>
+                {/* Club Dropdown Filter */}
+                <div className={styles.clubDropdownContainer} ref={clubDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsClubDropdownOpen((prev) => !prev)}
+                    className={`${styles.clubDropdownTrigger} ${
+                      clubFilter !== 'TODOS' ? styles.clubDropdownTriggerActive : ''
+                    }`}
+                    title="Filtrar por Clube"
+                  >
+                    <div className={styles.clubSelectedContent}>
+                      {selectedClub ? (
+                        <>
+                          {selectedClub.logoUrl && (
+                            <img
+                              src={selectedClub.logoUrl}
+                              alt={selectedClub.name}
+                              className={styles.clubCrestSmall}
+                            />
+                          )}
+                          <span>{selectedClub.name}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>🛡️</span>
+                          <span>Todos os Clubes</span>
+                        </>
+                      )}
+                    </div>
+                    <span className={styles.clubDropdownCaret}>
+                      {isClubDropdownOpen ? '▲' : '▼'}
+                    </span>
+                  </button>
+
+                  {isClubDropdownOpen && (
+                    <div className={styles.clubDropdownMenu}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setClubFilter('TODOS')
+                          setIsClubDropdownOpen(false)
+                        }}
+                        className={`${styles.clubDropdownItem} ${
+                          clubFilter === 'TODOS' ? styles.clubDropdownItemActive : ''
+                        }`}
+                      >
+                        <div className={styles.clubItemLabel}>
+                          <span>🛡️</span>
+                          <span>Todos os Clubes</span>
+                        </div>
+                        {clubFilter === 'TODOS' && <span>✓</span>}
+                      </button>
+
+                      {data.clubs?.map((club) => (
+                        <button
+                          key={club.id}
+                          type="button"
+                          onClick={() => {
+                            setClubFilter(club.id)
+                            setIsClubDropdownOpen(false)
+                          }}
+                          className={`${styles.clubDropdownItem} ${
+                            clubFilter === club.id ? styles.clubDropdownItemActive : ''
+                          }`}
+                        >
+                          <div className={styles.clubItemLabel}>
+                            {club.logoUrl ? (
+                              <img
+                                src={club.logoUrl}
+                                alt={club.name}
+                                className={styles.clubCrestSmall}
+                                loading="lazy"
+                              />
+                            ) : (
+                              <span>⚽</span>
+                            )}
+                            <span>{club.name}</span>
+                          </div>
+                          {clubFilter === club.id && <span>✓</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Search Input */}
+                <input
+                  type="text"
+                  placeholder="🔍 Buscar jogador..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className={styles.searchInput}
+                />
+              </div>
+            </div>
+
+            {/* Catalog Counter and Active Club Filter */}
+            <div className={styles.catalogCounterRow}>
+              <span>
+                Exibindo <strong>{filteredPlayers.length}</strong> jogadores disponíveis
+              </span>
+              {clubFilter !== 'TODOS' && (
+                <button
+                  type="button"
+                  onClick={() => setClubFilter('TODOS')}
+                  className={styles.clearClubFilterBtn}
+                >
+                  Limpar clube: {selectedClub?.name} ✕
+                </button>
+              )}
             </div>
 
             {/* Error Message */}
@@ -384,10 +601,19 @@ export default function DraftRoomPage() {
                     gap: '12px',
                   }}
                 >
-                  <div>
-                    <strong>Confirmar escolha: </strong>
-                    {selectedPlayer.name} ({selectedPlayer.position}) —{' '}
-                    {selectedPlayer.clubShortName}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {selectedPlayer.clubLogoUrl && (
+                      <img
+                        src={selectedPlayer.clubLogoUrl}
+                        alt={selectedPlayer.clubShortName}
+                        style={{ width: '24px', height: '24px', objectFit: 'contain' }}
+                      />
+                    )}
+                    <div>
+                      <strong>Confirmar escolha: </strong>
+                      {selectedPlayer.name} ({selectedPlayer.position}) —{' '}
+                      {selectedPlayer.clubShortName}
+                    </div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <Button
@@ -427,23 +653,32 @@ export default function DraftRoomPage() {
                     gap: '12px',
                   }}
                 >
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
-                      <span
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          color: 'var(--accent-gold)',
-                          letterSpacing: '0.05em',
-                          textTransform: 'uppercase',
-                        }}
-                      >
-                        👑 Escolha Assistida pelo Comissário
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '0.9375rem' }}>
-                      Escolher <strong>{selectedPlayer.name}</strong> ({selectedPlayer.position}) em nome de{' '}
-                      <strong style={{ color: 'var(--accent-gold)' }}>{data.currentTurnTeamName}</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {selectedPlayer.clubLogoUrl && (
+                      <img
+                        src={selectedPlayer.clubLogoUrl}
+                        alt={selectedPlayer.clubShortName}
+                        style={{ width: '24px', height: '24px', objectFit: 'contain' }}
+                      />
+                    )}
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                        <span
+                          style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: 'var(--accent-gold)',
+                            letterSpacing: '0.05em',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          👑 Escolha Assistida pelo Comissário
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.9375rem' }}>
+                        Escolher <strong>{selectedPlayer.name}</strong> ({selectedPlayer.position}) em nome de{' '}
+                        <strong style={{ color: 'var(--accent-gold)' }}>{data.currentTurnTeamName}</strong>
+                      </div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -480,7 +715,7 @@ export default function DraftRoomPage() {
               ) : null
             )}
 
-            {/* Players Grid */}
+            {/* Players Grid (Pre-Draft High-Standard Design) */}
             <div className={styles.playerGrid}>
               {filteredPlayers.map((player) => {
                 const isSelected = selectedPlayer?.id === player.id
@@ -492,62 +727,144 @@ export default function DraftRoomPage() {
                   <div
                     key={player.id}
                     onClick={() => {
-                      if (canPick) setSelectedPlayer(player)
+                      if (canPick) {
+                        setSelectedPlayer(player)
+                      } else {
+                        setModalPlayerId(player.id)
+                      }
                     }}
                     className={`${styles.playerCard} ${
                       canPick ? styles.playerCardSelectable : ''
-                    }`}
+                    } ${inWishlist ? styles.playerCardInWishlist : ''}`}
                     style={
                       isSelected
                         ? {
                             borderColor: isCommishPick ? 'var(--accent-gold)' : 'var(--accent-green)',
                             background: isCommishPick ? 'rgba(245, 158, 11, 0.15)' : 'var(--accent-green-subtle)',
+                            boxShadow: '0 0 16px rgba(16, 185, 129, 0.25)',
                           }
                         : {}
                     }
                   >
-                    <div className={styles.playerCardHeader}>
-                      <Badge variant={player.position as any}>
-                        {player.position}
-                      </Badge>
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setModalPlayerId(player.id)
-                          }}
-                          className={styles.wishlistBtn}
-                          title="Ver ficha técnica completa e scouts"
-                        >
-                          🔍 Ficha
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleToggleWishlist(player.id)
-                          }}
-                          className={`${styles.wishlistBtn} ${
-                            inWishlist ? styles.wishlistBtnActive : ''
-                          }`}
-                          title={
-                            inWishlist
-                              ? "Remover da Fila de Preferência"
-                              : "Adicionar à Fila de Preferência (Auto-pick prioriza)"
-                          }
-                        >
-                          {inWishlist ? '⭐ Na Fila' : '+ Fila'}
-                        </button>
+                    <div>
+                      {/* Card Header: Position Badge + Club Info */}
+                      <div className={styles.cardHeader}>
+                        <Badge variant={player.position as any}>{player.position}</Badge>
+
+                        <div className={styles.clubBadge}>
+                          {player.clubLogoUrl && (
+                            <img
+                              src={player.clubLogoUrl}
+                              alt={player.clubShortName}
+                              className={styles.clubCrestHeader}
+                              loading="lazy"
+                            />
+                          )}
+                          <span className={styles.playerClub}>{player.clubShortName}</span>
+                        </div>
+                      </div>
+
+                      {/* Card Body: Player Photo, Name, and Interest Badge */}
+                      <div className={styles.playerBody} style={{ marginTop: '10px' }}>
+                        <div className={styles.playerPhotoWrapper}>
+                          {player.photoUrl ? (
+                            <img
+                              src={player.photoUrl}
+                              alt={player.name}
+                              className={styles.playerPhoto}
+                              loading="lazy"
+                              onError={(e) => {
+                                const target = e.currentTarget
+                                target.style.display = 'none'
+                                if (target.parentElement) {
+                                  target.parentElement.innerHTML = '👤'
+                                }
+                              }}
+                            />
+                          ) : (
+                            <span className={styles.playerPhotoPlaceholder}>👤</span>
+                          )}
+                        </div>
+
+                        <div className={styles.playerInfo}>
+                          <div className={styles.playerName} title={player.name}>
+                            {player.name}
+                          </div>
+
+                          {/* Interest Badge */}
+                          {player.interestCount > 0 ? (
+                            <span
+                              className={styles.interestBadge}
+                              title={`${player.interestCount} times têm este jogador na fila`}
+                            >
+                              🔥 {player.interestCount}{' '}
+                              {player.interestCount === 1 ? 'time interessado' : 'times interessados'}
+                            </span>
+                          ) : (
+                            <span className={styles.interestBadgeZero}>0 na fila</span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <div className={styles.playerName}>{player.name}</div>
+                    {/* Stats Row */}
+                    <div className={styles.statsRow}>
+                      <div className={styles.statItem}>
+                        <span>Média:</span>
+                        <strong>{player.avgPoints.toFixed(1)}</strong>
+                      </div>
+                      <span>•</span>
+                      <div className={styles.statItem}>
+                        <span>Minutos:</span>
+                        <strong>{player.totalMinutes}&apos;</strong>
+                      </div>
+                    </div>
 
-                    <div className={styles.playerFooter}>
-                      <span className={styles.playerClub}>
-                        {player.clubShortName}
-                      </span>
+                    {/* Card Actions */}
+                    <div className={styles.cardActions}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setModalPlayerId(player.id)
+                        }}
+                        className={styles.btnDetail}
+                        title="Ver ficha técnica completa e scouts"
+                      >
+                        🔍 Ficha
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleToggleWishlist(player.id)
+                        }}
+                        className={`${styles.btnWishlist} ${
+                          inWishlist ? styles.btnWishlistActive : ''
+                        }`}
+                        title={
+                          inWishlist
+                            ? 'Remover da Fila de Preferência'
+                            : 'Adicionar à Fila de Preferência (Auto-pick prioriza)'
+                        }
+                      >
+                        {inWishlist ? '⭐ Na Fila' : '+ Fila'}
+                      </button>
+
+                      {canPick && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedPlayer(player)
+                          }}
+                          className={isCommishPick ? styles.btnPickCommish : styles.btnPickThis}
+                          title={isCommishPick ? 'Escolher pelo time da vez' : 'Escolher este jogador'}
+                        >
+                          {isSelected ? '✓ Selecionado' : '🎯 Escolher'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 )

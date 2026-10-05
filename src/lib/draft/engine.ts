@@ -96,7 +96,18 @@ export async function makePickEngine(
   if (tErr || !teams || teams.length < 2) throw new Error('Erro ao carregar times do draft.')
 
   const numTeams = teams.length
-  const currentPickNum = league.current_pick ?? 1
+
+  // Check latest completed pick to guarantee accurate pick sequence
+  const { data: latestPick } = await supabase
+    .from('draft_picks')
+    .select('pick_number')
+    .eq('league_id', leagueId)
+    .order('pick_number', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const maxCompleted = latestPick?.pick_number ?? 0
+  const currentPickNum = Math.max(league.current_pick ?? 1, maxCompleted + 1)
 
   // Compute snake order for all picks
   const teamIds = teams.map((t) => t.id)

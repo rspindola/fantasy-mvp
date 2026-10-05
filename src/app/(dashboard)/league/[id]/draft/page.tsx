@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition, useMemo } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import {
@@ -37,6 +37,23 @@ export default function DraftRoomPage() {
   const [isPending, startTransition] = useTransition()
   const [pickError, setPickError] = useState<string | null>(null)
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('draft_view_mode')
+      if (saved === 'grid' || saved === 'list') {
+        setViewMode(saved)
+      }
+    } catch {}
+  }, [])
+
+  const handleToggleViewMode = (mode: 'grid' | 'list') => {
+    setViewMode(mode)
+    try {
+      localStorage.setItem('draft_view_mode', mode)
+    } catch {}
+  }
 
   const clubDropdownRef = useRef<HTMLDivElement>(null)
 
@@ -82,31 +99,69 @@ export default function DraftRoomPage() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
-  const loadData = () => {
-    if (leagueId) {
-      getDraftRoomData(leagueId).then((res) => {
-        setData(res)
-        setLoading(false)
-      })
+  const channelRef = useRef<any>(null)
+  const reqIdRef = useRef(0)
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const loadData = (silent: boolean = false) => {
+    if (!leagueId) return
+    const currentReqId = ++reqIdRef.current
+    if (!silent && !data) {
+      setLoading(true)
     }
+    getDraftRoomData(leagueId)
+      .then((res) => {
+        if (currentReqId === reqIdRef.current) {
+          setData(res)
+          setLoading(false)
+        }
+      })
+      .catch((err) => {
+        console.error('[Draft] Erro ao carregar dados do draft:', err)
+        if (currentReqId === reqIdRef.current) {
+          setLoading(false)
+        }
+      })
   }
+
+  const debouncedLoadData = () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      loadData(true)
+    }, 80)
+  }
+
+  // Clear selectedPlayer if they were drafted by someone else or if turn changed and not commissioner
+  useEffect(() => {
+    if (!selectedPlayer || !data) return
+    const stillAvailable = data.availablePlayers.some((p) => p.id === selectedPlayer.id)
+    const canStillPick = (data.isMyTurn || data.isCommissioner) && !data.isPaused
+    if (!stillAvailable || !canStillPick) {
+      setSelectedPlayer(null)
+    }
+  }, [data, selectedPlayer])
 
   useEffect(() => {
     loadData()
 
-    // Supabase Realtime Subscription for live picks and pause updates
+    // Supabase Realtime Subscription for live picks, league state, teams, and instant broadcast
     const supabase = createClient()
     const channel = supabase
       .channel(`draft:${leagueId}`)
+      .on('broadcast', { event: 'draft_update' }, () => {
+        debouncedLoadData()
+      })
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'draft_picks',
           filter: `league_id=eq.${leagueId}`,
         },
-        () => loadData()
+        () => debouncedLoadData()
       )
       .on(
         'postgres_changes',
@@ -116,7 +171,17 @@ export default function DraftRoomPage() {
           table: 'leagues',
           filter: `id=eq.${leagueId}`,
         },
-        () => loadData()
+        () => debouncedLoadData()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'fantasy_teams',
+          filter: `league_id=eq.${leagueId}`,
+        },
+        () => debouncedLoadData()
       )
       .on(
         'postgres_changes',
@@ -125,14 +190,45 @@ export default function DraftRoomPage() {
           schema: 'public',
           table: 'draft_queues',
         },
-        () => loadData()
+        () => debouncedLoadData()
       )
-      .subscribe()
+      .subscribe((status) => {
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`[Draft Realtime] Channel status:`, status)
+        }
+      })
+
+    channelRef.current = channel
 
     return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
       supabase.removeChannel(channel)
+      channelRef.current = null
     }
   }, [leagueId])
+
+  // Polling fallback every 4 seconds while draft is in progress to ensure 100% sync
+  useEffect(() => {
+    if (data?.status !== 'drafting') return
+    const interval = setInterval(() => {
+      loadData(true)
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [data?.status, leagueId])
+
+  const notifyDraftUpdate = () => {
+    try {
+      channelRef.current?.send({
+        type: 'broadcast',
+        event: 'draft_update',
+        payload: { timestamp: Date.now() },
+      })
+    } catch {
+      // Ignore broadcast send errors
+    }
+  }
 
   const handleConfirmPick = () => {
     if (!selectedPlayer || !data) return
@@ -142,7 +238,8 @@ export default function DraftRoomPage() {
       try {
         await submitPickAction(leagueId, selectedPlayer.id)
         setSelectedPlayer(null)
-        loadData()
+        notifyDraftUpdate()
+        loadData(true)
       } catch (err: any) {
         setPickError(err.message || 'Erro ao fazer pick.')
       }
@@ -154,7 +251,8 @@ export default function DraftRoomPage() {
     startTransition(async () => {
       try {
         await startDraftFromRoomAction(leagueId)
-        loadData()
+        notifyDraftUpdate()
+        loadData(true)
       } catch (err: any) {
         setPickError(err.message || 'Erro ao iniciar o draft.')
       }
@@ -165,7 +263,8 @@ export default function DraftRoomPage() {
     startTransition(async () => {
       try {
         await toggleDraftPauseAction(leagueId)
-        loadData()
+        notifyDraftUpdate()
+        loadData(true)
       } catch (err: any) {
         setPickError(err.message || 'Erro ao alterar pausa do draft.')
       }
@@ -177,7 +276,8 @@ export default function DraftRoomPage() {
     startTransition(async () => {
       try {
         await triggerAutoPickAction(leagueId)
-        loadData()
+        notifyDraftUpdate()
+        loadData(true)
       } catch (err: any) {
         setPickError(err.message || 'Erro ao acionar auto-pick.')
       }
@@ -194,7 +294,8 @@ export default function DraftRoomPage() {
       } else {
         await addToWishlistAction(data.myTeamId!, playerId)
       }
-      loadData()
+      notifyDraftUpdate()
+      loadData(true)
     })
   }
 
@@ -238,6 +339,21 @@ export default function DraftRoomPage() {
   })
 
   const wishlistPlayerIds = new Set(data.myWishlist.map((w) => w.playerId))
+
+  // Group picks by round, ordered from oldest to newest (Round 1, Round 2, ...)
+  const picksByRound = useMemo(() => {
+    if (!data?.recentPicks || data.recentPicks.length === 0) return []
+    const groups: { [round: number]: typeof data.recentPicks } = {}
+    for (const pick of data.recentPicks) {
+      if (!groups[pick.round]) {
+        groups[pick.round] = []
+      }
+      groups[pick.round].push(pick)
+    }
+    return Object.entries(groups)
+      .map(([roundStr, picks]) => [Number(roundStr), picks] as const)
+      .sort(([a], [b]) => a - b)
+  }, [data?.recentPicks])
 
   return (
     <div className={styles.container}>
@@ -635,20 +751,47 @@ export default function DraftRoomPage() {
               </div>
             </div>
 
-            {/* Catalog Counter and Active Club Filter */}
+            {/* Catalog Counter and View Mode Toggle */}
             <div className={styles.catalogCounterRow}>
-              <span>
-                Exibindo <strong>{filteredPlayers.length}</strong> jogadores disponíveis
-              </span>
-              {clubFilter !== 'TODOS' && (
+              <div className={styles.catalogCounterLeft}>
+                <span>
+                  Exibindo <strong>{filteredPlayers.length}</strong> jogadores disponíveis
+                </span>
+                {clubFilter !== 'TODOS' && (
+                  <button
+                    type="button"
+                    onClick={() => setClubFilter('TODOS')}
+                    className={styles.clearClubFilterBtn}
+                  >
+                    Limpar clube: {selectedClub?.name} ✕
+                  </button>
+                )}
+              </div>
+
+              <div className={styles.viewModeToggle}>
                 <button
                   type="button"
-                  onClick={() => setClubFilter('TODOS')}
-                  className={styles.clearClubFilterBtn}
+                  onClick={() => handleToggleViewMode('grid')}
+                  className={`${styles.viewModeBtn} ${
+                    viewMode === 'grid' ? styles.viewModeBtnActive : ''
+                  }`}
+                  title="Visualização em Cards"
                 >
-                  Limpar clube: {selectedClub?.name} ✕
+                  <span>🪟</span>
+                  <span>Cards</span>
                 </button>
-              )}
+                <button
+                  type="button"
+                  onClick={() => handleToggleViewMode('list')}
+                  className={`${styles.viewModeBtn} ${
+                    viewMode === 'list' ? styles.viewModeBtnActive : ''
+                  }`}
+                  title="Visualização em Listagem"
+                >
+                  <span>☰</span>
+                  <span>Lista</span>
+                </button>
+              </div>
             </div>
 
             {/* Error Message */}
@@ -773,161 +916,313 @@ export default function DraftRoomPage() {
               ) : null
             )}
 
-            {/* Players Grid (Pre-Draft High-Standard Design) */}
-            <div className={styles.playerGrid}>
-              {filteredPlayers.map((player) => {
-                const isSelected = selectedPlayer?.id === player.id
-                const inWishlist = wishlistPlayerIds.has(player.id)
-                const canPick = (data.isMyTurn || data.isCommissioner) && !data.isPaused
-                const isCommishPick = !data.isMyTurn && data.isCommissioner
+            {/* Players Grid or List Table View */}
+            {viewMode === 'grid' ? (
+              <div className={styles.playerGrid}>
+                {filteredPlayers.map((player) => {
+                  const isSelected = selectedPlayer?.id === player.id
+                  const inWishlist = wishlistPlayerIds.has(player.id)
+                  const canPick = (data.isMyTurn || data.isCommissioner) && !data.isPaused
+                  const isCommishPick = !data.isMyTurn && data.isCommissioner
 
-                return (
-                  <div
-                    key={player.id}
-                    onClick={() => {
-                      if (canPick) {
-                        setSelectedPlayer(player)
-                      } else {
-                        setModalPlayerId(player.id)
+                  return (
+                    <div
+                      key={player.id}
+                      onClick={() => {
+                        if (canPick) {
+                          setSelectedPlayer(player)
+                        } else {
+                          setModalPlayerId(player.id)
+                        }
+                      }}
+                      className={`${styles.playerCard} ${
+                        canPick ? styles.playerCardSelectable : ''
+                      } ${inWishlist ? styles.playerCardInWishlist : ''}`}
+                      style={
+                        isSelected
+                          ? {
+                              borderColor: isCommishPick ? 'var(--accent-gold)' : 'var(--accent-green)',
+                              background: isCommishPick ? 'rgba(245, 158, 11, 0.15)' : 'var(--accent-green-subtle)',
+                              boxShadow: '0 0 16px rgba(16, 185, 129, 0.25)',
+                            }
+                          : {}
                       }
-                    }}
-                    className={`${styles.playerCard} ${
-                      canPick ? styles.playerCardSelectable : ''
-                    } ${inWishlist ? styles.playerCardInWishlist : ''}`}
-                    style={
-                      isSelected
-                        ? {
-                            borderColor: isCommishPick ? 'var(--accent-gold)' : 'var(--accent-green)',
-                            background: isCommishPick ? 'rgba(245, 158, 11, 0.15)' : 'var(--accent-green-subtle)',
-                            boxShadow: '0 0 16px rgba(16, 185, 129, 0.25)',
-                          }
-                        : {}
-                    }
-                  >
-                    <div>
-                      {/* Card Header: Position Badge + Club Info */}
-                      <div className={styles.cardHeader}>
-                        <Badge variant={player.position as any}>{player.position}</Badge>
+                    >
+                      <div>
+                        {/* Card Header: Position Badge + Club Info */}
+                        <div className={styles.cardHeader}>
+                          <Badge variant={player.position as any}>{player.position}</Badge>
 
-                        <div className={styles.clubBadge}>
-                          {player.clubLogoUrl && (
-                            <img
-                              src={player.clubLogoUrl}
-                              alt={player.clubShortName}
-                              className={styles.clubCrestHeader}
-                              loading="lazy"
-                            />
-                          )}
-                          <span className={styles.playerClub}>{player.clubShortName}</span>
-                        </div>
-                      </div>
-
-                      {/* Card Body: Player Photo, Name, and Interest Badge */}
-                      <div className={styles.playerBody} style={{ marginTop: '10px' }}>
-                        <div className={styles.playerPhotoWrapper}>
-                          {player.photoUrl ? (
-                            <img
-                              src={player.photoUrl}
-                              alt={player.name}
-                              className={styles.playerPhoto}
-                              loading="lazy"
-                              onError={(e) => {
-                                const target = e.currentTarget
-                                target.style.display = 'none'
-                                if (target.parentElement) {
-                                  target.parentElement.innerHTML = '👤'
-                                }
-                              }}
-                            />
-                          ) : (
-                            <span className={styles.playerPhotoPlaceholder}>👤</span>
-                          )}
+                          <div className={styles.clubBadge}>
+                            {player.clubLogoUrl && (
+                              <img
+                                src={player.clubLogoUrl}
+                                alt={player.clubShortName}
+                                className={styles.clubCrestHeader}
+                                loading="lazy"
+                              />
+                            )}
+                            <span className={styles.playerClub}>{player.clubShortName}</span>
+                          </div>
                         </div>
 
-                        <div className={styles.playerInfo}>
-                          <div className={styles.playerName} title={player.name}>
-                            {player.name}
+                        {/* Card Body: Player Photo, Name, and Interest Badge */}
+                        <div className={styles.playerBody} style={{ marginTop: '10px' }}>
+                          <div className={styles.playerPhotoWrapper}>
+                            {player.photoUrl ? (
+                              <img
+                                src={player.photoUrl}
+                                alt={player.name}
+                                className={styles.playerPhoto}
+                                loading="lazy"
+                                onError={(e) => {
+                                  const target = e.currentTarget
+                                  target.style.display = 'none'
+                                  if (target.parentElement) {
+                                    target.parentElement.innerHTML = '👤'
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <span className={styles.playerPhotoPlaceholder}>👤</span>
+                            )}
                           </div>
 
-                          {/* Interest Badge */}
-                          {player.interestCount > 0 ? (
-                            <span
-                              className={styles.interestBadge}
-                              title={`${player.interestCount} times têm este jogador na fila`}
-                            >
-                              🔥 {player.interestCount}{' '}
-                              {player.interestCount === 1 ? 'time interessado' : 'times interessados'}
-                            </span>
-                          ) : (
-                            <span className={styles.interestBadgeZero}>0 na fila</span>
-                          )}
+                          <div className={styles.playerInfo}>
+                            <div className={styles.playerName} title={player.name}>
+                              {player.name}
+                            </div>
+
+                            {/* Interest Badge */}
+                            {player.interestCount > 0 ? (
+                              <span
+                                className={styles.interestBadge}
+                                title={`${player.interestCount} times têm este jogador na fila`}
+                              >
+                                🔥 {player.interestCount}{' '}
+                                {player.interestCount === 1 ? 'time interessado' : 'times interessados'}
+                              </span>
+                            ) : (
+                              <span className={styles.interestBadgeZero}>0 na fila</span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Stats Row */}
-                    <div className={styles.statsRow}>
-                      <div className={styles.statItem}>
-                        <span>Média:</span>
-                        <strong>{player.avgPoints.toFixed(1)}</strong>
+                      {/* Stats Row */}
+                      <div className={styles.statsRow}>
+                        <div className={styles.statItem}>
+                          <span>Média:</span>
+                          <strong>{player.avgPoints.toFixed(1)}</strong>
+                        </div>
+                        <span>•</span>
+                        <div className={styles.statItem}>
+                          <span>Minutos:</span>
+                          <strong>{player.totalMinutes}&apos;</strong>
+                        </div>
                       </div>
-                      <span>•</span>
-                      <div className={styles.statItem}>
-                        <span>Minutos:</span>
-                        <strong>{player.totalMinutes}&apos;</strong>
-                      </div>
-                    </div>
 
-                    {/* Card Actions */}
-                    <div className={styles.cardActions}>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setModalPlayerId(player.id)
-                        }}
-                        className={styles.btnDetail}
-                        title="Ver ficha técnica completa e scouts"
-                      >
-                        🔍 Ficha
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleToggleWishlist(player.id)
-                        }}
-                        className={`${styles.btnWishlist} ${
-                          inWishlist ? styles.btnWishlistActive : ''
-                        }`}
-                        title={
-                          inWishlist
-                            ? 'Remover da Fila de Preferência'
-                            : 'Adicionar à Fila de Preferência (Auto-pick prioriza)'
-                        }
-                      >
-                        {inWishlist ? '⭐ Na Fila' : '+ Fila'}
-                      </button>
-
-                      {canPick && (
+                      {/* Card Actions */}
+                      <div className={styles.cardActions}>
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation()
-                            setSelectedPlayer(player)
+                            setModalPlayerId(player.id)
                           }}
-                          className={isCommishPick ? styles.btnPickCommish : styles.btnPickThis}
-                          title={isCommishPick ? 'Escolher pelo time da vez' : 'Escolher este jogador'}
+                          className={styles.btnDetail}
+                          title="Ver ficha técnica completa e scouts"
                         >
-                          {isSelected ? '✓ Selecionado' : '🎯 Escolher'}
+                          🔍 Ficha
                         </button>
-                      )}
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleToggleWishlist(player.id)
+                          }}
+                          className={`${styles.btnWishlist} ${
+                            inWishlist ? styles.btnWishlistActive : ''
+                          }`}
+                          title={
+                            inWishlist
+                              ? 'Remover da Fila de Preferência'
+                              : 'Adicionar à Fila de Preferência (Auto-pick prioriza)'
+                          }
+                        >
+                          {inWishlist ? '⭐ Na Fila' : '+ Fila'}
+                        </button>
+
+                        {canPick && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedPlayer(player)
+                            }}
+                            className={isCommishPick ? styles.btnPickCommish : styles.btnPickThis}
+                            title={isCommishPick ? 'Escolher pelo time da vez' : 'Escolher este jogador'}
+                          >
+                            {isSelected ? '✓ Selecionado' : '🎯 Escolher'}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className={styles.playerTableContainer}>
+                <table className={styles.playerTable}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: '60px' }}>Pos</th>
+                      <th>Jogador</th>
+                      <th>Clube</th>
+                      <th style={{ textAlign: 'center', width: '75px' }}>Média</th>
+                      <th className={styles.hideMobile} style={{ textAlign: 'center', width: '75px' }}>
+                        Minutos
+                      </th>
+                      <th style={{ textAlign: 'right', width: '160px' }}>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPlayers.map((player) => {
+                      const isSelected = selectedPlayer?.id === player.id
+                      const inWishlist = wishlistPlayerIds.has(player.id)
+                      const canPick = (data.isMyTurn || data.isCommissioner) && !data.isPaused
+                      const isCommishPick = !data.isMyTurn && data.isCommissioner
+
+                      return (
+                        <tr
+                          key={player.id}
+                          onClick={() => {
+                            if (canPick) {
+                              setSelectedPlayer(player)
+                            } else {
+                              setModalPlayerId(player.id)
+                            }
+                          }}
+                          className={`${styles.playerTableRow} ${
+                            canPick ? styles.playerTableRowSelectable : ''
+                          } ${
+                            isSelected
+                              ? isCommishPick
+                                ? styles.rowSelectedCommish
+                                : styles.rowSelectedMine
+                              : ''
+                          } ${inWishlist ? styles.rowInWishlist : ''}`}
+                        >
+                          <td>
+                            <Badge variant={player.position as any}>{player.position}</Badge>
+                          </td>
+                          <td>
+                            <div className={styles.tablePlayerCell}>
+                              <div className={styles.tablePlayerPhotoWrapper}>
+                                {player.photoUrl ? (
+                                  <img
+                                    src={player.photoUrl}
+                                    alt={player.name}
+                                    className={styles.tablePlayerPhoto}
+                                    loading="lazy"
+                                    onError={(e) => {
+                                      const target = e.currentTarget
+                                      target.style.display = 'none'
+                                      if (target.parentElement) {
+                                        target.parentElement.innerHTML = '👤'
+                                      }
+                                    }}
+                                  />
+                                ) : (
+                                  <span className={styles.tablePlayerPhotoPlaceholder}>👤</span>
+                                )}
+                              </div>
+                              <div className={styles.tablePlayerInfo}>
+                                <strong className={styles.tablePlayerName}>{player.name}</strong>
+                                {player.interestCount > 0 && (
+                                  <span
+                                    className={styles.tableInterestBadge}
+                                    title={`${player.interestCount} times têm este jogador na fila`}
+                                  >
+                                    🔥 {player.interestCount}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div className={styles.tableClubCell}>
+                              {player.clubLogoUrl && (
+                                <img
+                                  src={player.clubLogoUrl}
+                                  alt={player.clubShortName}
+                                  className={styles.tableClubLogo}
+                                  loading="lazy"
+                                />
+                              )}
+                              <span>{player.clubShortName || player.clubName}</span>
+                            </div>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <strong className={styles.tableAvgPts}>{player.avgPoints.toFixed(1)}</strong>
+                          </td>
+                          <td
+                            className={styles.hideMobile}
+                            style={{ textAlign: 'center', color: 'var(--text-muted)' }}
+                          >
+                            {player.totalMinutes}&apos;
+                          </td>
+                          <td>
+                            <div
+                              className={styles.tableActionsCell}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setModalPlayerId(player.id)}
+                                className={styles.tableBtnDetail}
+                                title="Ver ficha técnica"
+                              >
+                                🔍
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleWishlist(player.id)}
+                                className={`${styles.tableBtnWishlist} ${
+                                  inWishlist ? styles.tableBtnWishlistActive : ''
+                                }`}
+                                title={inWishlist ? 'Remover da Fila' : 'Adicionar à Fila'}
+                              >
+                                {inWishlist ? '⭐' : '+ Fila'}
+                              </button>
+                              {canPick && (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedPlayer(player)}
+                                  className={
+                                    isCommishPick
+                                      ? styles.btnPickCommishSmall
+                                      : styles.btnPickThisSmall
+                                  }
+                                  title={
+                                    isCommishPick
+                                      ? 'Escolher pelo time da vez'
+                                      : 'Escolher este jogador'
+                                  }
+                                >
+                                  {isSelected ? '✓' : '🎯 Pick'}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* Sidebar Area */}
@@ -1006,18 +1301,57 @@ export default function DraftRoomPage() {
               </div>
             </div>
 
-            {/* Feed de Escolhas */}
+            {/* Feed / Histórico de Escolhas por Rodada */}
             <div className={styles.sidebarSection}>
-              <h3 className={styles.sidebarTitle}>Histórico de Picks</h3>
+              <div className={styles.sidebarHeaderRow}>
+                <h3 className={styles.sidebarTitle}>
+                  Histórico de Picks ({data.recentPicks.length})
+                </h3>
+              </div>
               <div className={styles.historyList}>
-                {data.recentPicks.map((pick, idx) => (
-                  <div key={idx} className={styles.historyItem}>
-                    <span>
-                      #{pick.pickNumber} {pick.teamName}: {pick.playerName}
-                    </span>
-                    <Badge variant={pick.position as any}>{pick.position}</Badge>
-                  </div>
-                ))}
+                {picksByRound.length === 0 ? (
+                  <span
+                    style={{
+                      fontSize: '0.8125rem',
+                      color: 'var(--text-muted)',
+                    }}
+                  >
+                    Nenhuma escolha realizada ainda.
+                  </span>
+                ) : (
+                  picksByRound.map(([roundNum, roundPicks]) => (
+                    <div key={roundNum} className={styles.historyRoundGroup}>
+                      <div className={styles.historyRoundHeader}>
+                        <span className={styles.historyRoundTitle}>Rodada {roundNum}</span>
+                        <span className={styles.historyRoundCount}>
+                          {roundPicks.length} {roundPicks.length === 1 ? 'escolha' : 'escolhas'}
+                        </span>
+                      </div>
+                      <div className={styles.historyRoundPicks}>
+                        {roundPicks.map((pick) => (
+                          <div key={pick.pickNumber} className={styles.historyItem}>
+                            <div className={styles.historyItemLeft}>
+                              <span className={styles.historyPickNum}>#{pick.pickNumber}</span>
+                              <span className={styles.historyTeamName}>{pick.teamName}:</span>
+                              <strong className={styles.historyPlayerName} title={pick.playerName}>
+                                {pick.playerName}
+                              </strong>
+                              {pick.isAutoPick && (
+                                <span
+                                  className={styles.historyAutoBadge}
+                                  title="Escolha Automática"
+                                >
+                                  🤖
+                                </span>
+                              )}
+                            </div>
+                            <Badge variant={pick.position as any}>{pick.position}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

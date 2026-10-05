@@ -678,6 +678,273 @@
   border-color: var(--accent-red);
 }
 
+.catalogCounterLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* View Mode Toggle */
+.viewModeToggle {
+  display: flex;
+  align-items: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+
+.viewModeBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: calc(var(--radius-sm) - 2px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all var(--transition-fast);
+}
+
+.viewModeBtn:hover {
+  color: var(--text-primary);
+}
+
+.viewModeBtnActive {
+  background: var(--border-medium);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Player Table (Listagem) */
+.playerTableContainer {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  max-height: 720px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.playerTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.8125rem;
+}
+
+.playerTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-medium);
+}
+
+.playerTableRow {
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--transition-fast);
+}
+
+.playerTableRow td {
+  padding: 8px 14px;
+  vertical-align: middle;
+}
+
+.playerTableRowSelectable {
+  cursor: pointer;
+}
+
+.playerTableRowSelectable:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.rowSelectedMine {
+  background: var(--accent-green-subtle) !important;
+}
+
+.rowSelectedCommish {
+  background: rgba(245, 158, 11, 0.12) !important;
+}
+
+.rowInWishlist {
+  background: rgba(245, 158, 11, 0.04);
+}
+
+.tablePlayerCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tablePlayerPhotoWrapper {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tablePlayerPhoto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tablePlayerPhotoPlaceholder {
+  font-size: 0.875rem;
+}
+
+.tablePlayerInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tablePlayerName {
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tableInterestBadge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--accent-red);
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.tableClubCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+
+.tableClubLogo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.tableAvgPts {
+  color: var(--accent-gold);
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.tableActionsCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.tableBtnDetail {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tableBtnDetail:hover {
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+}
+
+.tableBtnWishlist {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.tableBtnWishlist:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.tableBtnWishlistActive {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.btnPickThisSmall {
+  background: var(--accent-green);
+  color: #0f172a;
+  border: 1px solid var(--accent-green);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.btnPickThisSmall:hover {
+  background: var(--accent-green-hover);
+}
+
+.btnPickCommishSmall {
+  background: var(--accent-gold);
+  color: #0f172a;
+  border: 1px solid var(--accent-gold);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.btnPickCommishSmall:hover {
+  background: #d97706;
+}
+
+@media (max-width: 640px) {
+  .hideMobile {
+    display: none;
+  }
+}
+
 .playerGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -1017,9 +1284,48 @@
 .historyList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 200px;
+  gap: 10px;
+  max-height: 320px;
   overflow-y: auto;
+  padding-right: 4px;
+}
+
+.historyRoundGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+}
+
+.historyRoundHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 4px;
+  margin-bottom: 2px;
+}
+
+.historyRoundTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-gold);
+}
+
+.historyRoundCount {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+.historyRoundPicks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .historyItem {
@@ -1028,6 +1334,46 @@
   align-items: center;
   justify-content: space-between;
   color: var(--text-secondary);
+  gap: 8px;
+}
+
+.historyItemLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.historyPickNum {
+  font-weight: 700;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.historyTeamName {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90px;
+  flex-shrink: 0;
+}
+
+.historyPlayerName {
+  color: var(--text-primary);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.8125rem;
+}
+
+.historyAutoBadge {
+  font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
 /* Mobile Responsive Optimizations */

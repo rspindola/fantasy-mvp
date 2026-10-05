@@ -111,15 +111,6 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
 
   const myTeam = teams.find((t) => t.user_id === user.id)
 
-  // Compute turn team
-  const snakeSlots = generateSnakeOrder(
-    teams.map((t) => t.id),
-    24
-  )
-  const currentPickNum = league.current_pick ?? 1
-  const currentSlot = snakeSlots.find((s) => s.pickNumber === currentPickNum)
-  const turnTeam = teams.find((t) => t.id === currentSlot?.fantasyTeamId)
-
   // Fetch draft picks already made in this league
   const { data: picks } = await supabase
     .from('draft_picks')
@@ -134,16 +125,32 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
     .eq('league_id', leagueId)
     .order('pick_number', { ascending: false })
 
-  const pickedPlayerIds = new Set((picks || []).map((p: any) => p.player.id))
+  const maxCompletedPick =
+    picks && picks.length > 0
+      ? Math.max(...picks.map((p: any) => p.pick_number))
+      : 0
+  const currentPickNum = Math.max(league.current_pick ?? 1, maxCompletedPick + 1)
+
+  // Compute turn team
+  const snakeSlots = generateSnakeOrder(
+    teams.map((t) => t.id),
+    24
+  )
+  const currentSlot = snakeSlots.find((s) => s.pickNumber === currentPickNum)
+  const turnTeam = teams.find((t) => t.id === currentSlot?.fantasyTeamId)
+
+  const pickedPlayerIds = new Set((picks || []).map((p: any) => p.player?.id).filter(Boolean))
 
   // Fetch my roster players
   const myPicks = (picks || []).filter((p: any) => p.team?.name === myTeam?.name)
-  const myRoster = myPicks.map((p: any) => ({
-    id: p.player.id,
-    name: p.player.name,
-    position: p.player.position,
-    clubShortName: '',
-  }))
+  const myRoster = myPicks
+    .filter((p: any) => p.player)
+    .map((p: any) => ({
+      id: p.player.id,
+      name: p.player.name,
+      position: p.player.position,
+      clubShortName: '',
+    }))
 
   // Fetch my wishlist / queue
   let myWishlist: { playerId: string; playerName: string; position: string; priority: number }[] = []
@@ -231,14 +238,18 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
       interestCount: interestMap[p.id] ?? 0,
     }))
 
-  const recentPicks = (picks || []).slice(0, 30).map((p: any) => ({
-    pickNumber: p.pick_number,
-    round: p.round,
-    teamName: p.team?.name ?? 'Time',
-    playerName: p.player?.name ?? 'Jogador',
-    position: p.player?.position ?? 'MEI',
-    isAutoPick: p.is_auto_pick ?? false,
-  }))
+  // Map all completed picks ordered from oldest to newest (pick #1, #2, ...)
+  const recentPicks = (picks || [])
+    .slice()
+    .sort((a: any, b: any) => a.pick_number - b.pick_number)
+    .map((p: any) => ({
+      pickNumber: p.pick_number,
+      round: p.round,
+      teamName: p.team?.name ?? 'Time',
+      playerName: p.player?.name ?? 'Jogador',
+      position: p.player?.position ?? 'MEI',
+      isAutoPick: p.is_auto_pick ?? false,
+    }))
 
   const teamMap = new Map(teams.map((t) => [t.id, t]))
 
@@ -407,6 +418,22 @@ export async function triggerAutoPickAction(leagueId: string) {
 
   const queuedPlayerIds = (queueData || []).map((q: any) => q.player_id)
 
+  // Fetch current turn team's actual roster
+  const { data: turnTeamPicks } = await supabase
+    .from('draft_picks')
+    .select('player:real_players(id, name, position)')
+    .eq('league_id', leagueId)
+    .eq('fantasy_team_id', data.currentTurnTeamId)
+
+  const turnTeamRoster = (turnTeamPicks || [])
+    .filter((p: any) => p.player)
+    .map((p: any) => ({
+      id: p.player.id,
+      name: p.player.name,
+      position: p.player.position,
+      clubShortName: '',
+    }))
+
   const candidates = data.availablePlayers.map((p) => ({
     id: p.id,
     name: p.name,
@@ -415,7 +442,7 @@ export async function triggerAutoPickAction(leagueId: string) {
     totalMinutes: p.totalMinutes,
   }))
 
-  const chosen = autoPickPlayer(candidates, data.myRoster, queuedPlayerIds)
+  const chosen = autoPickPlayer(candidates, turnTeamRoster, queuedPlayerIds)
   if (chosen) {
     await makePickEngine(leagueId, '', chosen.id, true)
   }

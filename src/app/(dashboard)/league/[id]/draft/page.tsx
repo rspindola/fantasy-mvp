@@ -41,6 +41,8 @@ export default function DraftRoomPage() {
   const [loading, setLoading] = useState(true)
   const [modalPlayerId, setModalPlayerId] = useState<string | null>(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
+  const [showCommissionerQueuesModal, setShowCommissionerQueuesModal] = useState(false)
+  const [selectedQueueTeamId, setSelectedQueueTeamId] = useState<string | null>(null)
   const [posFilter, setPosFilter] = useState<string>('TODOS')
   const [clubFilter, setClubFilter] = useState<string>('TODOS')
   const [isClubDropdownOpen, setIsClubDropdownOpen] = useState(false)
@@ -431,17 +433,51 @@ export default function DraftRoomPage() {
                 data.isMyTurn && !data.isPaused ? styles.turnBoxMyTurn : ''
               }`}
             >
-              <div>
-                <div className={styles.turnLabel}>Vez de Escolher:</div>
-                <div className={styles.turnTeamName}>{data.currentTurnTeamName}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                <div>
+                  <div className={styles.turnLabel}>Vez de Escolher:</div>
+                  <div className={styles.turnTeamName}>{data.currentTurnTeamName}</div>
+                </div>
+                {data.isMyTurn && !data.isPaused && (
+                  <span className={styles.turnMyBadge}>⚡ Sua Vez!</span>
+                )}
+                {data.isCommissioner && !data.isMyTurn && !data.isPaused && (
+                  <span className={styles.commissionerBadge}>
+                    👑 Modo Comissário
+                  </span>
+                )}
               </div>
-              {data.isMyTurn && !data.isPaused && (
-                <span className={styles.turnMyBadge}>⚡ Sua Vez!</span>
-              )}
-              {data.isCommissioner && !data.isMyTurn && !data.isPaused && (
-                <span className={styles.commissionerBadge}>
-                  👑 Modo Comissário
-                </span>
+
+              {data.nextAutoPick && (
+                <div
+                  className={styles.nextAutoPickCard}
+                  title="Jogador que será escolhido automaticamente caso o timer chegue a zero"
+                >
+                  <div className={styles.nextAutoPickHeaderRow}>
+                    <span className={styles.nextAutoPickTitle}>
+                      <span className={styles.nextAutoPickPulseDot} />
+                      Se o tempo esgotar:
+                    </span>
+                    <span className={styles.nextAutoPickSourceBadge}>
+                      {data.nextAutoPick.source === 'wishlist'
+                        ? `⭐ #${data.nextAutoPick.wishlistPriority} da Fila Pré-Draft`
+                        : `🤖 Auto-Pick Inteligente`}
+                    </span>
+                  </div>
+                  <div className={styles.nextAutoPickPlayerRow}>
+                    <strong className={styles.nextAutoPickPlayerName}>
+                      {data.nextAutoPick.playerName}
+                    </strong>
+                    <Badge variant={data.nextAutoPick.position as any}>
+                      {data.nextAutoPick.position}
+                    </Badge>
+                    {(data.nextAutoPick.clubShortName || data.nextAutoPick.clubName) && (
+                      <span className={styles.nextAutoPickClubBadge}>
+                        {data.nextAutoPick.clubShortName || data.nextAutoPick.clubName}
+                      </span>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
 
@@ -463,15 +499,29 @@ export default function DraftRoomPage() {
               ) : null}
 
               {data.isCommissioner && (
-                <Button
-                  variant={data.isPaused ? 'primary' : 'ghost'}
-                  size="sm"
-                  className={styles.pauseDraftBtn}
-                  onClick={handleTogglePause}
-                  isLoading={isPending}
-                >
-                  {data.isPaused ? '▶️ Retomar Draft' : '⏸️ Pausar Draft'}
-                </Button>
+                <>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className={styles.commissionerQueuesBtn}
+                    onClick={() => {
+                      setSelectedQueueTeamId(data.currentTurnTeamId)
+                      setShowCommissionerQueuesModal(true)
+                    }}
+                    title="Visualizar as filas pré-draft cadastradas pelos times"
+                  >
+                    📋 Filas Pré-Draft
+                  </Button>
+                  <Button
+                    variant={data.isPaused ? 'primary' : 'ghost'}
+                    size="sm"
+                    className={styles.pauseDraftBtn}
+                    onClick={handleTogglePause}
+                    isLoading={isPending}
+                  >
+                    {data.isPaused ? '▶️ Retomar Draft' : '⏸️ Pausar Draft'}
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -1708,6 +1758,134 @@ export default function DraftRoomPage() {
             <Button size="md" variant="secondary" onClick={() => setShowOrderModal(false)}>
               Fechar
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Commissioner Pre-Draft Queues Modal */}
+      {showCommissionerQueuesModal && data?.allTeamQueues && (
+        <div
+          className={styles.queuesModalOverlay}
+          onClick={() => setShowCommissionerQueuesModal(false)}
+        >
+          <div
+            className={styles.queuesModalContent}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.queuesModalHeader}>
+              <h3 className={styles.queuesModalTitle}>
+                📋 Filas Pré-Draft dos Times
+              </h3>
+              <button
+                type="button"
+                className={styles.queuesModalCloseBtn}
+                onClick={() => setShowCommissionerQueuesModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Team selection tabs */}
+            <div className={styles.queuesTeamTabs}>
+              {data.allTeamQueues.map((t) => {
+                const isSelected = (selectedQueueTeamId || data.currentTurnTeamId) === t.teamId
+                const isOnClock = data.currentTurnTeamId === t.teamId
+                return (
+                  <button
+                    key={t.teamId}
+                    type="button"
+                    className={`${styles.queuesTeamTab} ${
+                      isSelected ? styles.queuesTeamTabActive : ''
+                    } ${isOnClock && !isSelected ? styles.queuesTeamTabOnClock : ''}`}
+                    onClick={() => setSelectedQueueTeamId(t.teamId)}
+                  >
+                    <span>{t.teamName}</span>
+                    <span style={{ fontSize: '0.72rem', opacity: 0.85 }}>
+                      ({t.queue.length})
+                    </span>
+                    {isOnClock && <span style={{ fontSize: '0.65rem' }}>⏱️ Na Vez</span>}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Body showing selected team's queue */}
+            <div className={styles.queuesModalBody}>
+              {(() => {
+                const currentSelectedTeam =
+                  data.allTeamQueues.find(
+                    (t) => t.teamId === (selectedQueueTeamId || data.currentTurnTeamId)
+                  ) || data.allTeamQueues[0]
+
+                if (!currentSelectedTeam) return null
+
+                const isOnClock = currentSelectedTeam.teamId === data.currentTurnTeamId
+
+                return (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                      <div>
+                        <strong style={{ color: '#f8fafc', fontSize: '1rem' }}>
+                          {currentSelectedTeam.teamName}
+                        </strong>
+                        <span style={{ color: '#94a3b8', fontSize: '0.8rem', marginLeft: '8px' }}>
+                          {currentSelectedTeam.queue.length} jogador(es) na fila
+                        </span>
+                      </div>
+                      {isOnClock && data.nextAutoPick && (
+                        <div style={{ fontSize: '0.75rem', color: '#fbbf24', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '3px 8px', borderRadius: '4px' }}>
+                          ⏱️ Próximo se tempo esgotar: <strong>{data.nextAutoPick.playerName}</strong> ({data.nextAutoPick.position})
+                        </div>
+                      )}
+                    </div>
+
+                    {currentSelectedTeam.queue.length === 0 ? (
+                      <div className={styles.queuesEmptyNotice}>
+                        <span style={{ fontSize: '1.5rem' }}>📭</span>
+                        <strong style={{ color: '#e2e8f0' }}>Nenhum jogador na fila pré-draft</strong>
+                        <span>
+                          Este time não configurou uma lista de preferências. Caso o tempo acabe,
+                          o sistema selecionará automaticamente o jogador com maior média para a posição mais carente do elenco.
+                        </span>
+                      </div>
+                    ) : (
+                      <div className={styles.queuesList}>
+                        {currentSelectedTeam.queue.map((item) => (
+                          <div
+                            key={item.playerId}
+                            className={`${styles.queuesItem} ${
+                              !item.isAvailable ? styles.queuesItemUnavailable : ''
+                            }`}
+                          >
+                            <div className={styles.queuesItemLeft}>
+                              <span className={styles.queuesPriorityBadge}>#{item.priority}</span>
+                              <div className={styles.queuesPlayerInfo}>
+                                <span className={styles.queuesPlayerName}>{item.playerName}</span>
+                                <span className={styles.queuesPlayerSub}>
+                                  {item.clubShortName || 'Clube'}
+                                </span>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Badge variant={item.position as any}>{item.position}</Badge>
+                              {item.isAvailable ? (
+                                <span className={`${styles.queuesStatusBadge} ${styles.queuesStatusAvailable}`}>
+                                  🟢 Disponível
+                                </span>
+                              ) : (
+                                <span className={`${styles.queuesStatusBadge} ${styles.queuesStatusPicked}`}>
+                                  ⛔ Já Escolhido
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
+            </div>
           </div>
         </div>
       )}

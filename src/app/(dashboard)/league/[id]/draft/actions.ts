@@ -85,6 +85,27 @@ export type DraftStateData = {
     position: string
     isAutoPick: boolean
   }[]
+  nextAutoPick?: {
+    playerId: string
+    playerName: string
+    position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'
+    clubName: string
+    clubShortName: string
+    source: 'wishlist' | 'auto_rank'
+    wishlistPriority?: number
+  } | null
+  allTeamQueues?: {
+    teamId: string
+    teamName: string
+    queue: {
+      playerId: string
+      playerName: string
+      position: string
+      clubShortName: string
+      priority: number
+      isAvailable: boolean
+    }[]
+  }[]
 }
 
 export async function getDraftRoomData(leagueId: string): Promise<DraftStateData | null> {
@@ -156,43 +177,50 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
       clubShortName: '',
     }))
 
-  // Fetch my wishlist / queue
-  let myWishlist: { playerId: string; playerName: string; position: string; priority: number }[] = []
-  if (myTeam) {
-    const { data: queueData } = await supabase
+  // Fetch teams in this league to calculate interest count and pre-draft queues
+  const teamIds = teams.map((t) => t.id)
+  const interestMap: Record<string, number> = {}
+  let leagueQueues: any[] = []
+
+  if (teamIds.length > 0) {
+    const { data: qData } = await supabase
       .from('draft_queues')
       .select(`
+        id,
         priority,
         player_id,
-        player:real_players(name, position)
+        fantasy_team_id,
+        player:real_players(
+          id,
+          name,
+          position,
+          club:real_clubs(name, short_name)
+        )
       `)
-      .eq('fantasy_team_id', myTeam.id)
+      .in('fantasy_team_id', teamIds)
       .order('priority', { ascending: true })
 
-    if (queueData) {
-      myWishlist = queueData
-        .filter((q: any) => !pickedPlayerIds.has(q.player_id))
-        .map((q: any) => ({
-          playerId: q.player_id,
-          playerName: q.player?.name ?? 'Jogador',
-          position: q.player?.position ?? 'MEI',
-          priority: q.priority,
-        }))
+    leagueQueues = qData || []
+
+    for (const q of leagueQueues) {
+      interestMap[q.player_id] = (interestMap[q.player_id] || 0) + 1
     }
   }
 
-  // Fetch teams in this league to calculate interest count
-  const teamIds = teams.map((t) => t.id)
-  const interestMap: Record<string, number> = {}
-  if (teamIds.length > 0) {
-    const { data: leagueQueues } = await supabase
-      .from('draft_queues')
-      .select('player_id, fantasy_team_id')
-      .in('fantasy_team_id', teamIds)
-
-    for (const q of leagueQueues || []) {
-      interestMap[q.player_id] = (interestMap[q.player_id] || 0) + 1
-    }
+  // Fetch my wishlist / queue
+  let myWishlist: { playerId: string; playerName: string; position: string; priority: number }[] = []
+  if (myTeam) {
+    myWishlist = leagueQueues
+      .filter((q: any) => q.fantasy_team_id === myTeam.id && !pickedPlayerIds.has(q.player_id))
+      .map((q: any) => {
+        const p = Array.isArray(q.player) ? q.player[0] : q.player
+        return {
+          playerId: q.player_id,
+          playerName: p?.name ?? 'Jogador',
+          position: p?.position ?? 'MEI',
+          priority: q.priority,
+        }
+      })
   }
 
   // Fetch clubs for filter
@@ -329,12 +357,85 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
         : league.draft_started_at
       : null
 
+  // Compute next auto-pick player for the team currently on the clock
+  let nextAutoPick: DraftStateData['nextAutoPick'] = null
+  if (turnTeam && league.status === 'drafting') {
+    const turnTeamQueues = leagueQueues
+      .filter((q: any) => q.fantasy_team_id === turnTeam.id)
+      .sort((a: any, b: any) => a.priority - b.priority)
+    const turnQueuedPlayerIds = turnTeamQueues.map((q: any) => q.player_id)
+
+    // Current roster of the turn team
+    const turnTeamPicks = (picks || []).filter(
+      (p: any) => (Array.isArray(p.team) ? p.team[0]?.name : p.team?.name) === turnTeam.name
+    )
+    const turnTeamRoster = turnTeamPicks
+      .filter((p: any) => p.player)
+      .map((p: any) => ({
+        position: (Array.isArray(p.player) ? p.player[0]?.position : p.player?.position) as any,
+      }))
+
+    const candidates = availablePlayers
+      .filter((p) => !p.isPicked)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        position: p.position,
+        avgPoints: p.avgPoints,
+        totalMinutes: p.totalMinutes,
+      }))
+
+    const chosen = autoPickPlayer(candidates, turnTeamRoster, turnQueuedPlayerIds)
+    if (chosen) {
+      const isFromQueue = turnQueuedPlayerIds.includes(chosen.id)
+      const qIndex = turnQueuedPlayerIds.indexOf(chosen.id)
+      const chosenPlayerMeta = availablePlayers.find((p) => p.id === chosen.id)
+
+      nextAutoPick = {
+        playerId: chosen.id,
+        playerName: chosen.name,
+        position: chosen.position,
+        clubName: chosenPlayerMeta?.clubName ?? '',
+        clubShortName: chosenPlayerMeta?.clubShortName ?? '',
+        source: isFromQueue ? 'wishlist' : 'auto_rank',
+        wishlistPriority: isFromQueue && qIndex >= 0 ? qIndex + 1 : undefined,
+      }
+    }
+  }
+
+  // Pre-draft queues of all teams (accessible to commissioner)
+  const isCommissioner = league.commissioner_id === user.id
+  const allTeamQueues = isCommissioner
+    ? teams.map((t) => {
+        const teamQueues = leagueQueues
+          .filter((q: any) => q.fantasy_team_id === t.id)
+          .sort((a: any, b: any) => a.priority - b.priority)
+        return {
+          teamId: t.id,
+          teamName: t.name,
+          queue: teamQueues.map((q: any) => {
+            const p = Array.isArray(q.player) ? q.player[0] : q.player
+            const club = Array.isArray(p?.club) ? p?.club[0] : p?.club
+            const isPicked = pickedPlayerIds.has(q.player_id)
+            return {
+              playerId: q.player_id,
+              playerName: p?.name ?? 'Jogador',
+              position: p?.position ?? 'MEI',
+              clubShortName: club?.short_name ?? '',
+              priority: q.priority,
+              isAvailable: !isPicked,
+            }
+          }),
+        }
+      })
+    : []
+
   return {
     leagueId: league.id,
     leagueName: league.name,
     status: league.status,
     isPaused: league.is_paused ?? false,
-    isCommissioner: league.commissioner_id === user.id,
+    isCommissioner,
     currentPick: currentPickNum,
     totalPicks: league.total_picks,
     pickTimerSeconds: league.pick_timer_seconds,
@@ -351,6 +452,8 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
     myRoster,
     myWishlist,
     recentPicks,
+    nextAutoPick,
+    allTeamQueues,
   }
 }
 

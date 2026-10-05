@@ -2000,3 +2000,296 @@
   }
 }
 
+/* ==========================================================================
+   Next Auto-Pick Target Banner & Commissioner Queues Modal
+   ========================================================================== */
+
+.nextAutoPickCard {
+  margin-top: 8px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px dashed rgba(245, 158, 11, 0.4);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nextAutoPickHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.nextAutoPickTitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nextAutoPickPulseDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+  display: inline-block;
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.nextAutoPickPlayerRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nextAutoPickPlayerName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.nextAutoPickClubBadge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.nextAutoPickSourceBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.commissionerQueuesBtn {
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  font-weight: 700 !important;
+  transition: all 0.2s ease !important;
+}
+
+.commissionerQueuesBtn:hover {
+  background: rgba(245, 158, 11, 0.22) !important;
+  border-color: #fbbf24 !important;
+}
+
+/* Modal styles for Commissioner Queues */
+.queuesModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.queuesModalContent {
+  background: #111a2e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.queuesModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.queuesModalTitle {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.queuesModalCloseBtn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.queuesModalCloseBtn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.queuesTeamTabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 20px;
+  overflow-x: auto;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.queuesTeamTab {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.queuesTeamTab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+}
+
+.queuesTeamTabActive {
+  background: #3b82f6 !important;
+  border-color: #60a5fa !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.queuesTeamTabOnClock {
+  border-color: rgba(245, 158, 11, 0.6) !important;
+  color: #fbbf24;
+}
+
+.queuesModalBody {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.queuesEmptyNotice {
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.queuesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.queuesItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 14px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.queuesItemUnavailable {
+  opacity: 0.55;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.queuesItemLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.queuesPriorityBadge {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.06);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.queuesPlayerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.queuesPlayerName {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.queuesPlayerSub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.queuesStatusBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.queuesStatusAvailable {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.queuesStatusPicked {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+

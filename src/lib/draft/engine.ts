@@ -3,6 +3,7 @@ import { generateSnakeOrder } from './snake-order'
 import { autoPickPlayer, type PlayerCandidate, type PositionKey } from './auto-pick'
 import { generateBergerMatchups } from '@/lib/h2h/berger-generator'
 import { h2hRoundsNeeded } from '@/lib/league/h2h-validation'
+import { notifyDraftTurn } from '@/lib/whatsapp/draft-notification'
 
 /**
  * Starts the draft for a league:
@@ -153,6 +154,11 @@ export async function makePickEngine(
       .from('leagues')
       .update({ current_pick: nextPick })
       .eq('id', leagueId)
+
+    // 6. Notify next player via WhatsApp (fire-and-forget)
+    notifyDraftTurn(leagueId, nextPick).catch((err) =>
+      console.error('[Draft] WhatsApp notification failed:', err)
+    )
   }
 
   return {

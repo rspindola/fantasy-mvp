@@ -123,6 +123,7 @@ export async function fetchAndPopulateRounds(startRound: number, endRound: numbe
     const fixturesRes = await client.query(
       `
       SELECT f.id, f.round, f.api_fixture_id, f.home_club_id, f.away_club_id,
+             f.home_score, f.away_score,
              hc.name as home, ac.name as away
       FROM fixtures f
       JOIN real_clubs hc ON hc.id = f.home_club_id
@@ -255,6 +256,10 @@ export async function fetchAndPopulateRounds(startRound: number, endRound: numbe
       const statsRows: any[] = []
 
       for (const teamItem of fixtureData) {
+        const apiTeamId = teamItem.team?.id
+        const dbClubId = clubIdMap.get(apiTeamId)
+        const isHome = dbClubId ? dbClubId === f.home_club_id : null
+        const teamGoalsConceded = isHome === true ? (f.away_score ?? 0) : (f.home_score ?? 0)
         const players = teamItem.players || []
 
         for (let pIdx = 0; pIdx < players.length; pIdx++) {
@@ -271,9 +276,12 @@ export async function fetchAndPopulateRounds(startRound: number, endRound: numbe
           const goals = stats.goals?.total || 0
           const assists = stats.goals?.assists || 0
           const saves = stats.goals?.saves || 0
-          const goalsConceded = stats.goals?.conceded || 0
+          const goalsConceded = position === 'GOL' ? (stats.goals?.conceded ?? teamGoalsConceded) : 0
           const cleanSheet =
-            (position === 'GOL' || position === 'ZAG' || position === 'LAT') && minutes >= 45 && goalsConceded === 0
+            (position === 'GOL' || position === 'ZAG' || position === 'LAT') &&
+            minutes >= 45 &&
+            teamGoalsConceded === 0 &&
+            (position !== 'GOL' || goalsConceded === 0)
           const tackles = (stats.tackles?.total || 0) + (stats.tackles?.interceptions || 0)
           const foulsCommitted = stats.fouls?.committed || 0
           const foulsDrawn = stats.fouls?.drawn || 0

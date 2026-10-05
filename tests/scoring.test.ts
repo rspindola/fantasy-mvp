@@ -137,4 +137,39 @@ describe('Cartola FC Scoring Engine', () => {
     // 3.0 - 0.5 = 2.5
     expect(calculatePlayerScoring(scouts)).toBe(2.5)
   })
+
+  it('calculates lateral score correctly with and without clean sheet', () => {
+    const baseScouts: PlayerScouts = {
+      position: 'LAT',
+      minutes: 82,
+      goals: 1, // +8.0
+      assists: 1, // +4.0
+      tackles: 7, // 7 * 1.5 = +10.5
+      shotsOnTarget: 1, // +1.2
+      passesCompleted: 19, // 19 * 0.1 = +1.9
+      passesFailed: 8, // 8 * -0.1 = -0.8
+      yellowCards: 1, // -1.0
+      cleanSheet: false, // Team conceded goal (2-1)
+      shotsOnWoodwork: 0,
+      shotsOffTarget: 0,
+      foulsDrawn: 0,
+      penaltiesWon: 0,
+      offsides: 0,
+      penaltiesMissed: 0,
+      saves: 0,
+      penaltySaves: 0,
+      foulsCommitted: 0,
+      ownGoals: 0,
+      redCards: 0,
+      goalsConceded: 0,
+      penaltiesCommitted: 0,
+    }
+
+    // 8 + 4 + 10.5 + 1.2 + 1.9 - 0.8 - 1.0 = 23.8
+    expect(calculatePlayerScoring(baseScouts)).toBe(23.8)
+
+    // If clean sheet was kept (+5.0): 23.8 + 5.0 = 28.8
+    expect(calculatePlayerScoring({ ...baseScouts, cleanSheet: true })).toBe(28.8)
+  })
 })
+

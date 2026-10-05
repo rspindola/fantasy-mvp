@@ -1425,6 +1425,204 @@
   border-radius: var(--radius-sm);
 }
 
+/* ==========================================================================
+   Radar de Elenco (Sidebar Widget)
+   ========================================================================== */
+
+.radarCard {
+  background: #111a2e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.radarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.radarTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.radarShieldIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.radarTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.radarCountHeader {
+  color: #f8fafc;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.radarVacanciesBadge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.radarPositionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.radarPositionRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.radarPositionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.radarPositionLabel {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.radarPositionStats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.radarCountFraction {
+  color: #e2e8f0;
+  font-weight: 700;
+  font-size: 0.825rem;
+  font-family: var(--font-mono, monospace), inherit;
+}
+
+.radarStatusCritical {
+  color: #f87171;
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.radarStatusPriority {
+  color: #fb7185;
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.radarStatusDeficit {
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.8rem;
+  font-family: var(--font-mono, monospace), inherit;
+}
+
+.radarStatusComplete {
+  color: #34d399;
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.5px;
+}
+
+.radarProgressBarTrack {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.radarProgressBarFill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.radarPlayersSubtext {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  padding-left: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.4;
+  font-family: var(--font-mono, monospace), inherit;
+}
+
+.radarPlayerBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s ease;
+}
+
+.radarPlayerBtn:hover {
+  color: #38bdf8;
+  text-decoration: underline;
+}
+
+.radarFooter {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.radarFooterLabel {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.radarFooterValue {
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  font-family: var(--font-mono, monospace), inherit;
+  letter-spacing: 0.3px;
+}
+
 .wishlistList {
   display: flex;
   flex-direction: column;

@@ -20,6 +20,20 @@ import { Badge } from '@/components/ui/Badge'
 import { PlayerDetailModal } from '@/components/player/PlayerDetailModal'
 import styles from './page.module.css'
 
+const RADAR_POSITIONS: {
+  key: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'
+  label: string
+  target: number
+  color: string
+  criticalWhenZero?: boolean
+}[] = [
+  { key: 'GOL', label: 'Goleiros (GOL)', target: 3, color: '#fbbf24', criticalWhenZero: true },
+  { key: 'LAT', label: 'Laterais (LAT)', target: 4, color: '#22d3ee' },
+  { key: 'ZAG', label: 'Zagueiros (ZAG)', target: 4, color: '#38bdf8' },
+  { key: 'MEI', label: 'Meias (MEI)', target: 6, color: '#34d399' },
+  { key: 'ATA', label: 'Atacantes (ATA)', target: 5, color: '#fb7185' },
+]
+
 export default function DraftRoomPage() {
   const params = useParams()
   const leagueId = params.id as string
@@ -39,6 +53,25 @@ export default function DraftRoomPage() {
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [availabilityFilter, setAvailabilityFilter] = useState<'ALL' | 'AVAILABLE' | 'PICKED'>('ALL')
+
+  const rosterByPosition = useMemo(() => {
+    const map: Record<string, { id: string; name: string; position: string }[]> = {
+      GOL: [],
+      LAT: [],
+      ZAG: [],
+      MEI: [],
+      ATA: [],
+    }
+    for (const p of data?.myRoster || []) {
+      if (map[p.position]) {
+        map[p.position].push(p)
+      }
+    }
+    return map
+  }, [data?.myRoster])
+
+  const totalDrafted = data?.myRoster?.length || 0
+  const remainingRosterSlots = Math.max(0, 24 - totalDrafted)
 
   useEffect(() => {
     try {
@@ -1376,29 +1409,105 @@ export default function DraftRoomPage() {
               </div>
             </div>
 
-            {/* Meu Elenco */}
-            <div className={styles.sidebarSection}>
-              <h3 className={styles.sidebarTitle}>
-                Meu Elenco ({data.myRoster.length}/24)
-              </h3>
-              <div className={styles.rosterList}>
-                {data.myRoster.length === 0 ? (
-                  <span
-                    style={{
-                      fontSize: '0.8125rem',
-                      color: 'var(--text-muted)',
-                    }}
-                  >
-                    Nenhum jogador draftado ainda.
+            {/* Radar de Elenco */}
+            <div className={styles.radarCard}>
+              <div className={styles.radarHeader}>
+                <div className={styles.radarTitleGroup}>
+                  <span className={styles.radarShieldIcon}>
+                    <svg width="16" height="19" viewBox="0 0 24 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <clipPath id="radarShieldClip">
+                          <path d="M12 2L3 5.5V13.5C3 19.5 7.5 24.5 12 26C16.5 24.5 21 19.5 21 13.5V5.5L12 2Z" />
+                        </clipPath>
+                      </defs>
+                      <g clipPath="url(#radarShieldClip)">
+                        <rect width="24" height="28" fill="#ffffff" />
+                        <rect x="0" y="0" width="4.8" height="28" fill="#ef4444" />
+                        <rect x="9.6" y="0" width="4.8" height="28" fill="#ef4444" />
+                        <rect x="19.2" y="0" width="4.8" height="28" fill="#ef4444" />
+                      </g>
+                      <path d="M12 2L3 5.5V13.5C3 19.5 7.5 24.5 12 26C16.5 24.5 21 19.5 21 13.5V5.5L12 2Z" fill="none" stroke="#94a3b8" strokeWidth="1.5" />
+                    </svg>
                   </span>
-                ) : (
-                  data.myRoster.map((p, idx) => (
-                    <div key={idx} className={styles.rosterItem}>
-                      <span>{p.name}</span>
-                      <Badge variant={p.position as any}>{p.position}</Badge>
+                  <h3 className={styles.radarTitle}>
+                    RADAR DE ELENCO <span className={styles.radarCountHeader}>({totalDrafted}/24)</span>
+                  </h3>
+                </div>
+                <div className={styles.radarVacanciesBadge}>
+                  {remainingRosterSlots === 0
+                    ? 'ELENCO COMPLETO'
+                    : `${remainingRosterSlots} ${remainingRosterSlots === 1 ? 'VAGA RESTANTE' : 'VAGAS RESTANTES'}`}
+                </div>
+              </div>
+
+              <div className={styles.radarPositionsList}>
+                {RADAR_POSITIONS.map((pos) => {
+                  const players = rosterByPosition[pos.key] || []
+                  const count = players.length
+                  const pct = Math.min(100, Math.round((count / pos.target) * 100))
+
+                  return (
+                    <div key={pos.key} className={styles.radarPositionRow}>
+                      <div className={styles.radarPositionHeader}>
+                        <span className={styles.radarPositionLabel} style={{ color: pos.color }}>
+                          {pos.label}
+                        </span>
+                        <div className={styles.radarPositionStats}>
+                          <span className={styles.radarCountFraction}>
+                            {count} / {pos.target}
+                          </span>
+                          {count === 0 ? (
+                            pos.criticalWhenZero ? (
+                              <span className={styles.radarStatusCritical}>CRÍTICO</span>
+                            ) : (
+                              <span className={styles.radarStatusPriority}>PRIORIDADE</span>
+                            )
+                          ) : count < pos.target ? (
+                            <span className={styles.radarStatusDeficit}>(-{pos.target - count})</span>
+                          ) : count === pos.target ? (
+                            <span className={styles.radarStatusComplete}>OK</span>
+                          ) : (
+                            <span className={styles.radarStatusComplete}>(+{count - pos.target})</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className={styles.radarProgressBarTrack}>
+                        <div
+                          className={styles.radarProgressBarFill}
+                          style={{
+                            width: `${pct}%`,
+                            backgroundColor: pos.color,
+                          }}
+                        />
+                      </div>
+
+                      {count > 0 && (
+                        <div className={styles.radarPlayersSubtext}>
+                          <span>•</span>
+                          {players.map((p, idx) => (
+                            <span key={p.id || idx}>
+                              <button
+                                type="button"
+                                className={styles.radarPlayerBtn}
+                                onClick={() => setModalPlayerId(p.id)}
+                                title="Ver detalhes do jogador"
+                              >
+                                {p.name}
+                              </button>
+                              {idx < players.length - 1 && ', '}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ))
-                )}
+                  )
+                })}
+              </div>
+
+              <div className={styles.radarFooter}>
+                <span className={styles.radarFooterLabel}>Teto Salarial Utilizado:</span>
+                <span className={styles.radarFooterValue}>Livre (Draft Snake)</span>
               </div>
             </div>
 

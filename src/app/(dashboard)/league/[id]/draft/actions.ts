@@ -204,7 +204,7 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
     logoUrl: c.logo_url ?? null,
   }))
 
-  // Fetch available real players from catalog ordered by avg_points desc
+  // Fetch available real players from catalog ordered alphabetically by name
   const { data: players } = await supabase
     .from('real_players')
     .select(`
@@ -218,7 +218,7 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
       club:real_clubs(id, name, short_name, logo_url)
     `)
     .eq('is_active', true)
-    .order('avg_points', { ascending: false, nullsFirst: false })
+    .order('name', { ascending: true })
     .limit(1000)
 
   // Filter out already draft picks and map available

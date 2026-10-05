@@ -342,16 +342,18 @@ export default function DraftRoomPage() {
   const roundPicks = (data.allPicks || []).filter((p) => p.round === activeRound)
   const selectedClub = data.clubs?.find((c) => c.id === clubFilter)
 
-  const filteredPlayers = data.availablePlayers.filter((p) => {
-    const matchesPos = posFilter === 'TODOS' || p.position === posFilter
-    const matchesClub = clubFilter === 'TODOS' || p.clubId === clubFilter
-    const matchesSearch =
-      search === '' ||
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.clubName.toLowerCase().includes(search.toLowerCase()) ||
-      p.clubShortName.toLowerCase().includes(search.toLowerCase())
-    return matchesPos && matchesClub && matchesSearch
-  })
+  const filteredPlayers = (data.availablePlayers || [])
+    .filter((p) => {
+      const matchesPos = posFilter === 'TODOS' || p.position === posFilter
+      const matchesClub = clubFilter === 'TODOS' || p.clubId === clubFilter
+      const matchesSearch =
+        search === '' ||
+        p.name.toLowerCase().includes(search.toLowerCase()) ||
+        p.clubName.toLowerCase().includes(search.toLowerCase()) ||
+        p.clubShortName.toLowerCase().includes(search.toLowerCase())
+      return matchesPos && matchesClub && matchesSearch
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }))
 
   const wishlistPlayerIds = new Set(data.myWishlist.map((w) => w.playerId))
 

@@ -25,13 +25,12 @@ const RADAR_POSITIONS: {
   label: string
   target: number
   color: string
-  criticalWhenZero?: boolean
 }[] = [
-  { key: 'GOL', label: 'Goleiros (GOL)', target: 3, color: '#fbbf24', criticalWhenZero: true },
+  { key: 'GOL', label: 'Goleiros (GOL)', target: 2, color: '#fbbf24' },
   { key: 'LAT', label: 'Laterais (LAT)', target: 4, color: '#22d3ee' },
   { key: 'ZAG', label: 'Zagueiros (ZAG)', target: 4, color: '#38bdf8' },
-  { key: 'MEI', label: 'Meias (MEI)', target: 6, color: '#34d399' },
-  { key: 'ATA', label: 'Atacantes (ATA)', target: 5, color: '#fb7185' },
+  { key: 'MEI', label: 'Meias (MEI)', target: 8, color: '#34d399' },
+  { key: 'ATA', label: 'Atacantes (ATA)', target: 6, color: '#fb7185' },
 ]
 
 export default function DraftRoomPage() {
@@ -72,6 +71,8 @@ export default function DraftRoomPage() {
 
   const totalDrafted = data?.myRoster?.length || 0
   const remainingRosterSlots = Math.max(0, 24 - totalDrafted)
+  const defTotal =
+    (rosterByPosition['LAT']?.length || 0) + (rosterByPosition['ZAG']?.length || 0)
 
   useEffect(() => {
     try {
@@ -1446,6 +1447,39 @@ export default function DraftRoomPage() {
                   const count = players.length
                   const pct = Math.min(100, Math.round((count / pos.target) * 100))
 
+                  let statusBadge: React.ReactNode = null
+                  if (pos.key === 'GOL') {
+                    if (count === 0) {
+                      statusBadge = <span className={styles.radarStatusCritical}>CRÍTICO</span>
+                    } else if (count < pos.target) {
+                      statusBadge = <span className={styles.radarStatusDeficit}>(-{pos.target - count})</span>
+                    } else {
+                      statusBadge = <span className={styles.radarStatusComplete}>OK</span>
+                    }
+                  } else if (pos.key === 'LAT' || pos.key === 'ZAG') {
+                    const minRequired = 2
+                    if (count === 0) {
+                      statusBadge = <span className={styles.radarStatusPriority}>PRIORIDADE (mín 2)</span>
+                    } else if (count < minRequired) {
+                      statusBadge = <span className={styles.radarStatusDeficit}>(-{minRequired - count} p/ mín 2)</span>
+                    } else if (defTotal >= 8) {
+                      statusBadge = <span className={styles.radarStatusComplete}>OK</span>
+                    } else {
+                      statusBadge = <span className={styles.radarStatusDeficit}>(-{8 - defTotal} DEF)</span>
+                    }
+                  } else {
+                    // MEI (8) & ATA (6)
+                    if (count === 0) {
+                      statusBadge = <span className={styles.radarStatusPriority}>PRIORIDADE</span>
+                    } else if (count < pos.target) {
+                      statusBadge = <span className={styles.radarStatusDeficit}>(-{pos.target - count})</span>
+                    } else if (count === pos.target) {
+                      statusBadge = <span className={styles.radarStatusComplete}>OK</span>
+                    } else {
+                      statusBadge = <span className={styles.radarStatusComplete}>(+{count - pos.target})</span>
+                    }
+                  }
+
                   return (
                     <div key={pos.key} className={styles.radarPositionRow}>
                       <div className={styles.radarPositionHeader}>
@@ -1456,19 +1490,7 @@ export default function DraftRoomPage() {
                           <span className={styles.radarCountFraction}>
                             {count} / {pos.target}
                           </span>
-                          {count === 0 ? (
-                            pos.criticalWhenZero ? (
-                              <span className={styles.radarStatusCritical}>CRÍTICO</span>
-                            ) : (
-                              <span className={styles.radarStatusPriority}>PRIORIDADE</span>
-                            )
-                          ) : count < pos.target ? (
-                            <span className={styles.radarStatusDeficit}>(-{pos.target - count})</span>
-                          ) : count === pos.target ? (
-                            <span className={styles.radarStatusComplete}>OK</span>
-                          ) : (
-                            <span className={styles.radarStatusComplete}>(+{count - pos.target})</span>
-                          )}
+                          {statusBadge}
                         </div>
                       </div>
 
@@ -1500,14 +1522,39 @@ export default function DraftRoomPage() {
                           ))}
                         </div>
                       )}
+
+                      {/* Mini indicador consolidado de Defensores (8 no total, mín. 2Z, 2L) */}
+                      {pos.key === 'ZAG' && (
+                        <div className={styles.radarDefSubRow}>
+                          <span className={styles.radarDefSubRowText}>
+                            🛡️ Total Defesa (mín. 2Z, 2L):
+                          </span>
+                          <span
+                            className={styles.radarDefSubRowValue}
+                            style={{
+                              color:
+                                defTotal >= 8 &&
+                                (rosterByPosition['LAT']?.length || 0) >= 2 &&
+                                (rosterByPosition['ZAG']?.length || 0) >= 2
+                                  ? '#34d399'
+                                  : defTotal > 0
+                                  ? '#e2e8f0'
+                                  : '#f87171',
+                            }}
+                          >
+                            {defTotal} / 8{' '}
+                            {defTotal >= 8 ? '(OK)' : `(-${8 - defTotal})`}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
               </div>
 
               <div className={styles.radarFooter}>
-                <span className={styles.radarFooterLabel}>Teto Salarial Utilizado:</span>
-                <span className={styles.radarFooterValue}>Livre (Draft Snake)</span>
+                <span className={styles.radarFooterLabel}>Regra do Elenco:</span>
+                <span className={styles.radarFooterValue}>2G · 8DEF (mín 2Z, 2L) · 8M · 6A</span>
               </div>
             </div>
 

@@ -9,6 +9,7 @@ import {
   toggleDraftPauseAction,
   addToWishlistAction,
   removeFromWishlistAction,
+  startDraftFromRoomAction,
   type DraftStateData,
 } from './actions'
 import { createClient } from '@/lib/supabase/client'
@@ -25,6 +26,7 @@ export default function DraftRoomPage() {
   const [data, setData] = useState<DraftStateData | null>(null)
   const [loading, setLoading] = useState(true)
   const [modalPlayerId, setModalPlayerId] = useState<string | null>(null)
+  const [showOrderModal, setShowOrderModal] = useState(false)
   const [posFilter, setPosFilter] = useState<string>('TODOS')
   const [search, setSearch] = useState('')
   const [selectedPlayer, setSelectedPlayer] = useState<any | null>(null)
@@ -98,6 +100,18 @@ export default function DraftRoomPage() {
     })
   }
 
+  const handleStartDraftNow = () => {
+    setPickError(null)
+    startTransition(async () => {
+      try {
+        await startDraftFromRoomAction(leagueId)
+        loadData()
+      } catch (err: any) {
+        setPickError(err.message || 'Erro ao iniciar o draft.')
+      }
+    })
+  }
+
   const handleTogglePause = () => {
     startTransition(async () => {
       try {
@@ -142,7 +156,7 @@ export default function DraftRoomPage() {
     )
   }
 
-  const isCompleted = data.status === 'active' || data.currentPick > data.totalPicks
+  const isCompleted = data.status === 'active' || (data.totalPicks > 0 && data.currentPick > data.totalPicks)
 
   const filteredPlayers = data.availablePlayers.filter((p) => {
     const matchesPos = posFilter === 'TODOS' || p.position === posFilter
@@ -162,13 +176,15 @@ export default function DraftRoomPage() {
           <span className={styles.pickInfo}>
             {isCompleted
               ? 'Draft Concluído! 🏆'
+              : data.status === 'open'
+              ? `Aguardando Início do Draft · Timer: ${formatTimerSeconds(data.pickTimerSeconds)}`
               : `Pick ${data.currentPick} de ${data.totalPicks} (Rodada ${Math.ceil(
                   data.currentPick / (data.totalPicks / 24)
                 )} de 24) · Timer: ${formatTimerSeconds(data.pickTimerSeconds)}`}
           </span>
         </div>
 
-        {!isCompleted && (
+        {!isCompleted && data.status === 'drafting' && (
           <div className={styles.controlsGroup}>
             {data.isCommissioner && (
               <Button
@@ -212,6 +228,67 @@ export default function DraftRoomPage() {
           </div>
         )}
       </div>
+
+      {/* Draft Not Started Banner */}
+      {data.status === 'open' && (
+        <div className={styles.notStartedBanner}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>
+              ⏳ O Draft ainda não começou
+            </div>
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+              {data.isCommissioner
+                ? 'Como comissário, clique no botão ao lado para sortear a ordem dos times e iniciar o Pick #1 imediatamente.'
+                : 'Aguarde o comissário da liga iniciar o sorteio das posições e abrir a primeira rodada.'}
+            </div>
+          </div>
+          {data.isCommissioner && (
+            <Button
+              size="md"
+              isLoading={isPending}
+              onClick={handleStartDraftNow}
+            >
+              ⚡ Iniciar Sorteio & Começar Draft Agora
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Snake Upcoming Order Bar */}
+      {data.status === 'drafting' && data.upcomingPicks.length > 0 && (
+        <div className={styles.snakeBar}>
+          <div className={styles.snakeBarHeader}>
+            <span className={styles.snakeBarTitle}>🔄 Ordem das Próximas Escolhas (Snake):</span>
+            <button
+              type="button"
+              onClick={() => setShowOrderModal(true)}
+              className={styles.viewOrderBtn}
+            >
+              📋 Ver Ordem de Todos os Times
+            </button>
+          </div>
+          <div className={styles.snakeTrack}>
+            {data.upcomingPicks.map((p, idx) => (
+              <div
+                key={p.pickNumber}
+                className={`${styles.snakeCard} ${
+                  idx === 0 ? styles.snakeCardCurrent : ''
+                } ${p.isMyTurn ? styles.snakeCardMine : ''}`}
+              >
+                <div className={styles.snakeCardTop}>
+                  <span className={styles.snakePickNum}>Pick #{p.pickNumber}</span>
+                  <span className={styles.snakeRound}>R{p.round}</span>
+                </div>
+                <div className={styles.snakeTeamName} title={p.teamName}>
+                  {p.teamName}
+                </div>
+                {idx === 0 && <span className={styles.snakeCurrentTag}>● Escolhendo</span>}
+                {idx > 0 && p.isMyTurn && <span className={styles.snakeMineTag}>⭐ Você</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Paused Banner */}
       {data.isPaused && !isCompleted && (
@@ -568,6 +645,103 @@ export default function DraftRoomPage() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Draft Order Modal */}
+      {showOrderModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '16px',
+          }}
+          onClick={() => setShowOrderModal(false)}
+        >
+          <div
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-medium)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '24px',
+              maxWidth: '480px',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 700 }}>
+                📋 Ordem do Sorteio (Times)
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowOrderModal(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  fontSize: '1.25rem',
+                  cursor: 'pointer',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+              Nas rodadas ímpares (1, 3, 5...), a ordem segue do 1º ao último. Nas rodadas pares (2, 4, 6...), a ordem se inverte (formato Snake / Serpentina).
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '360px', overflowY: 'auto' }}>
+              {data.draftOrder.map((team) => (
+                <div
+                  key={team.teamId}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: team.isMyTeam ? 'var(--accent-green-subtle)' : 'var(--bg-surface)',
+                    border: team.isMyTeam ? '1px solid var(--accent-green)' : '1px solid var(--border-subtle)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        color: 'var(--accent-gold)',
+                        minWidth: '24px',
+                      }}
+                    >
+                      #{team.order}
+                    </span>
+                    <span style={{ fontWeight: 600 }}>{team.teamName}</span>
+                  </div>
+                  {team.isMyTeam && (
+                    <span
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: 'var(--accent-green)',
+                      }}
+                    >
+                      (Seu Time)
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+            <Button size="md" variant="secondary" onClick={() => setShowOrderModal(false)}>
+              Fechar
+            </Button>
           </div>
         </div>
       )}

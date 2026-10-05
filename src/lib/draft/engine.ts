@@ -33,10 +33,15 @@ export async function startDraftEngine(leagueId: string) {
 
   // Save draft_order for each team
   for (let index = 0; index < shuffled.length; index++) {
-    await supabase
+    const { error: teamErr } = await supabase
       .from('fantasy_teams')
       .update({ draft_order: index + 1 })
       .eq('id', shuffled[index].id)
+
+    if (teamErr) {
+      console.error('Error updating draft order for team:', shuffled[index].id, teamErr)
+      throw new Error(`Erro ao definir ordem do draft: ${teamErr.message}`)
+    }
   }
 
   const numTeams = teams.length
@@ -54,7 +59,8 @@ export async function startDraftEngine(leagueId: string) {
     .eq('id', leagueId)
 
   if (leagueUpdateErr) {
-    throw new Error('Erro ao atualizar status da liga.')
+    console.error('Error updating league status:', leagueUpdateErr)
+    throw new Error(`Erro ao atualizar status da liga: ${leagueUpdateErr.message}`)
   }
 }
 

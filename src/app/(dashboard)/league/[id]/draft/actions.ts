@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { makePickEngine, toggleDraftPauseEngine } from '@/lib/draft/engine'
+import { makePickEngine, toggleDraftPauseEngine, startDraftEngine } from '@/lib/draft/engine'
 import { generateSnakeOrder } from '@/lib/draft/snake-order'
 import { autoPickPlayer } from '@/lib/draft/auto-pick'
 import { revalidatePath } from 'next/cache'
@@ -19,6 +19,19 @@ export type DraftStateData = {
   currentTurnTeamId: string
   currentTurnTeamName: string
   isMyTurn: boolean
+  draftOrder: {
+    order: number
+    teamId: string
+    teamName: string
+    isMyTeam: boolean
+  }[]
+  upcomingPicks: {
+    pickNumber: number
+    round: number
+    teamId: string
+    teamName: string
+    isMyTurn: boolean
+  }[]
   availablePlayers: {
     id: string
     name: string
@@ -174,6 +187,34 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
     isAutoPick: p.is_auto_pick ?? false,
   }))
 
+  const teamMap = new Map(teams.map((t) => [t.id, t]))
+
+  const upcomingPicks =
+    league.status === 'drafting'
+      ? snakeSlots
+          .filter((s) => s.pickNumber >= currentPickNum && s.pickNumber < currentPickNum + 8)
+          .map((s) => {
+            const t = teamMap.get(s.fantasyTeamId)
+            return {
+              pickNumber: s.pickNumber,
+              round: s.round,
+              teamId: s.fantasyTeamId,
+              teamName: t?.name ?? 'Time',
+              isMyTurn: s.fantasyTeamId === myTeam?.id,
+            }
+          })
+      : []
+
+  const draftOrder = teams
+    .filter((t) => t.draft_order !== null)
+    .sort((a, b) => (a.draft_order ?? 0) - (b.draft_order ?? 0))
+    .map((t) => ({
+      order: t.draft_order ?? 0,
+      teamId: t.id,
+      teamName: t.name,
+      isMyTeam: t.id === myTeam?.id,
+    }))
+
   return {
     leagueId: league.id,
     leagueName: league.name,
@@ -187,11 +228,36 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
     currentTurnTeamId: turnTeam?.id ?? '',
     currentTurnTeamName: turnTeam?.name ?? 'Aguardando',
     isMyTurn: turnTeam?.id === myTeam?.id,
+    draftOrder,
+    upcomingPicks,
     availablePlayers,
     myRoster,
     myWishlist,
     recentPicks,
   }
+}
+
+export async function startDraftFromRoomAction(leagueId: string) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Não autenticado')
+
+  const { data: league } = await supabase
+    .from('leagues')
+    .select('commissioner_id, status')
+    .eq('id', leagueId)
+    .single()
+
+  if (!league) throw new Error('Liga não encontrada')
+  if (league.commissioner_id !== user.id) {
+    throw new Error('Apenas o comissário pode iniciar o draft')
+  }
+
+  await startDraftEngine(leagueId)
+  revalidatePath(`/league/${leagueId}/draft`)
 }
 
 export async function submitPickAction(leagueId: string, playerId: string) {

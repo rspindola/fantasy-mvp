@@ -264,33 +264,6 @@ export default function DraftRoomPage() {
 
         {!isCompleted && data.status === 'drafting' && (
           <div className={styles.controlsGroup}>
-            {data.isPaused ? (
-              <div className={styles.countdownPaused}>⏸️ Timer Pausado</div>
-            ) : secondsLeft !== null ? (
-              <div
-                className={`${styles.countdownBox} ${
-                  secondsLeft <= 60 ? styles.countdownUrgent : ''
-                }`}
-                title="Tempo restante para esta escolha"
-              >
-                <span className={styles.countdownLabel}>Tempo Restante</span>
-                <span className={styles.countdownValue}>
-                  {secondsLeft === 0 ? '00:00 (Esgotado)' : formatCountdown(secondsLeft)}
-                </span>
-              </div>
-            ) : null}
-
-            {data.isCommissioner && (
-              <Button
-                variant={data.isPaused ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={handleTogglePause}
-                isLoading={isPending}
-              >
-                {data.isPaused ? '▶️ Retomar Draft' : '⏸️ Pausar Draft'}
-              </Button>
-            )}
-
             <div
               className={`${styles.turnBox} ${
                 data.isMyTurn && !data.isPaused ? styles.turnBoxMyTurn : ''
@@ -304,19 +277,39 @@ export default function DraftRoomPage() {
                 <span className={styles.turnMyBadge}>⚡ Sua Vez!</span>
               )}
               {data.isCommissioner && !data.isMyTurn && !data.isPaused && (
-                <span
-                  style={{
-                    background: 'rgba(245, 158, 11, 0.15)',
-                    color: 'var(--accent-gold)',
-                    border: '1px solid rgba(245, 158, 11, 0.4)',
-                    padding: '3px 8px',
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                  }}
-                >
+                <span className={styles.commissionerBadge}>
                   👑 Modo Comissário
                 </span>
+              )}
+            </div>
+
+            <div className={styles.controlsActionsRow}>
+              {data.isPaused ? (
+                <div className={styles.countdownPaused}>⏸️ Timer Pausado</div>
+              ) : secondsLeft !== null ? (
+                <div
+                  className={`${styles.countdownBox} ${
+                    secondsLeft <= 60 ? styles.countdownUrgent : ''
+                  }`}
+                  title="Tempo restante para esta escolha"
+                >
+                  <span className={styles.countdownLabel}>Tempo Restante</span>
+                  <span className={styles.countdownValue}>
+                    {secondsLeft === 0 ? '00:00 (Esgotado)' : formatCountdown(secondsLeft)}
+                  </span>
+                </div>
+              ) : null}
+
+              {data.isCommissioner && (
+                <Button
+                  variant={data.isPaused ? 'primary' : 'ghost'}
+                  size="sm"
+                  className={styles.pauseDraftBtn}
+                  onClick={handleTogglePause}
+                  isLoading={isPending}
+                >
+                  {data.isPaused ? '▶️ Retomar Draft' : '⏸️ Pausar Draft'}
+                </Button>
               )}
             </div>
           </div>
@@ -358,7 +351,7 @@ export default function DraftRoomPage() {
                 • Rodada {activeRound} de 24
               </span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className={styles.snakeHeaderActions}>
               {activeRound !== currentRound && (
                 <button
                   type="button"
@@ -677,20 +670,8 @@ export default function DraftRoomPage() {
             {/* Selected Player Confirmation Bar */}
             {selectedPlayer && !data.isPaused && (
               data.isMyTurn ? (
-                <div
-                  style={{
-                    background: 'var(--accent-green-subtle)',
-                    border: '1px solid var(--border-accent)',
-                    padding: '12px 20px',
-                    borderRadius: 'var(--radius-md)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '12px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className={styles.confirmPickBar}>
+                  <div className={styles.confirmPickPlayerInfo}>
                     {selectedPlayer.clubLogoUrl && (
                       <img
                         src={selectedPlayer.clubLogoUrl}
@@ -704,13 +685,13 @@ export default function DraftRoomPage() {
                       {selectedPlayer.clubShortName}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className={styles.confirmPickActions}>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => setModalPlayerId(selectedPlayer.id)}
                     >
-                      🔍 Ver Ficha
+                      🔍 Ficha
                     </Button>
                     <Button
                       size="sm"
@@ -729,20 +710,8 @@ export default function DraftRoomPage() {
                   </div>
                 </div>
               ) : data.isCommissioner ? (
-                <div
-                  style={{
-                    background: 'rgba(245, 158, 11, 0.12)',
-                    border: '1px solid rgba(245, 158, 11, 0.5)',
-                    padding: '14px 20px',
-                    borderRadius: 'var(--radius-md)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '12px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className={styles.confirmPickBarCommish}>
+                  <div className={styles.confirmPickPlayerInfo}>
                     {selectedPlayer.clubLogoUrl && (
                       <img
                         src={selectedPlayer.clubLogoUrl}
@@ -770,13 +739,13 @@ export default function DraftRoomPage() {
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className={styles.confirmPickActions}>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => setModalPlayerId(selectedPlayer.id)}
                     >
-                      🔍 Ver Ficha
+                      🔍 Ficha
                     </Button>
                     <Button
                       size="sm"
@@ -797,7 +766,7 @@ export default function DraftRoomPage() {
                       isLoading={isPending}
                       onClick={handleConfirmPick}
                     >
-                      👑 Escolher por {data.currentTurnTeamName}
+                      👑 Escolher
                     </Button>
                   </div>
                 </div>

@@ -15,6 +15,7 @@ export type DraftStateData = {
   currentPick: number
   totalPicks: number
   pickTimerSeconds: number
+  turnStartedAt: string | null
   myTeamId: string | null
   currentTurnTeamId: string
   currentTurnTeamName: string
@@ -93,7 +94,7 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
   // Fetch league info
   const { data: league } = await supabase
     .from('leagues')
-    .select('id, name, status, current_pick, total_picks, pick_timer_seconds, commissioner_id, is_paused')
+    .select('id, name, status, current_pick, total_picks, pick_timer_seconds, commissioner_id, is_paused, draft_started_at')
     .eq('id', leagueId)
     .single()
 
@@ -126,6 +127,7 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
       pick_number,
       round,
       is_auto_pick,
+      picked_at,
       team:fantasy_teams(name),
       player:real_players(id, name, position)
     `)
@@ -278,6 +280,13 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
       isMyTeam: t.id === myTeam?.id,
     }))
 
+  const turnStartedAt =
+    league.status === 'drafting'
+      ? picks && picks.length > 0
+        ? picks[0].picked_at
+        : league.draft_started_at
+      : null
+
   return {
     leagueId: league.id,
     leagueName: league.name,
@@ -287,6 +296,7 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
     currentPick: currentPickNum,
     totalPicks: league.total_picks,
     pickTimerSeconds: league.pick_timer_seconds,
+    turnStartedAt,
     myTeamId: myTeam?.id ?? null,
     currentTurnTeamId: turnTeam?.id ?? '',
     currentTurnTeamName: turnTeam?.name ?? 'Aguardando',

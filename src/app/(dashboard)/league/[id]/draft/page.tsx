@@ -10,6 +10,7 @@ import {
   addToWishlistAction,
   removeFromWishlistAction,
   startDraftFromRoomAction,
+  triggerAutoPickAction,
   type DraftStateData,
 } from './actions'
 import { createClient } from '@/lib/supabase/client'
@@ -35,6 +36,7 @@ export default function DraftRoomPage() {
   const [selectedPlayer, setSelectedPlayer] = useState<any | null>(null)
   const [isPending, startTransition] = useTransition()
   const [pickError, setPickError] = useState<string | null>(null)
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
 
   const clubDropdownRef = useRef<HTMLDivElement>(null)
 
@@ -50,6 +52,35 @@ export default function DraftRoomPage() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    if (!data?.turnStartedAt || data.isPaused || data.status !== 'drafting') {
+      setSecondsLeft(null)
+      return
+    }
+
+    const calcTime = () => {
+      const startMs = new Date(data.turnStartedAt!).getTime()
+      const deadlineMs = startMs + data.pickTimerSeconds * 1000
+      const nowMs = Date.now()
+      const diffSec = Math.max(0, Math.floor((deadlineMs - nowMs) / 1000))
+      setSecondsLeft(diffSec)
+    }
+
+    calcTime()
+    const timer = setInterval(calcTime, 1000)
+    return () => clearInterval(timer)
+  }, [data?.turnStartedAt, data?.pickTimerSeconds, data?.isPaused, data?.status])
+
+  function formatCountdown(sec: number): string {
+    const h = Math.floor(sec / 3600)
+    const m = Math.floor((sec % 3600) / 60)
+    const s = sec % 60
+    if (h > 0) {
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+    }
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  }
 
   const loadData = () => {
     if (leagueId) {
@@ -141,6 +172,18 @@ export default function DraftRoomPage() {
     })
   }
 
+  const handleTriggerAutoPick = () => {
+    setPickError(null)
+    startTransition(async () => {
+      try {
+        await triggerAutoPickAction(leagueId)
+        loadData()
+      } catch (err: any) {
+        setPickError(err.message || 'Erro ao acionar auto-pick.')
+      }
+    })
+  }
+
   const handleToggleWishlist = (playerId: string) => {
     if (!data?.myTeamId) return
 
@@ -206,15 +249,37 @@ export default function DraftRoomPage() {
             {isCompleted
               ? 'Draft Concluído! 🏆'
               : data.status === 'open'
-              ? `Aguardando Início do Draft · Timer: ${formatTimerSeconds(data.pickTimerSeconds)}`
+              ? `Aguardando Início do Draft · Timer por Turno: ${formatTimerSeconds(data.pickTimerSeconds)}`
               : `Pick ${data.currentPick} de ${data.totalPicks} (Rodada ${Math.ceil(
                   data.currentPick / (data.totalPicks / 24)
-                )} de 24) · Timer: ${formatTimerSeconds(data.pickTimerSeconds)}`}
+                )} de 24) · ${
+                  data.isPaused
+                    ? '⏸️ Pausado'
+                    : secondsLeft !== null
+                    ? `Tempo restante: ${formatCountdown(secondsLeft)}`
+                    : `Timer: ${formatTimerSeconds(data.pickTimerSeconds)}`
+                }`}
           </span>
         </div>
 
         {!isCompleted && data.status === 'drafting' && (
           <div className={styles.controlsGroup}>
+            {data.isPaused ? (
+              <div className={styles.countdownPaused}>⏸️ Timer Pausado</div>
+            ) : secondsLeft !== null ? (
+              <div
+                className={`${styles.countdownBox} ${
+                  secondsLeft <= 60 ? styles.countdownUrgent : ''
+                }`}
+                title="Tempo restante para esta escolha"
+              >
+                <span className={styles.countdownLabel}>Tempo Restante</span>
+                <span className={styles.countdownValue}>
+                  {secondsLeft === 0 ? '00:00 (Esgotado)' : formatCountdown(secondsLeft)}
+                </span>
+              </div>
+            ) : null}
+
             {data.isCommissioner && (
               <Button
                 variant={data.isPaused ? 'primary' : 'ghost'}
@@ -381,7 +446,9 @@ export default function DraftRoomPage() {
                     {p.teamName}
                   </div>
                   {isCurrent ? (
-                    <span className={styles.snakeCurrentTag}>● Escolhendo Agora</span>
+                    <span className={styles.snakeCurrentTag}>
+                      ● {data.isPaused ? 'Pausado' : secondsLeft !== null ? `Escolhendo (${formatCountdown(secondsLeft)})` : 'Escolhendo Agora'}
+                    </span>
                   ) : p.playerName ? (
                     <div className={styles.snakePickedPlayer} title={`${p.playerName} (${p.playerPosition})`}>
                       <span>✅</span>
@@ -407,6 +474,28 @@ export default function DraftRoomPage() {
           <span style={{ fontSize: '0.8125rem', fontWeight: 400 }}>
             Nenhum timer ou pick automático é executado enquanto estiver pausado.
           </span>
+        </div>
+      )}
+
+      {/* Expired Timer Banner */}
+      {!data.isPaused && !isCompleted && data.status === 'drafting' && secondsLeft === 0 && (
+        <div className={styles.expiredBanner}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>⚠️</span>
+            <span>
+              O tempo limite de escolha de <strong>{data.currentTurnTeamName}</strong> esgotou!
+            </span>
+          </div>
+          {data.isCommissioner && (
+            <Button
+              size="sm"
+              variant="danger"
+              isLoading={isPending}
+              onClick={handleTriggerAutoPick}
+            >
+              ⚡ Forçar Auto-Pick Agora
+            </Button>
+          )}
         </div>
       )}
 

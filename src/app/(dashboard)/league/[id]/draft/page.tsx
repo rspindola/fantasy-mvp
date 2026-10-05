@@ -38,6 +38,7 @@ export default function DraftRoomPage() {
   const [pickError, setPickError] = useState<string | null>(null)
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [availabilityFilter, setAvailabilityFilter] = useState<'ALL' | 'AVAILABLE' | 'PICKED'>('ALL')
 
   useEffect(() => {
     try {
@@ -136,7 +137,7 @@ export default function DraftRoomPage() {
   // Clear selectedPlayer if they were drafted by someone else or if turn changed and not commissioner
   useEffect(() => {
     if (!selectedPlayer || !data) return
-    const stillAvailable = data.availablePlayers.some((p) => p.id === selectedPlayer.id)
+    const stillAvailable = data.availablePlayers.some((p) => p.id === selectedPlayer.id && !p.isPicked)
     const canStillPick = (data.isMyTurn || data.isCommissioner) && !data.isPaused
     if (!stillAvailable || !canStillPick) {
       setSelectedPlayer(null)
@@ -342,16 +343,25 @@ export default function DraftRoomPage() {
   const roundPicks = (data.allPicks || []).filter((p) => p.round === activeRound)
   const selectedClub = data.clubs?.find((c) => c.id === clubFilter)
 
+  const availableCount = (data.availablePlayers || []).filter((p) => !p.isPicked).length
+  const pickedCount = (data.availablePlayers || []).filter((p) => p.isPicked).length
+
   const filteredPlayers = (data.availablePlayers || [])
     .filter((p) => {
       const matchesPos = posFilter === 'TODOS' || p.position === posFilter
       const matchesClub = clubFilter === 'TODOS' || p.clubId === clubFilter
+      const matchesAvailability =
+        availabilityFilter === 'ALL'
+          ? true
+          : availabilityFilter === 'AVAILABLE'
+          ? !p.isPicked
+          : p.isPicked
       const matchesSearch =
         search === '' ||
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.clubName.toLowerCase().includes(search.toLowerCase()) ||
         p.clubShortName.toLowerCase().includes(search.toLowerCase())
-      return matchesPos && matchesClub && matchesSearch
+      return matchesPos && matchesClub && matchesAvailability && matchesSearch
     })
     .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }))
 
@@ -753,11 +763,16 @@ export default function DraftRoomPage() {
               </div>
             </div>
 
-            {/* Catalog Counter and View Mode Toggle */}
+            {/* Catalog Counter, Quick Availability Filter and View Mode Toggle */}
             <div className={styles.catalogCounterRow}>
               <div className={styles.catalogCounterLeft}>
                 <span>
-                  Exibindo <strong>{filteredPlayers.length}</strong> jogadores disponíveis
+                  Exibindo <strong>{filteredPlayers.length}</strong> jogadores
+                  {availabilityFilter === 'ALL' && (
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginLeft: '6px' }}>
+                      ({availableCount} disponíveis · {pickedCount} escolhidos)
+                    </span>
+                  )}
                 </span>
                 {clubFilter !== 'TODOS' && (
                   <button
@@ -770,29 +785,66 @@ export default function DraftRoomPage() {
                 )}
               </div>
 
-              <div className={styles.viewModeToggle}>
-                <button
-                  type="button"
-                  onClick={() => handleToggleViewMode('grid')}
-                  className={`${styles.viewModeBtn} ${
-                    viewMode === 'grid' ? styles.viewModeBtnActive : ''
-                  }`}
-                  title="Visualização em Cards"
-                >
-                  <span>🪟</span>
-                  <span>Cards</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleToggleViewMode('list')}
-                  className={`${styles.viewModeBtn} ${
-                    viewMode === 'list' ? styles.viewModeBtnActive : ''
-                  }`}
-                  title="Visualização em Listagem"
-                >
-                  <span>☰</span>
-                  <span>Lista</span>
-                </button>
+              <div className={styles.counterRightControls}>
+                {/* Availability Filter Buttons */}
+                <div className={styles.availabilityFilterGroup}>
+                  <button
+                    type="button"
+                    onClick={() => setAvailabilityFilter('ALL')}
+                    className={`${styles.availBtn} ${
+                      availabilityFilter === 'ALL' ? styles.availBtnActive : ''
+                    }`}
+                    title="Exibir todos os jogadores"
+                  >
+                    Todos ({data.availablePlayers.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAvailabilityFilter('AVAILABLE')}
+                    className={`${styles.availBtn} ${
+                      availabilityFilter === 'AVAILABLE' ? styles.availBtnActive : ''
+                    }`}
+                    title="Exibir apenas jogadores ainda disponíveis"
+                  >
+                    Disponíveis ({availableCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAvailabilityFilter('PICKED')}
+                    className={`${styles.availBtn} ${
+                      availabilityFilter === 'PICKED' ? styles.availBtnActive : ''
+                    }`}
+                    title="Exibir apenas jogadores já escolhidos"
+                  >
+                    Escolhidos ({pickedCount})
+                  </button>
+                </div>
+
+                {/* View Mode Toggle */}
+                <div className={styles.viewModeToggle}>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleViewMode('grid')}
+                    className={`${styles.viewModeBtn} ${
+                      viewMode === 'grid' ? styles.viewModeBtnActive : ''
+                    }`}
+                    title="Visualização em Cards"
+                  >
+                    <span>🪟</span>
+                    <span>Cards</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleViewMode('list')}
+                    className={`${styles.viewModeBtn} ${
+                      viewMode === 'list' ? styles.viewModeBtnActive : ''
+                    }`}
+                    title="Visualização em Listagem"
+                  >
+                    <span>☰</span>
+                    <span>Lista</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -924,7 +976,7 @@ export default function DraftRoomPage() {
                 {filteredPlayers.map((player) => {
                   const isSelected = selectedPlayer?.id === player.id
                   const inWishlist = wishlistPlayerIds.has(player.id)
-                  const canPick = (data.isMyTurn || data.isCommissioner) && !data.isPaused
+                  const canPick = (data.isMyTurn || data.isCommissioner) && !data.isPaused && !player.isPicked
                   const isCommishPick = !data.isMyTurn && data.isCommissioner
 
                   return (
@@ -938,8 +990,10 @@ export default function DraftRoomPage() {
                         }
                       }}
                       className={`${styles.playerCard} ${
-                        canPick ? styles.playerCardSelectable : ''
-                      } ${inWishlist ? styles.playerCardInWishlist : ''}`}
+                        player.isPicked ? styles.playerCardPicked : ''
+                      } ${canPick ? styles.playerCardSelectable : ''} ${
+                        inWishlist ? styles.playerCardInWishlist : ''
+                      }`}
                       style={
                         isSelected
                           ? {
@@ -951,6 +1005,21 @@ export default function DraftRoomPage() {
                       }
                     >
                       <div>
+                        {/* Picked Indicator Banner */}
+                        {player.isPicked && (
+                          <div className={styles.pickedBanner}>
+                            <span className={styles.pickedBannerIcon}>🔒</span>
+                            <div className={styles.pickedBannerText}>
+                              <span className={styles.pickedTeamName}>
+                                Escolhido por {player.pickedByTeam}
+                              </span>
+                              <span className={styles.pickedRoundDetail}>
+                                Rodada {player.pickedRound} · Pick #{player.pickedNumber}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Card Header: Position Badge + Club Info */}
                         <div className={styles.cardHeader}>
                           <Badge variant={player.position as any}>{player.position}</Badge>
@@ -996,7 +1065,7 @@ export default function DraftRoomPage() {
                             </div>
 
                             {/* Interest Badge */}
-                            {player.interestCount > 0 ? (
+                            {!player.isPicked && player.interestCount > 0 ? (
                               <span
                                 className={styles.interestBadge}
                                 title={`${player.interestCount} times têm este jogador na fila`}
@@ -1004,9 +1073,9 @@ export default function DraftRoomPage() {
                                 🔥 {player.interestCount}{' '}
                                 {player.interestCount === 1 ? 'time interessado' : 'times interessados'}
                               </span>
-                            ) : (
+                            ) : !player.isPicked ? (
                               <span className={styles.interestBadgeZero}>0 na fila</span>
-                            )}
+                            ) : null}
                           </div>
                         </div>
                       </div>
@@ -1032,31 +1101,40 @@ export default function DraftRoomPage() {
                             e.stopPropagation()
                             setModalPlayerId(player.id)
                           }}
-                          className={styles.btnDetail}
+                          className={player.isPicked ? styles.btnDetailFull : styles.btnDetail}
                           title="Ver ficha técnica completa e scouts"
                         >
                           🔍 Ficha
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleToggleWishlist(player.id)
-                          }}
-                          className={`${styles.btnWishlist} ${
-                            inWishlist ? styles.btnWishlistActive : ''
-                          }`}
-                          title={
-                            inWishlist
-                              ? 'Remover da Fila de Preferência'
-                              : 'Adicionar à Fila de Preferência (Auto-pick prioriza)'
-                          }
-                        >
-                          {inWishlist ? '⭐ Na Fila' : '+ Fila'}
-                        </button>
+                        {!player.isPicked && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleToggleWishlist(player.id)
+                            }}
+                            className={`${styles.btnWishlist} ${
+                              inWishlist ? styles.btnWishlistActive : ''
+                            }`}
+                            title={
+                              inWishlist
+                                ? 'Remover da Fila de Preferência'
+                                : 'Adicionar à Fila de Preferência (Auto-pick prioriza)'
+                            }
+                          >
+                            {inWishlist ? '⭐ Na Fila' : '+ Fila'}
+                          </button>
+                        )}
 
-                        {canPick && (
+                        {player.isPicked ? (
+                          <span
+                            className={styles.btnPickedDisabled}
+                            title={`Escolhido por ${player.pickedByTeam} na Rodada ${player.pickedRound}`}
+                          >
+                            🔒 Rodada {player.pickedRound}
+                          </span>
+                        ) : canPick ? (
                           <button
                             type="button"
                             onClick={(e) => {
@@ -1068,7 +1146,7 @@ export default function DraftRoomPage() {
                           >
                             {isSelected ? '✓ Selecionado' : '🎯 Escolher'}
                           </button>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   )
@@ -1093,7 +1171,7 @@ export default function DraftRoomPage() {
                     {filteredPlayers.map((player) => {
                       const isSelected = selectedPlayer?.id === player.id
                       const inWishlist = wishlistPlayerIds.has(player.id)
-                      const canPick = (data.isMyTurn || data.isCommissioner) && !data.isPaused
+                      const canPick = (data.isMyTurn || data.isCommissioner) && !data.isPaused && !player.isPicked
                       const isCommishPick = !data.isMyTurn && data.isCommissioner
 
                       return (
@@ -1107,6 +1185,8 @@ export default function DraftRoomPage() {
                             }
                           }}
                           className={`${styles.playerTableRow} ${
+                            player.isPicked ? styles.rowPicked : ''
+                          } ${
                             canPick ? styles.playerTableRowSelectable : ''
                           } ${
                             isSelected
@@ -1141,13 +1221,23 @@ export default function DraftRoomPage() {
                                 )}
                               </div>
                               <div className={styles.tablePlayerInfo}>
-                                <strong className={styles.tablePlayerName}>{player.name}</strong>
-                                {player.interestCount > 0 && (
+                                <div className={styles.tablePlayerNameRow}>
+                                  <strong className={styles.tablePlayerName}>{player.name}</strong>
+                                  {!player.isPicked && player.interestCount > 0 && (
+                                    <span
+                                      className={styles.tableInterestBadge}
+                                      title={`${player.interestCount} times têm este jogador na fila`}
+                                    >
+                                      🔥 {player.interestCount}
+                                    </span>
+                                  )}
+                                </div>
+                                {player.isPicked && (
                                   <span
-                                    className={styles.tableInterestBadge}
-                                    title={`${player.interestCount} times têm este jogador na fila`}
+                                    className={styles.tablePickedBadge}
+                                    title={`Escolhido por ${player.pickedByTeam} na Rodada ${player.pickedRound} (Pick #${player.pickedNumber})`}
                                   >
-                                    🔥 {player.interestCount}
+                                    🔒 {player.pickedByTeam} · R{player.pickedRound} (#{player.pickedNumber})
                                   </span>
                                 )}
                               </div>
@@ -1188,17 +1278,26 @@ export default function DraftRoomPage() {
                               >
                                 🔍
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => handleToggleWishlist(player.id)}
-                                className={`${styles.tableBtnWishlist} ${
-                                  inWishlist ? styles.tableBtnWishlistActive : ''
-                                }`}
-                                title={inWishlist ? 'Remover da Fila' : 'Adicionar à Fila'}
-                              >
-                                {inWishlist ? '⭐' : '+ Fila'}
-                              </button>
-                              {canPick && (
+                              {!player.isPicked && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleWishlist(player.id)}
+                                  className={`${styles.tableBtnWishlist} ${
+                                    inWishlist ? styles.tableBtnWishlistActive : ''
+                                  }`}
+                                  title={inWishlist ? 'Remover da Fila' : 'Adicionar à Fila'}
+                                >
+                                  {inWishlist ? '⭐' : '+ Fila'}
+                                </button>
+                              )}
+                              {player.isPicked ? (
+                                <span
+                                  className={styles.tablePickedTag}
+                                  title={`Escolhido por ${player.pickedByTeam} na Rodada ${player.pickedRound}`}
+                                >
+                                  🔒 R{player.pickedRound}
+                                </span>
+                              ) : canPick ? (
                                 <button
                                   type="button"
                                   onClick={() => setSelectedPlayer(player)}
@@ -1215,7 +1314,7 @@ export default function DraftRoomPage() {
                                 >
                                   {isSelected ? '✓' : '🎯 Pick'}
                                 </button>
-                              )}
+                              ) : null}
                             </div>
                           </td>
                         </tr>

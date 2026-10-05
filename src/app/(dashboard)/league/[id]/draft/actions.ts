@@ -60,6 +60,10 @@ export type DraftStateData = {
     avgPoints: number
     totalMinutes: number
     interestCount: number
+    isPicked: boolean
+    pickedByTeam: string | null
+    pickedRound: number | null
+    pickedNumber: number | null
   }[]
   myRoster: {
     id: string
@@ -221,10 +225,32 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
     .order('name', { ascending: true })
     .limit(1000)
 
-  // Filter out already draft picks and map available
-  const availablePlayers = (players || [])
-    .filter((p) => !pickedPlayerIds.has(p.id))
-    .map((p: any) => ({
+  // Build a lookup map of all completed picks for quick player metadata
+  const pickByPlayerId = new Map<
+    string,
+    {
+      teamName: string
+      round: number
+      pickNumber: number
+    }
+  >()
+
+  for (const p of (picks || []) as any[]) {
+    const playerId = Array.isArray(p.player) ? p.player[0]?.id : p.player?.id
+    const teamName = Array.isArray(p.team) ? p.team[0]?.name : p.team?.name
+    if (playerId) {
+      pickByPlayerId.set(playerId, {
+        teamName: teamName ?? 'Time',
+        round: p.round,
+        pickNumber: p.pick_number,
+      })
+    }
+  }
+
+  // Map all players including drafted status and team/round details
+  const availablePlayers = (players || []).map((p: any) => {
+    const pickInfo = pickByPlayerId.get(p.id)
+    return {
       id: p.id,
       name: p.name,
       position: p.position as any,
@@ -236,7 +262,12 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
       avgPoints: Number(p.avg_points ?? 0),
       totalMinutes: p.total_minutes ?? 0,
       interestCount: interestMap[p.id] ?? 0,
-    }))
+      isPicked: !!pickInfo,
+      pickedByTeam: pickInfo?.teamName ?? null,
+      pickedRound: pickInfo?.round ?? null,
+      pickedNumber: pickInfo?.pickNumber ?? null,
+    }
+  })
 
   // Map all completed picks ordered from oldest to newest (pick #1, #2, ...)
   const recentPicks = (picks || [])
@@ -434,13 +465,15 @@ export async function triggerAutoPickAction(leagueId: string) {
       clubShortName: '',
     }))
 
-  const candidates = data.availablePlayers.map((p) => ({
-    id: p.id,
-    name: p.name,
-    position: p.position,
-    avgPoints: p.avgPoints,
-    totalMinutes: p.totalMinutes,
-  }))
+  const candidates = data.availablePlayers
+    .filter((p) => !p.isPicked)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      position: p.position,
+      avgPoints: p.avgPoints,
+      totalMinutes: p.totalMinutes,
+    }))
 
   const chosen = autoPickPlayer(candidates, turnTeamRoster, queuedPlayerIds)
   if (chosen) {

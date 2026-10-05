@@ -448,7 +448,7 @@ export default function DraftRoomPage() {
                 )}
               </div>
 
-              {data.nextAutoPick && (
+              {data.isCommissioner && data.nextAutoPick && (
                 <div
                   className={styles.nextAutoPickCard}
                   title="Jogador que será escolhido automaticamente caso o timer chegue a zero"

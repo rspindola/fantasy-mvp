@@ -357,9 +357,11 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
         : league.draft_started_at
       : null
 
-  // Compute next auto-pick player for the team currently on the clock
+  const isCommissioner = league.commissioner_id === user.id
+
+  // Compute next auto-pick player for the team currently on the clock (only for commissioner)
   let nextAutoPick: DraftStateData['nextAutoPick'] = null
-  if (turnTeam && league.status === 'drafting') {
+  if (isCommissioner && turnTeam && league.status === 'drafting') {
     const turnTeamQueues = leagueQueues
       .filter((q: any) => q.fantasy_team_id === turnTeam.id)
       .sort((a: any, b: any) => a.priority - b.priority)
@@ -404,7 +406,6 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
   }
 
   // Pre-draft queues of all teams (accessible to commissioner)
-  const isCommissioner = league.commissioner_id === user.id
   const allTeamQueues = isCommissioner
     ? teams.map((t) => {
         const teamQueues = leagueQueues

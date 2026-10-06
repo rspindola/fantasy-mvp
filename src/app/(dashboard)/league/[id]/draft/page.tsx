@@ -14,7 +14,7 @@ import {
   type DraftStateData,
 } from './actions'
 import { createClient } from '@/lib/supabase/client'
-import { formatTimerSeconds } from '@/lib/utils/format'
+import { formatTimerSeconds, normalizeText } from '@/lib/utils/format'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { PlayerDetailModal } from '@/components/player/PlayerDetailModal'
@@ -382,6 +382,7 @@ export default function DraftRoomPage() {
   const availableCount = (data.availablePlayers || []).filter((p) => !p.isPicked).length
   const pickedCount = (data.availablePlayers || []).filter((p) => p.isPicked).length
 
+  const normalizedSearch = normalizeText(search)
   const filteredPlayers = (data.availablePlayers || [])
     .filter((p) => {
       const matchesPos = posFilter === 'TODOS' || p.position === posFilter
@@ -393,10 +394,10 @@ export default function DraftRoomPage() {
           ? !p.isPicked
           : p.isPicked
       const matchesSearch =
-        search === '' ||
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.clubName.toLowerCase().includes(search.toLowerCase()) ||
-        p.clubShortName.toLowerCase().includes(search.toLowerCase())
+        !normalizedSearch ||
+        normalizeText(p.name).includes(normalizedSearch) ||
+        normalizeText(p.clubName).includes(normalizedSearch) ||
+        normalizeText(p.clubShortName).includes(normalizedSearch)
       return matchesPos && matchesClub && matchesAvailability && matchesSearch
     })
     .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }))
@@ -846,7 +847,7 @@ export default function DraftRoomPage() {
                 {/* Search Input */}
                 <input
                   type="text"
-                  placeholder="🔍 Buscar jogador..."
+                  placeholder="🔍  Buscar jogador..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className={styles.searchInput}
@@ -1248,14 +1249,14 @@ export default function DraftRoomPage() {
                 <table className={styles.playerTable}>
                   <thead>
                     <tr>
-                      <th style={{ width: '60px' }}>Pos</th>
-                      <th>Jogador</th>
-                      <th>Clube</th>
-                      <th style={{ textAlign: 'center', width: '75px' }}>Média</th>
+                      <th className={styles.tableColPos} style={{ width: '60px' }}>Pos</th>
+                      <th className={styles.tableColPlayer}>Jogador</th>
+                      <th className={styles.tableColClub}>Clube</th>
+                      <th className={styles.tableColAvg} style={{ textAlign: 'center', width: '75px' }}>Média</th>
                       <th className={styles.hideMobile} style={{ textAlign: 'center', width: '75px' }}>
                         Minutos
                       </th>
-                      <th style={{ textAlign: 'right', width: '160px' }}>Ações</th>
+                      <th className={styles.tableColActions} style={{ textAlign: 'right', width: '160px' }}>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1287,10 +1288,10 @@ export default function DraftRoomPage() {
                               : ''
                           } ${inWishlist ? styles.rowInWishlist : ''}`}
                         >
-                          <td>
+                          <td className={styles.tableColPos}>
                             <Badge variant={player.position as any}>{player.position}</Badge>
                           </td>
-                          <td>
+                          <td className={styles.tableColPlayer}>
                             <div className={styles.tablePlayerCell}>
                               <div className={styles.tablePlayerPhotoWrapper}>
                                 {player.photoUrl ? (
@@ -1334,20 +1335,20 @@ export default function DraftRoomPage() {
                               </div>
                             </div>
                           </td>
-                          <td>
+                          <td className={styles.tableColClub}>
                             <div className={styles.tableClubCell}>
                               {player.clubLogoUrl && (
                                 <img
-                                  src={player.clubLogoUrl}
-                                  alt={player.clubShortName}
-                                  className={styles.tableClubLogo}
-                                  loading="lazy"
-                                />
+                                    src={player.clubLogoUrl}
+                                    alt={player.clubShortName}
+                                    className={styles.tableClubLogo}
+                                    loading="lazy"
+                                  />
                               )}
                               <span>{player.clubShortName || player.clubName}</span>
                             </div>
                           </td>
-                          <td style={{ textAlign: 'center' }}>
+                          <td className={styles.tableColAvg} style={{ textAlign: 'center' }}>
                             <strong className={styles.tableAvgPts}>{player.avgPoints.toFixed(1)}</strong>
                           </td>
                           <td
@@ -1356,7 +1357,7 @@ export default function DraftRoomPage() {
                           >
                             {player.totalMinutes}&apos;
                           </td>
-                          <td>
+                          <td className={styles.tableColActions}>
                             <div
                               className={styles.tableActionsCell}
                               onClick={(e) => e.stopPropagation()}
@@ -1367,7 +1368,7 @@ export default function DraftRoomPage() {
                                 className={styles.tableBtnDetail}
                                 title="Ver ficha técnica"
                               >
-                                🔍
+                                🔍 <span className={styles.tableBtnTextMobile}>Ficha</span>
                               </button>
                               {!player.isPicked && (
                                 <button
@@ -1378,7 +1379,7 @@ export default function DraftRoomPage() {
                                   }`}
                                   title={inWishlist ? 'Remover da Fila' : 'Adicionar à Fila'}
                                 >
-                                  {inWishlist ? '⭐' : '+ Fila'}
+                                  {inWishlist ? '⭐ Fila' : '+ Fila'}
                                 </button>
                               )}
                               {player.isPicked ? (
@@ -1386,7 +1387,7 @@ export default function DraftRoomPage() {
                                   className={styles.tablePickedTag}
                                   title={`Escolhido por ${player.pickedByTeam} na Rodada ${player.pickedRound}`}
                                 >
-                                  🔒 R{player.pickedRound}
+                                  🔒 R{player.pickedRound} ({player.pickedByTeam})
                                 </span>
                               ) : canPick ? (
                                 <button
@@ -1403,7 +1404,7 @@ export default function DraftRoomPage() {
                                       : 'Escolher este jogador'
                                   }
                                 >
-                                  {isSelected ? '✓' : '🎯 Pick'}
+                                  {isSelected ? '✓ Selecionado' : '🎯 Escolher'}
                                 </button>
                               ) : null}
                             </div>

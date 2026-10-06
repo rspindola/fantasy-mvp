@@ -13,6 +13,7 @@ import {
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { PlayerDetailModal } from '@/components/player/PlayerDetailModal'
+import { normalizeText } from '@/lib/utils/format'
 import styles from './page.module.css'
 
 export default function PreDraftPrepPage({
@@ -152,14 +153,15 @@ export default function PreDraftPrepPage({
 
   const selectedClub = data.clubs.find((c) => c.id === clubFilter)
 
+  const normalizedSearch = normalizeText(search)
   const filteredPlayers = data.availablePlayers.filter((player) => {
     const matchesPos = posFilter === 'TODOS' || player.position === posFilter
     const matchesClub = clubFilter === 'TODOS' || player.clubId === clubFilter
     const matchesSearch =
-      search === '' ||
-      player.name.toLowerCase().includes(search.toLowerCase()) ||
-      player.clubName.toLowerCase().includes(search.toLowerCase()) ||
-      player.clubShortName.toLowerCase().includes(search.toLowerCase())
+      !normalizedSearch ||
+      normalizeText(player.name).includes(normalizedSearch) ||
+      normalizeText(player.clubName).includes(normalizedSearch) ||
+      normalizeText(player.clubShortName).includes(normalizedSearch)
     return matchesPos && matchesClub && matchesSearch
   })
 
@@ -309,7 +311,7 @@ export default function PreDraftPrepPage({
               {/* Search Input */}
               <input
                 type="text"
-                placeholder="🔍 Buscar jogador..."
+                placeholder="🔍  Buscar jogador..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className={styles.searchInput}

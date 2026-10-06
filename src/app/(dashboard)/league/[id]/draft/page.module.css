@@ -970,6 +970,10 @@
   color: var(--text-primary);
 }
 
+.tableBtnTextMobile {
+  display: none;
+}
+
 .tableBtnWishlist {
   background: transparent;
   border: 1px solid var(--border-subtle);
@@ -1775,21 +1779,24 @@
 /* Mobile Responsive Optimizations */
 @media (max-width: 768px) {
   .container {
-    gap: 16px;
+    gap: 14px;
+    padding: 0 2px;
   }
 
   .topBar {
-    padding: 14px 16px;
-    gap: 14px;
+    padding: 14px;
+    gap: 12px;
+    border-radius: var(--radius-md);
   }
 
   .leagueTitle {
     font-size: 1.15rem;
+    font-weight: 800;
   }
 
   .pickInfo {
     font-size: 0.8125rem;
-    line-height: 1.35;
+    line-height: 1.4;
   }
 
   .controlsGroup {
@@ -1801,49 +1808,116 @@
 
   .turnBox {
     width: 100%;
-    padding: 10px 14px;
-    justify-content: space-between;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    border-radius: 12px;
   }
 
   .turnTeamName {
-    font-size: 1rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+  }
+
+  .turnLabel {
+    font-size: 0.75rem;
+  }
+
+  .nextAutoPickCard {
+    width: 100%;
+    margin-top: 4px;
+    padding: 10px 12px;
+    background: rgba(15, 23, 42, 0.85);
+    border-radius: 10px;
+  }
+
+  .nextAutoPickHeaderRow {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .nextAutoPickTitle {
+    font-size: 0.72rem;
+  }
+
+  .nextAutoPickSourceBadge {
+    font-size: 0.7rem;
+    padding: 2px 7px;
+  }
+
+  .nextAutoPickPlayerRow {
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .nextAutoPickPlayerName {
+    font-size: 0.875rem;
   }
 
   .controlsActionsRow {
     width: 100%;
     display: flex;
+    flex-direction: column;
     align-items: stretch;
     gap: 8px;
   }
 
   .countdownBox {
-    flex: 1;
+    width: 100%;
+    flex: none;
     min-width: 0;
-    padding: 6px 10px;
+    min-height: 48px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid var(--border-medium);
+  }
+
+  .countdownLabel {
+    font-size: 0.72rem;
+    letter-spacing: 0.5px;
+    text-align: left;
   }
 
   .countdownValue {
-    font-size: 1.05rem;
+    font-size: 1.25rem;
+    font-weight: 800;
+    text-align: right;
   }
 
   .countdownPaused {
-    flex: 1;
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 14px;
     text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 700;
   }
 
+  .commissionerQueuesBtn,
   .pauseDraftBtn {
-    flex: 1;
-    white-space: nowrap;
+    width: 100%;
+    height: 42px;
+    font-size: 0.8125rem;
+    font-weight: 700;
     justify-content: center;
-    min-height: 40px;
+    border-radius: 8px;
   }
 
   .snakeBar {
     padding: 12px 14px;
-    gap: 10px;
+    gap: 12px;
+    border-radius: var(--radius-md);
   }
 
   .snakeBarHeader {
@@ -1855,32 +1929,87 @@
   .snakeBarTitle {
     justify-content: space-between;
     width: 100%;
+    font-size: 0.85rem;
   }
 
   .snakeHeaderActions {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 8px;
     width: 100%;
   }
 
   .viewOrderBtn,
   .currentRoundJumpBtn {
-    flex: 1;
+    width: 100%;
     text-align: center;
     justify-content: center;
-    font-size: 0.72rem;
-    padding: 6px 8px;
-    white-space: nowrap;
+    font-size: 0.78rem;
+    padding: 8px 12px;
+    height: 38px;
+    border-radius: 8px;
+  }
+
+  .roundNavRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .roundTitleBox {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .roundArrowBtn {
+    width: 100%;
+    justify-content: center;
+    height: 36px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .roundPillsTrack {
+    gap: 6px;
+    padding: 2px 0 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .roundPillsTrack::-webkit-scrollbar {
+    display: none;
+  }
+
+  .roundPill {
+    min-width: 44px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    justify-content: center;
+    border-radius: 8px;
+  }
+
+  .snakeTrack {
+    gap: 10px;
+    padding: 4px 2px 10px;
+    scroll-padding: 6px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
   }
 
   .snakeCard {
-    min-width: 140px;
-    padding: 8px 10px;
+    scroll-snap-align: start;
+    min-width: 155px;
+    max-width: 175px;
+    padding: 10px 12px;
+    border-radius: 10px;
   }
 
   .boardArea {
     padding: 14px 12px;
     gap: 14px;
+    border-radius: var(--radius-md);
   }
 
   .filterRow {
@@ -1890,22 +2019,30 @@
     width: 100%;
   }
 
+  /* Barra de filtros de posição esportiva deslizante */
   .posFilters {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+    padding: 2px 2px 6px;
     width: 100%;
-    gap: 4px;
+  }
+
+  .posFilters::-webkit-scrollbar {
+    display: none;
   }
 
   .posBtn {
-    padding: 8px 0;
-    font-size: 0.75rem;
+    flex-shrink: 0;
+    padding: 8px 16px;
+    font-size: 0.8125rem;
     font-weight: 700;
-    text-align: center;
+    border-radius: 20px;
     justify-content: center;
-    display: flex;
-    align-items: center;
-    width: 100%;
+    min-width: 58px;
+    text-align: center;
   }
 
   .secondaryFilters {
@@ -1922,32 +2059,98 @@
 
   .clubDropdownTrigger {
     width: 100%;
-    height: 40px;
+    height: 44px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    padding: 10px 14px;
   }
 
   .searchInput {
     width: 100%;
     min-width: 0;
-    height: 40px;
+    height: 44px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    padding: 10px 14px;
     order: -1;
+  }
+
+  .catalogCounterRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .catalogCounterLeft {
+    justify-content: space-between;
+    width: 100%;
+    font-size: 0.8rem;
+  }
+
+  .counterRightControls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .availabilityFilterGroup {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+    background: var(--bg-surface);
+    padding: 3px;
+    border-radius: 10px;
+    border: 1px solid var(--border-medium);
+  }
+
+  .availBtn {
+    padding: 8px 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 8px;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .viewModeToggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    background: var(--bg-surface);
+    padding: 3px;
+    border-radius: 10px;
+    border: 1px solid var(--border-medium);
+  }
+
+  .viewModeBtn {
+    padding: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+    justify-content: center;
+    border-radius: 8px;
   }
 
   .playerGrid {
     grid-template-columns: 1fr;
     gap: 10px;
     padding-right: 0;
-    max-height: 600px;
+    max-height: 620px;
   }
 
   .playerCard {
     padding: 12px;
+    border-radius: 12px;
   }
 
   .confirmPickBar,
   .confirmPickBarCommish {
     flex-direction: column;
     align-items: stretch;
-    padding: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
   }
 
   .confirmPickActions {
@@ -1959,8 +2162,10 @@
 
   .confirmPickActions button {
     width: 100%;
+    height: 40px;
     padding: 8px 4px;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 700;
     justify-content: center;
   }
 
@@ -1969,14 +2174,192 @@
     align-items: stretch;
     text-align: center;
     gap: 10px;
+    border-radius: 12px;
   }
 
   .expiredBanner button {
     width: 100%;
+    height: 42px;
   }
 
   .sidebarSection {
-    padding: 14px 16px;
+    padding: 14px;
+    border-radius: var(--radius-md);
+  }
+}
+
+/* Modo Tabela Adaptativo no Mobile (Cards compactos) */
+@media (max-width: 640px) {
+  .playerTableContainer {
+    background: transparent;
+    border: none;
+    max-height: 640px;
+    padding: 0;
+  }
+
+  .playerTable {
+    display: block;
+    width: 100%;
+  }
+
+  .playerTable thead {
+    display: none;
+  }
+
+  .playerTable tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .playerTableRow {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    grid-template-areas:
+      "pos player club avg"
+      "actions actions actions actions";
+    align-items: center;
+    gap: 8px 10px;
+    padding: 10px 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    transition: transform var(--transition-fast), border-color var(--transition-fast);
+  }
+
+  .playerTableRow td {
+    padding: 0;
+    border: none;
+    display: block;
+  }
+
+  .tableColPos {
+    grid-area: pos;
+  }
+
+  .tableColPlayer {
+    grid-area: player;
+    min-width: 0;
+  }
+
+  .tablePlayerCell {
+    gap: 8px;
+  }
+
+  .tablePlayerPhotoWrapper {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+  }
+
+  .tablePlayerName {
+    font-size: 0.875rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tablePickedBadge {
+    display: none; /* Já exibido com clareza no botão da área de ações */
+  }
+
+  .tableColClub {
+    grid-area: club;
+  }
+
+  .tableClubCell {
+    gap: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+
+  .tableClubLogo {
+    width: 16px;
+    height: 16px;
+  }
+
+  .tableColAvg {
+    grid-area: avg;
+    text-align: right !important;
+  }
+
+  .tableAvgPts {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.1);
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+
+  .tableColActions {
+    grid-area: actions;
+    width: 100%;
+  }
+
+  .tableActionsCell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    width: 100%;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .tableBtnTextMobile {
+    display: inline;
+  }
+
+  .tableBtnDetail {
+    padding: 7px 12px;
+    font-size: 0.78rem;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 36px;
+  }
+
+  .tableBtnWishlist {
+    padding: 7px 14px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 8px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .tablePickedTag {
+    width: 100%;
+    text-align: center;
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-subtle);
+    color: #94a3b8;
+  }
+
+  .btnPickThisSmall,
+  .btnPickCommishSmall {
+    padding: 7px 16px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    border-radius: 8px;
+    height: 36px;
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
   }
 }
 
@@ -1990,7 +2373,7 @@
   .btnPickThis,
   .btnPickCommish {
     padding: 8px 6px;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     white-space: nowrap;
   }
 

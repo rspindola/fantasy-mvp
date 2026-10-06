@@ -48,13 +48,16 @@ export async function startDraftEngine(leagueId: string) {
   const totalPicks = numTeams * 24
 
   // Update league status
+  const nowIso = new Date().toISOString()
   const { error: leagueUpdateErr } = await supabase
     .from('leagues')
     .update({
       status: 'drafting',
       current_pick: 1,
       total_picks: totalPicks,
-      draft_started_at: new Date().toISOString(),
+      draft_started_at: nowIso,
+      turn_started_at: nowIso,
+      paused_remaining_seconds: null,
     })
     .eq('id', leagueId)
 
@@ -169,7 +172,11 @@ export async function makePickEngine(
   } else {
     await supabase
       .from('leagues')
-      .update({ current_pick: nextPick })
+      .update({
+        current_pick: nextPick,
+        turn_started_at: new Date().toISOString(),
+        paused_remaining_seconds: null,
+      })
       .eq('id', leagueId)
 
     // 6. Notify next player via WhatsApp (fire-and-forget)
@@ -291,7 +298,7 @@ export async function toggleDraftPauseEngine(leagueId: string, userId: string): 
 
   const { data: league, error } = await supabase
     .from('leagues')
-    .select('commissioner_id, is_paused, status')
+    .select('commissioner_id, is_paused, status, pick_timer_seconds, turn_started_at, paused_remaining_seconds, draft_started_at')
     .eq('id', leagueId)
     .single()
 
@@ -301,10 +308,52 @@ export async function toggleDraftPauseEngine(leagueId: string, userId: string): 
 
   const newPauseState = !league.is_paused
 
-  await supabase
-    .from('leagues')
-    .update({ is_paused: newPauseState })
-    .eq('id', leagueId)
+  if (newPauseState) {
+    // PAUSANDO: congela o tempo restante exato da rodada atual
+    let startMs = league.turn_started_at ? new Date(league.turn_started_at).getTime() : null
+    if (!startMs) {
+      const { data: latestPick } = await supabase
+        .from('draft_picks')
+        .select('picked_at')
+        .eq('league_id', leagueId)
+        .order('pick_number', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      startMs = latestPick?.picked_at
+        ? new Date(latestPick.picked_at).getTime()
+        : new Date(league.draft_started_at).getTime()
+    }
+    const elapsedSec = Math.floor((Date.now() - startMs) / 1000)
+    const remainingSec = Math.max(0, (league.pick_timer_seconds || 90) - elapsedSec)
+
+    await supabase
+      .from('leagues')
+      .update({
+        is_paused: true,
+        paused_remaining_seconds: remainingSec,
+      })
+      .eq('id', leagueId)
+  } else {
+    // RETOMANDO: restaura o tempo restante a partir de onde parou
+    const timerSec = league.pick_timer_seconds || 90
+    // Se havia tempo restante congelado (> 0), retoma dele; caso contrário, reinicia o timer completo
+    const remaining =
+      typeof league.paused_remaining_seconds === 'number' && league.paused_remaining_seconds > 0
+        ? league.paused_remaining_seconds
+        : timerSec
+
+    // Virtual turn_started_at garante que deadline (turn_started_at + timerSec) = Date.now() + remaining
+    const virtualTurnStart = new Date(Date.now() - (timerSec - remaining) * 1000).toISOString()
+
+    await supabase
+      .from('leagues')
+      .update({
+        is_paused: false,
+        turn_started_at: virtualTurnStart,
+        paused_remaining_seconds: null,
+      })
+      .eq('id', leagueId)
+  }
 
   return newPauseState
 }

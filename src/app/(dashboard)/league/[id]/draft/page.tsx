@@ -483,7 +483,14 @@ export default function DraftRoomPage() {
 
             <div className={styles.controlsActionsRow}>
               {data.isPaused ? (
-                <div className={styles.countdownPaused}>⏸️ Timer Pausado</div>
+                <div className={styles.countdownPaused}>
+                  ⏸️ Timer Pausado
+                  {data.pausedRemainingSeconds ? (
+                    <span style={{ fontSize: '0.8rem', opacity: 0.9, marginLeft: '6px' }}>
+                      ({formatCountdown(data.pausedRemainingSeconds)})
+                    </span>
+                  ) : null}
+                </div>
               ) : secondsLeft !== null ? (
                 <div
                   className={`${styles.countdownBox} ${

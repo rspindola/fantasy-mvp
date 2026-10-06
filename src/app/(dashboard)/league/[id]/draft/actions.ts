@@ -11,6 +11,7 @@ export type DraftStateData = {
   leagueName: string
   status: string
   isPaused: boolean
+  pausedRemainingSeconds?: number | null
   isCommissioner: boolean
   currentPick: number
   totalPicks: number
@@ -119,7 +120,7 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
   // Fetch league info
   const { data: league } = await supabase
     .from('leagues')
-    .select('id, name, status, current_pick, total_picks, pick_timer_seconds, commissioner_id, is_paused, draft_started_at')
+    .select('id, name, status, current_pick, total_picks, pick_timer_seconds, commissioner_id, is_paused, draft_started_at, turn_started_at, paused_remaining_seconds')
     .eq('id', leagueId)
     .single()
 
@@ -352,9 +353,8 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
 
   const turnStartedAt =
     league.status === 'drafting'
-      ? picks && picks.length > 0
-        ? picks[0].picked_at
-        : league.draft_started_at
+      ? league.turn_started_at ||
+        (picks && picks.length > 0 ? picks[0].picked_at : league.draft_started_at)
       : null
 
   const isCommissioner = league.commissioner_id === user.id
@@ -436,6 +436,7 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
     leagueName: league.name,
     status: league.status,
     isPaused: league.is_paused ?? false,
+    pausedRemainingSeconds: league.paused_remaining_seconds ?? null,
     isCommissioner,
     currentPick: currentPickNum,
     totalPicks: league.total_picks,

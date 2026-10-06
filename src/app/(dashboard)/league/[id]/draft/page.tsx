@@ -54,6 +54,17 @@ export default function DraftRoomPage() {
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [availabilityFilter, setAvailabilityFilter] = useState<'ALL' | 'AVAILABLE' | 'PICKED'>('ALL')
+  const [sortBy, setSortBy] = useState<'avg' | 'minutes' | 'name'>('avg')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+
+  const handleSort = (field: 'avg' | 'minutes' | 'name') => {
+    if (sortBy === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortBy(field)
+      setSortDirection(field === 'name' ? 'asc' : 'desc')
+    }
+  }
 
   const rosterByPosition = useMemo(() => {
     const map: Record<string, { id: string; name: string; position: string }[]> = {
@@ -400,7 +411,23 @@ export default function DraftRoomPage() {
         normalizeText(p.clubShortName).includes(normalizedSearch)
       return matchesPos && matchesClub && matchesAvailability && matchesSearch
     })
-    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }))
+    .sort((a, b) => {
+      let comp = 0
+      if (sortBy === 'avg') {
+        comp = b.avgPoints - a.avgPoints
+        if (comp === 0) comp = b.totalMinutes - a.totalMinutes
+        if (comp === 0) comp = a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' })
+        return sortDirection === 'desc' ? comp : -comp
+      } else if (sortBy === 'minutes') {
+        comp = b.totalMinutes - a.totalMinutes
+        if (comp === 0) comp = b.avgPoints - a.avgPoints
+        if (comp === 0) comp = a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' })
+        return sortDirection === 'desc' ? comp : -comp
+      } else {
+        comp = a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' })
+        return sortDirection === 'asc' ? comp : -comp
+      }
+    })
 
   const wishlistPlayerIds = new Set(data.myWishlist.map((w) => w.playerId))
 
@@ -507,7 +534,7 @@ export default function DraftRoomPage() {
               ) : null}
 
               {data.isCommissioner && (
-                <>
+                <div className={styles.commissionerButtonsRow}>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -529,7 +556,7 @@ export default function DraftRoomPage() {
                   >
                     {data.isPaused ? '▶️ Retomar Draft' : '⏸️ Pausar Draft'}
                   </Button>
-                </>
+                </div>
               )}
             </div>
           </div>
@@ -878,6 +905,41 @@ export default function DraftRoomPage() {
               </div>
 
               <div className={styles.counterRightControls}>
+                {/* Sort Order Filter */}
+                <div className={styles.sortFilterGroup}>
+                  <span className={styles.sortLabel}>Ordenar:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleSort('avg')}
+                    className={`${styles.sortBtn} ${
+                      sortBy === 'avg' ? styles.sortBtnActive : ''
+                    }`}
+                    title="Ordenar por Média de Pontos"
+                  >
+                    ⭐ Média {sortBy === 'avg' ? (sortDirection === 'desc' ? '↓' : '↑') : ''}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSort('minutes')}
+                    className={`${styles.sortBtn} ${
+                      sortBy === 'minutes' ? styles.sortBtnActive : ''
+                    }`}
+                    title="Ordenar por Minutos Jogados"
+                  >
+                    ⏱️ Minutos {sortBy === 'minutes' ? (sortDirection === 'desc' ? '↓' : '↑') : ''}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSort('name')}
+                    className={`${styles.sortBtn} ${
+                      sortBy === 'name' ? styles.sortBtnActive : ''
+                    }`}
+                    title="Ordenar por Ordem Alfabética"
+                  >
+                    🔤 A-Z {sortBy === 'name' ? (sortDirection === 'asc' ? '↓' : '↑') : ''}
+                  </button>
+                </div>
+
                 {/* Availability Filter Buttons */}
                 <div className={styles.availabilityFilterGroup}>
                   <button
@@ -1250,11 +1312,29 @@ export default function DraftRoomPage() {
                   <thead>
                     <tr>
                       <th className={styles.tableColPos} style={{ width: '60px' }}>Pos</th>
-                      <th className={styles.tableColPlayer}>Jogador</th>
+                      <th
+                        className={`${styles.tableColPlayer} ${styles.tableSortableTh}`}
+                        onClick={() => handleSort('name')}
+                        title="Clique para ordenar por nome"
+                      >
+                        Jogador {sortBy === 'name' ? (sortDirection === 'asc' ? '▲' : '▼') : ''}
+                      </th>
                       <th className={styles.tableColClub}>Clube</th>
-                      <th className={styles.tableColAvg} style={{ textAlign: 'center', width: '75px' }}>Média</th>
-                      <th className={styles.hideMobile} style={{ textAlign: 'center', width: '75px' }}>
-                        Minutos
+                      <th
+                        className={`${styles.tableColAvg} ${styles.tableSortableTh}`}
+                        style={{ textAlign: 'center', width: '75px' }}
+                        onClick={() => handleSort('avg')}
+                        title="Clique para ordenar por média de pontos"
+                      >
+                        Média {sortBy === 'avg' ? (sortDirection === 'desc' ? '▼' : '▲') : ''}
+                      </th>
+                      <th
+                        className={`${styles.hideMobile} ${styles.tableSortableTh}`}
+                        style={{ textAlign: 'center', width: '75px' }}
+                        onClick={() => handleSort('minutes')}
+                        title="Clique para ordenar por minutos jogados"
+                      >
+                        Minutos {sortBy === 'minutes' ? (sortDirection === 'desc' ? '▼' : '▲') : ''}
                       </th>
                       <th className={styles.tableColActions} style={{ textAlign: 'right', width: '160px' }}>Ações</th>
                     </tr>

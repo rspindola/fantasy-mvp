@@ -30,7 +30,18 @@ export default function PreDraftPrepPage({
   const [search, setSearch] = useState('')
   const [modalPlayerId, setModalPlayerId] = useState<string | null>(null)
   const [pendingPlayerIds, setPendingPlayerIds] = useState<Set<string>>(new Set())
+  const [sortBy, setSortBy] = useState<'avg' | 'minutes' | 'name'>('avg')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [, startTransition] = useTransition()
+
+  const handleSort = (field: 'avg' | 'minutes' | 'name') => {
+    if (sortBy === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortBy(field)
+      setSortDirection(field === 'name' ? 'asc' : 'desc')
+    }
+  }
 
   const clubDropdownRef = useRef<HTMLDivElement>(null)
 
@@ -154,16 +165,34 @@ export default function PreDraftPrepPage({
   const selectedClub = data.clubs.find((c) => c.id === clubFilter)
 
   const normalizedSearch = normalizeText(search)
-  const filteredPlayers = data.availablePlayers.filter((player) => {
-    const matchesPos = posFilter === 'TODOS' || player.position === posFilter
-    const matchesClub = clubFilter === 'TODOS' || player.clubId === clubFilter
-    const matchesSearch =
-      !normalizedSearch ||
-      normalizeText(player.name).includes(normalizedSearch) ||
-      normalizeText(player.clubName).includes(normalizedSearch) ||
-      normalizeText(player.clubShortName).includes(normalizedSearch)
-    return matchesPos && matchesClub && matchesSearch
-  })
+  const filteredPlayers = data.availablePlayers
+    .filter((player) => {
+      const matchesPos = posFilter === 'TODOS' || player.position === posFilter
+      const matchesClub = clubFilter === 'TODOS' || player.clubId === clubFilter
+      const matchesSearch =
+        !normalizedSearch ||
+        normalizeText(player.name).includes(normalizedSearch) ||
+        normalizeText(player.clubName).includes(normalizedSearch) ||
+        normalizeText(player.clubShortName).includes(normalizedSearch)
+      return matchesPos && matchesClub && matchesSearch
+    })
+    .sort((a, b) => {
+      let comp = 0
+      if (sortBy === 'avg') {
+        comp = b.avgPoints - a.avgPoints
+        if (comp === 0) comp = b.totalMinutes - a.totalMinutes
+        if (comp === 0) comp = a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' })
+        return sortDirection === 'desc' ? comp : -comp
+      } else if (sortBy === 'minutes') {
+        comp = b.totalMinutes - a.totalMinutes
+        if (comp === 0) comp = b.avgPoints - a.avgPoints
+        if (comp === 0) comp = a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' })
+        return sortDirection === 'desc' ? comp : -comp
+      } else {
+        comp = a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' })
+        return sortDirection === 'asc' ? comp : -comp
+      }
+    })
 
   return (
     <div className={styles.container}>
@@ -321,18 +350,55 @@ export default function PreDraftPrepPage({
 
           {/* Catalog Counter and Active Filters */}
           <div className={styles.catalogCounterRow}>
-            <span>
-              Exibindo <strong>{filteredPlayers.length}</strong> jogadores disponíveis
-            </span>
-            {clubFilter !== 'TODOS' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span>
+                Exibindo <strong>{filteredPlayers.length}</strong> jogadores disponíveis
+              </span>
+              {clubFilter !== 'TODOS' && (
+                <button
+                  type="button"
+                  onClick={() => setClubFilter('TODOS')}
+                  className={styles.clearClubFilterBtn}
+                >
+                  Limpar clube: {selectedClub?.name} ✕
+                </button>
+              )}
+            </div>
+
+            {/* Sort Order Filter */}
+            <div className={styles.sortFilterGroup}>
+              <span className={styles.sortLabel}>Ordenar:</span>
               <button
                 type="button"
-                onClick={() => setClubFilter('TODOS')}
-                className={styles.clearClubFilterBtn}
+                onClick={() => handleSort('avg')}
+                className={`${styles.sortBtn} ${
+                  sortBy === 'avg' ? styles.sortBtnActive : ''
+                }`}
+                title="Ordenar por Média de Pontos"
               >
-                Limpar clube: {selectedClub?.name} ✕
+                ⭐ Média {sortBy === 'avg' ? (sortDirection === 'desc' ? '↓' : '↑') : ''}
               </button>
-            )}
+              <button
+                type="button"
+                onClick={() => handleSort('minutes')}
+                className={`${styles.sortBtn} ${
+                  sortBy === 'minutes' ? styles.sortBtnActive : ''
+                }`}
+                title="Ordenar por Minutos Jogados"
+              >
+                ⏱️ Minutos {sortBy === 'minutes' ? (sortDirection === 'desc' ? '↓' : '↑') : ''}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSort('name')}
+                className={`${styles.sortBtn} ${
+                  sortBy === 'name' ? styles.sortBtnActive : ''
+                }`}
+                title="Ordenar por Ordem Alfabética"
+              >
+                🔤 A-Z {sortBy === 'name' ? (sortDirection === 'asc' ? '↓' : '↑') : ''}
+              </button>
+            </div>
           </div>
 
           {/* Players Grid */}

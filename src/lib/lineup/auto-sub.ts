@@ -13,7 +13,7 @@ export interface LineupPlayerInput {
   isStarter: boolean
   minutes: number
   points: number
-  matchStatus?: 'played' | 'benched' | 'not_related' | 'postponed'
+  matchStatus?: 'played' | 'benched' | 'not_related' | 'postponed' | 'scheduled'
   scouts?: Record<string, any>
 }
 
@@ -65,8 +65,8 @@ export function processAutoSubstitutions(
   const usedReserveIds = new Set<string>()
 
   for (const starter of starters) {
-    // If starter did not play (0 minutes)
-    if (starter.minutes === 0) {
+    // If starter did not play (0 minutes) and their match is not scheduled for the future
+    if (starter.minutes === 0 && starter.matchStatus !== 'scheduled') {
       // Find eligible reserve for this exact position who played > 0 minutes and hasn't subbed in yet
       const eligibleReserve = reserves.find(
         (r) =>

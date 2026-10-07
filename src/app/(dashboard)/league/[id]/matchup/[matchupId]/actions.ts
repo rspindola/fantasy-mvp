@@ -136,6 +136,34 @@ export async function getMatchupDetailData(
     clubFixtureStatusMap.set(f.away_club_id, f.status)
   })
 
+  const status: MatchupDetailPageData['status'] =
+    matchup.fixture_round < currentSeasonRound
+      ? 'completed'
+      : matchup.fixture_round === currentSeasonRound
+      ? 'live'
+      : 'upcoming'
+
+  function getPlayerMatchStatus(
+    clubId: string,
+    hasStats: boolean,
+    minutes: number
+  ): 'played' | 'benched' | 'not_related' | 'postponed' | 'scheduled' {
+    const fixtureStatus = clubFixtureStatusMap.get(clubId)
+
+    if (fixtureStatus === 'postponed' && minutes === 0) {
+      return 'postponed'
+    }
+    if (hasStats) {
+      if (minutes > 0) return 'played'
+      if (fixtureStatus === 'scheduled') return 'scheduled'
+      return 'benched'
+    }
+    if (fixtureStatus === 'FT' || fixtureStatus === 'live' || status === 'completed') {
+      return 'not_related'
+    }
+    return 'scheduled'
+  }
+
   // 3. Helper to process a team's lineup and auto-sub
   async function loadTeamLineup(
     teamId: string,
@@ -240,17 +268,17 @@ export async function getMatchupDetailData(
     const startersInput: LineupPlayerInput[] = (slots || [])
       .filter((s: any) => s.is_starter)
       .map((s: any) => {
+        const hasStats = statsMap.has(s.player_id)
         const stat = statsMap.get(s.player_id) || {
           minutes: 0,
           points: 0.0,
-          matchStatus: 'not_related' as const,
           scouts: {},
         }
-        const isPostponedClub = clubFixtureStatusMap.get(s.player.club_id) === 'postponed'
-        const matchStatus =
-          isPostponedClub && stat.minutes === 0
-            ? ('postponed' as const)
-            : stat.matchStatus
+        const matchStatus = getPlayerMatchStatus(
+          s.player.club_id,
+          hasStats,
+          stat.minutes
+        )
 
         return {
           playerId: s.player_id,
@@ -272,17 +300,17 @@ export async function getMatchupDetailData(
     const reservesInput: LineupPlayerInput[] = (slots || [])
       .filter((s: any) => !s.is_starter)
       .map((s: any) => {
+        const hasStats = statsMap.has(s.player_id)
         const stat = statsMap.get(s.player_id) || {
           minutes: 0,
           points: 0.0,
-          matchStatus: 'not_related' as const,
           scouts: {},
         }
-        const isPostponedClub = clubFixtureStatusMap.get(s.player.club_id) === 'postponed'
-        const matchStatus =
-          isPostponedClub && stat.minutes === 0
-            ? ('postponed' as const)
-            : stat.matchStatus
+        const matchStatus = getPlayerMatchStatus(
+          s.player.club_id,
+          hasStats,
+          stat.minutes
+        )
 
         return {
           playerId: s.player_id,
@@ -344,13 +372,6 @@ export async function getMatchupDetailData(
     awayTeamRaw?.profile?.display_name ?? 'Técnico',
     awayTeamRaw?.user_id
   )
-
-  const status: MatchupDetailPageData['status'] =
-    matchup.fixture_round < currentSeasonRound
-      ? 'completed'
-      : matchup.fixture_round === currentSeasonRound
-      ? 'live'
-      : 'upcoming'
 
   return {
     leagueId,

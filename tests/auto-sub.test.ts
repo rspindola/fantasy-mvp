@@ -167,4 +167,43 @@ describe('Auto-Sub Engine', () => {
     expect(result.reserves[0].subbedIn).toBe(false)
     expect(result.totalPoints).toBe(0.0)
   })
+
+  it('does not substitute a starter whose match is scheduled (game not played yet)', () => {
+    const starters: LineupPlayerInput[] = [
+      {
+        playerId: 'p1',
+        name: 'Hugo Souza',
+        position: 'GOL',
+        slotPosition: 'GOL_1',
+        isCaptain: false,
+        isStarter: true,
+        minutes: 0,
+        points: 0.0,
+        matchStatus: 'scheduled',
+      },
+    ]
+
+    const reserves: LineupPlayerInput[] = [
+      {
+        playerId: 'r1',
+        name: 'Goleiro Reserva (Jogou na sexta)',
+        position: 'GOL',
+        slotPosition: 'RES_GOL',
+        isCaptain: false,
+        isStarter: false,
+        minutes: 90,
+        points: 6.0,
+        matchStatus: 'played',
+      },
+    ]
+
+    const result = processAutoSubstitutions(starters, reserves)
+
+    // Hugo Souza should NOT be replaced because his game is in the future
+    expect(result.substitutions).toHaveLength(0)
+    expect(result.starters[0].subbedOut).toBe(false)
+    expect(result.reserves[0].subbedIn).toBe(false)
+    expect(result.totalPoints).toBe(0.0)
+  })
 })
+

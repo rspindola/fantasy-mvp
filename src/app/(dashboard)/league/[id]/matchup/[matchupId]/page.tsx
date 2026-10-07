@@ -165,6 +165,8 @@ export default function MatchupDetailPage() {
                 <span style={{ color: '#fbbf24' }}>· Adiado (*)</span>
               ) : p.matchStatus === 'benched' ? (
                 <span>· Banco (0 min)</span>
+              ) : p.matchStatus === 'scheduled' ? (
+                <span style={{ color: 'var(--text-muted)' }}>· A jogar</span>
               ) : (
                 <span>· 0 min</span>
               )}

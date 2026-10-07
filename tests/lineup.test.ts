@@ -65,4 +65,88 @@ describe('Lineup Engine & Validation', () => {
     expect(captain).toBeDefined()
     expect(captain?.playerId).toBe('p10') // highest avgPoints (8.0)
   })
+
+  it('validates 4-4-2 formation correctly (1 GOL, 2 LAT, 2 ZAG, 4 MEI, 2 ATA)', () => {
+    const roster = [
+      { id: 'g1', position: 'GOL' as const, avgPoints: 5.0 },
+      { id: 'l1', position: 'LAT' as const, avgPoints: 5.0 },
+      { id: 'l2', position: 'LAT' as const, avgPoints: 5.0 },
+      { id: 'z1', position: 'ZAG' as const, avgPoints: 5.0 },
+      { id: 'z2', position: 'ZAG' as const, avgPoints: 5.0 },
+      { id: 'm1', position: 'MEI' as const, avgPoints: 5.0 },
+      { id: 'm2', position: 'MEI' as const, avgPoints: 5.0 },
+      { id: 'm3', position: 'MEI' as const, avgPoints: 5.0 },
+      { id: 'm4', position: 'MEI' as const, avgPoints: 5.0 },
+      { id: 'a1', position: 'ATA' as const, avgPoints: 5.0 },
+      { id: 'a2', position: 'ATA' as const, avgPoints: 5.0 },
+    ]
+    const starters = roster.map((p, i) => ({
+      playerId: p.id,
+      position: p.position,
+      isCaptain: i === 0,
+      isStarter: true,
+    }))
+    const result = validateLineup({
+      formation: '4-4-2',
+      starters,
+      rosterPlayerIds: roster.map((p) => p.id),
+    })
+    expect(result.isValid).toBe(true)
+  })
+
+  it('validates 3-4-3 formation correctly (1 GOL, 0 LAT, 3 ZAG, 4 MEI, 3 ATA)', () => {
+    const roster = [
+      { id: 'g1', position: 'GOL' as const, avgPoints: 5.0 },
+      { id: 'z1', position: 'ZAG' as const, avgPoints: 5.0 },
+      { id: 'z2', position: 'ZAG' as const, avgPoints: 5.0 },
+      { id: 'z3', position: 'ZAG' as const, avgPoints: 5.0 },
+      { id: 'm1', position: 'MEI' as const, avgPoints: 5.0 },
+      { id: 'm2', position: 'MEI' as const, avgPoints: 5.0 },
+      { id: 'm3', position: 'MEI' as const, avgPoints: 5.0 },
+      { id: 'm4', position: 'MEI' as const, avgPoints: 5.0 },
+      { id: 'a1', position: 'ATA' as const, avgPoints: 5.0 },
+      { id: 'a2', position: 'ATA' as const, avgPoints: 5.0 },
+      { id: 'a3', position: 'ATA' as const, avgPoints: 5.0 },
+    ]
+    const starters = roster.map((p, i) => ({
+      playerId: p.id,
+      position: p.position,
+      isCaptain: i === 0,
+      isStarter: true,
+    }))
+    const result = validateLineup({
+      formation: '3-4-3',
+      starters,
+      rosterPlayerIds: roster.map((p) => p.id),
+    })
+    expect(result.isValid).toBe(true)
+  })
+
+  it('validates 5-3-2 formation correctly (1 GOL, 2 LAT, 3 ZAG, 3 MEI, 2 ATA)', () => {
+    const roster = [
+      { id: 'g1', position: 'GOL' as const, avgPoints: 5.0 },
+      { id: 'l1', position: 'LAT' as const, avgPoints: 5.0 },
+      { id: 'l2', position: 'LAT' as const, avgPoints: 5.0 },
+      { id: 'z1', position: 'ZAG' as const, avgPoints: 5.0 },
+      { id: 'z2', position: 'ZAG' as const, avgPoints: 5.0 },
+      { id: 'z3', position: 'ZAG' as const, avgPoints: 5.0 },
+      { id: 'm1', position: 'MEI' as const, avgPoints: 5.0 },
+      { id: 'm2', position: 'MEI' as const, avgPoints: 5.0 },
+      { id: 'm3', position: 'MEI' as const, avgPoints: 5.0 },
+      { id: 'a1', position: 'ATA' as const, avgPoints: 5.0 },
+      { id: 'a2', position: 'ATA' as const, avgPoints: 5.0 },
+    ]
+    const starters = roster.map((p, i) => ({
+      playerId: p.id,
+      position: p.position,
+      isCaptain: i === 0,
+      isStarter: true,
+    }))
+    const result = validateLineup({
+      formation: '5-3-2',
+      starters,
+      rosterPlayerIds: roster.map((p) => p.id),
+    })
+    expect(result.isValid).toBe(true)
+  })
 })

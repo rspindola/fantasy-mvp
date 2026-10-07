@@ -5,6 +5,15 @@ import { validateLineup, sortByPosition, type Formation, type LineupSlotItem } f
 import { checkRoundLockStatus, generateAutoFallbackLineup } from '@/lib/lineup/lock'
 import { revalidatePath } from 'next/cache'
 
+export type OpponentInfo = {
+  opponentClubId: string
+  opponentName: string
+  opponentShortName: string
+  opponentLogoUrl: string | null
+  isHome: boolean
+  label: string
+}
+
 export type LineupPageData = {
   leagueId: string
   leagueName: string
@@ -19,10 +28,12 @@ export type LineupPageData = {
     id: string
     name: string
     position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'
+    clubId: string
     clubShortName: string
     clubLogoUrl: string | null
     photoUrl: string | null
     avgPoints: number
+    opponent: OpponentInfo | null
   }[]
   starters: {
     playerId: string
@@ -77,6 +88,42 @@ export async function getLineupData(leagueId: string): Promise<LineupPageData | 
   // Check market lock status
   const lockStatus = await checkRoundLockStatus(league.season_id, currentRound)
 
+  // Fetch fixtures for current round to determine player opponents
+  const { data: fixturesData } = await supabase
+    .from('fixtures')
+    .select(`
+      id,
+      home_club_id,
+      away_club_id,
+      kickoff_at,
+      home_club:real_clubs!fixtures_home_club_id_fkey(id, name, short_name, logo_url),
+      away_club:real_clubs!fixtures_away_club_id_fkey(id, name, short_name, logo_url)
+    `)
+    .eq('season_id', league.season_id)
+    .eq('round', currentRound)
+
+  const clubOpponentMap = new Map<string, OpponentInfo>()
+  for (const f of (fixturesData || []) as any[]) {
+    if (f.home_club_id && f.away_club_id) {
+      clubOpponentMap.set(f.home_club_id, {
+        opponentClubId: f.away_club_id,
+        opponentName: f.away_club?.name ?? 'Adversário',
+        opponentShortName: f.away_club?.short_name ?? 'ADV',
+        opponentLogoUrl: f.away_club?.logo_url ?? null,
+        isHome: true,
+        label: `vs ${f.away_club?.short_name ?? 'ADV'} (C)`,
+      })
+      clubOpponentMap.set(f.away_club_id, {
+        opponentClubId: f.home_club_id,
+        opponentName: f.home_club?.name ?? 'Adversário',
+        opponentShortName: f.home_club?.short_name ?? 'ADV',
+        opponentLogoUrl: f.home_club?.logo_url ?? null,
+        isHome: false,
+        label: `vs ${f.home_club?.short_name ?? 'ADV'} (F)`,
+      })
+    }
+  }
+
   // Fetch user roster players
   const { data: rosterData } = await supabase
     .from('roster_players')
@@ -87,20 +134,28 @@ export async function getLineupData(leagueId: string): Promise<LineupPageData | 
         position,
         photo_url,
         avg_points,
-        club:real_clubs(short_name, logo_url)
+        club_id,
+        club:real_clubs(id, short_name, logo_url)
       )
     `)
     .eq('fantasy_team_id', team.id)
 
-  const roster = (rosterData || []).map((r: any) => ({
-    id: r.player.id,
-    name: r.player.name,
-    position: r.player.position,
-    clubShortName: r.player.club?.short_name ?? '',
-    clubLogoUrl: r.player.club?.logo_url ?? null,
-    photoUrl: r.player.photo_url ?? null,
-    avgPoints: Number(r.player.avg_points ?? 0),
-  }))
+  const roster = (rosterData || []).map((r: any) => {
+    const clubId = r.player.club?.id || r.player.club_id
+    const opponent = clubId ? clubOpponentMap.get(clubId) ?? null : null
+
+    return {
+      id: r.player.id,
+      name: r.player.name,
+      position: r.player.position,
+      clubId: clubId ?? '',
+      clubShortName: r.player.club?.short_name ?? '',
+      clubLogoUrl: r.player.club?.logo_url ?? null,
+      photoUrl: r.player.photo_url ?? null,
+      avgPoints: Number(r.player.avg_points ?? 0),
+      opponent,
+    }
+  })
 
   // Fetch existing lineup for current round
   const { data: lineup } = await supabase

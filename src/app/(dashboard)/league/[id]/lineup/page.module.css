@@ -45,14 +45,114 @@
   gap: 12px;
 }
 
-.formationSelect {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-medium);
+/* Formations Card Selector (Image 1) */
+.formationsContainer {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+.formationsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.formationsTitle {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.formationsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .formationsGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.formationCard {
+  background: #141722;
+  border: 1.5px solid #232838;
   border-radius: var(--radius-md);
-  padding: 8px 12px;
-  font-size: 0.875rem;
-  color: var(--text-primary);
+  padding: 12px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
   outline: none;
+}
+
+.formationCard:hover:not(:disabled) {
+  border-color: #3b4256;
+  background: #191e2b;
+}
+
+.formationCard:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.formationCardSelected {
+  border-color: #3b82f6 !important;
+  background: rgba(59, 130, 246, 0.1) !important;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3) !important;
+}
+
+.dotsPitch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  margin-bottom: 8px;
+}
+
+.dotsRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dotBlue {
+  background: #4f6ef7;
+  box-shadow: 0 0 3px rgba(79, 110, 247, 0.6);
+}
+
+.dotGrey {
+  background: #8b92a2;
+}
+
+.formationCardName {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.formationCardSelected .formationCardName {
+  color: #ffffff;
 }
 
 .lockedBanner {
@@ -76,6 +176,231 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* Slot List (Image 2) */
+.slotsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slotItem {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  gap: 10px;
+}
+
+.slotItemEmpty {
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  background: rgba(19, 23, 34, 0.45);
+}
+
+.slotItemEmpty:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(56, 189, 248, 0.03);
+}
+
+.slotItemFilled {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #141824;
+}
+
+.slotItemCaptain {
+  border: 1px solid rgba(234, 179, 8, 0.45) !important;
+  background: linear-gradient(90deg, rgba(234, 179, 8, 0.08) 0%, rgba(20, 24, 36, 1) 100%) !important;
+}
+
+.slotPosLabelArea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 58px;
+  flex-shrink: 0;
+}
+
+.posBadgeText {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.pos_GOL { color: #fbbf24; }
+.pos_LAT { color: #38bdf8; }
+.pos_ZAG { color: #60a5fa; }
+.pos_MEI { color: #34d399; }
+.pos_ATA { color: #f87171; }
+
+.slotDash {
+  color: #64748b;
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+.slotFilledContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  min-width: 0;
+  gap: 10px;
+}
+
+.slotPlayerInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  cursor: pointer;
+}
+
+.slotPlayerText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.slotPlayerName {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slotPlayerSub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.opponentBadge {
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.6875rem;
+}
+
+.noOpponentBadge {
+  background: rgba(148, 163, 184, 0.1);
+  color: #94a3b8;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+}
+
+.avgPointsText {
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.slotActionsArea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.removeSlotBtn {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.removeSlotBtn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+}
+
+.slotEmptyContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  cursor: pointer;
+}
+
+.slotEmptyHint {
+  font-size: 0.8125rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+.slotEscalarBtn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.slotEscalarBtn:hover {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: #38bdf8;
+}
+
+/* Bench Divider (Image 2) */
+.benchDividerContainer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 24px 0 12px 0;
+}
+
+.benchDividerLine {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.benchDividerText {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.benchHelpIcon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid #f97316;
+  color: #f97316;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
 }
 
 /* Two Column Layout */

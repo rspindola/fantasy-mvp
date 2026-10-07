@@ -1,4 +1,4 @@
-export type Formation = '4-3-3' | '4-4-2' | '3-5-2'
+export type Formation = '3-4-3' | '3-5-2' | '4-3-3' | '4-4-2' | '4-5-1' | '5-3-2' | '5-4-1'
 
 export interface PositionRequirements {
   GOL: number
@@ -9,10 +9,32 @@ export interface PositionRequirements {
 }
 
 export const FORMATION_REQUIREMENTS: Record<Formation, PositionRequirements> = {
+  '3-4-3': { GOL: 1, LAT: 0, ZAG: 3, MEI: 4, ATA: 3 },
+  '3-5-2': { GOL: 1, LAT: 0, ZAG: 3, MEI: 5, ATA: 2 },
   '4-3-3': { GOL: 1, LAT: 2, ZAG: 2, MEI: 3, ATA: 3 },
   '4-4-2': { GOL: 1, LAT: 2, ZAG: 2, MEI: 4, ATA: 2 },
-  '3-5-2': { GOL: 1, LAT: 0, ZAG: 3, MEI: 5, ATA: 2 },
+  '4-5-1': { GOL: 1, LAT: 2, ZAG: 2, MEI: 5, ATA: 1 },
+  '5-3-2': { GOL: 1, LAT: 2, ZAG: 3, MEI: 3, ATA: 2 },
+  '5-4-1': { GOL: 1, LAT: 2, ZAG: 3, MEI: 4, ATA: 1 },
 }
+
+export interface FormationInfo {
+  id: Formation
+  name: string
+  defenders: number // bottom blue dots
+  midfielders: number // middle grey dots
+  attackers: number // top blue dots
+}
+
+export const FORMATIONS_LIST: FormationInfo[] = [
+  { id: '3-4-3', name: '3-4-3', defenders: 3, midfielders: 4, attackers: 3 },
+  { id: '3-5-2', name: '3-5-2', defenders: 3, midfielders: 5, attackers: 2 },
+  { id: '4-3-3', name: '4-3-3', defenders: 4, midfielders: 3, attackers: 3 },
+  { id: '4-4-2', name: '4-4-2', defenders: 4, midfielders: 4, attackers: 2 },
+  { id: '4-5-1', name: '4-5-1', defenders: 4, midfielders: 5, attackers: 1 },
+  { id: '5-3-2', name: '5-3-2', defenders: 5, midfielders: 3, attackers: 2 },
+  { id: '5-4-1', name: '5-4-1', defenders: 5, midfielders: 4, attackers: 1 },
+]
 
 export const POSITION_ORDER: Record<string, number> = {
   GOL: 1,

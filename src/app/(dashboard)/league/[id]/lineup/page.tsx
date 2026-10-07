@@ -4,7 +4,12 @@ import { useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { getLineupData, saveLineupAction, type LineupPageData } from './actions'
-import { FORMATION_REQUIREMENTS, type Formation, type LineupSlotItem } from '@/lib/lineup/lineup-engine'
+import {
+  FORMATION_REQUIREMENTS,
+  FORMATIONS_LIST,
+  type Formation,
+  type LineupSlotItem,
+} from '@/lib/lineup/lineup-engine'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { PlayerDetailModal } from '@/components/player/PlayerDetailModal'
@@ -366,17 +371,6 @@ export default function LineupPage() {
         </div>
 
         <div className={styles.controlsGroup}>
-          <select
-            value={formation}
-            disabled={data.isLocked}
-            onChange={(e) => handleFormationChange(e.target.value as Formation)}
-            className={styles.formationSelect}
-          >
-            <option value="4-3-3">Formação 4-3-3 (1G, 2L, 2Z, 3M, 3A)</option>
-            <option value="4-4-2">Formação 4-4-2 (1G, 2L, 2Z, 4M, 2A)</option>
-            <option value="3-5-2">Formação 3-5-2 (1G, 0L, 3Z, 5M, 2A)</option>
-          </select>
-
           {!data.isLocked && (
             <Button size="md" isLoading={isPending} onClick={handleSaveLineup}>
               {isPending ? 'Salvando...' : '💾 Salvar Escalação'}
@@ -411,6 +405,56 @@ export default function LineupPage() {
         </div>
       ) : null}
 
+      {/* Formations Cards Bar (Imagem 1) */}
+      <div className={styles.formationsContainer}>
+        <div className={styles.formationsHeader}>
+          <span className={styles.formationsTitle}>Esquema Tático</span>
+          <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+            Formação selecionada: <strong style={{ color: 'var(--accent-blue)' }}>{formation}</strong>
+          </span>
+        </div>
+
+        <div className={styles.formationsGrid}>
+          {FORMATIONS_LIST.map((form) => {
+            const isSelected = formation === form.id
+            return (
+              <button
+                key={form.id}
+                type="button"
+                disabled={data.isLocked}
+                onClick={() => handleFormationChange(form.id)}
+                className={`${styles.formationCard} ${
+                  isSelected ? styles.formationCardSelected : ''
+                }`}
+                title={`Esquema ${form.name}`}
+              >
+                <div className={styles.dotsPitch}>
+                  {/* Top row: Attackers (blue) */}
+                  <div className={styles.dotsRow}>
+                    {Array.from({ length: form.attackers }).map((_, i) => (
+                      <span key={i} className={`${styles.dot} ${styles.dotBlue}`} />
+                    ))}
+                  </div>
+                  {/* Middle row: Midfielders (grey) */}
+                  <div className={styles.dotsRow}>
+                    {Array.from({ length: form.midfielders }).map((_, i) => (
+                      <span key={i} className={`${styles.dot} ${styles.dotGrey}`} />
+                    ))}
+                  </div>
+                  {/* Bottom row: Defenders (blue) */}
+                  <div className={styles.dotsRow}>
+                    {Array.from({ length: form.defenders }).map((_, i) => (
+                      <span key={i} className={`${styles.dot} ${styles.dotBlue}`} />
+                    ))}
+                  </div>
+                </div>
+                <span className={styles.formationCardName}>{form.name}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {/* Feedback Message */}
       {saveMessage && (
         <div
@@ -440,7 +484,7 @@ export default function LineupPage() {
 
       {/* Two Column Layout: Starters vs Roster */}
       <div className={styles.grid}>
-        {/* Coluna 1: Titulares Escalados e Banco de Reservas */}
+        {/* Coluna 1: Titulares Escalados e Banco de Reservas (Imagem 2) */}
         <div className={styles.columnCard}>
           <div className={styles.columnHeader}>
             <div className={styles.columnTitle}>
@@ -449,125 +493,230 @@ export default function LineupPage() {
             <span className={styles.subHelp}>Clique no ⭐ para escolher o Capitão (1.5x)</span>
           </div>
 
-          <div className={styles.startersList}>
-            {starters.length === 0 ? (
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '24px 0' }}>
-                Nenhum jogador escalado. Clique em &quot;+ Titular&quot; na coluna do elenco à direita!
-              </span>
-            ) : (
-              sortedStarters.map((starter) => {
-                const player = data.roster.find((r) => r.id === starter.playerId)
+          {/* Slots de Titulares (Ordenados por posição conforme formação) */}
+          <div className={styles.slotsList}>
+            {(() => {
+              const POS_ORDER: ('GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA')[] = ['GOL', 'LAT', 'ZAG', 'MEI', 'ATA']
+              const startersByPos: Record<string, LineupSlotItem[]> = {
+                GOL: starters.filter((s) => s.position === 'GOL'),
+                LAT: starters.filter((s) => s.position === 'LAT'),
+                ZAG: starters.filter((s) => s.position === 'ZAG'),
+                MEI: starters.filter((s) => s.position === 'MEI'),
+                ATA: starters.filter((s) => s.position === 'ATA'),
+              }
+
+              const slots: { pos: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'; assigned?: LineupSlotItem }[] = []
+              for (const pos of POS_ORDER) {
+                const count = reqs[pos] || 0
+                const assignedList = startersByPos[pos] || []
+                for (let i = 0; i < count; i++) {
+                  slots.push({ pos, assigned: assignedList[i] })
+                }
+              }
+
+              return slots.map((slot, idx) => {
+                const starterItem = slot.assigned
+                const player = starterItem
+                  ? data.roster.find((r) => r.id === starterItem.playerId)
+                  : null
+
                 return (
                   <div
-                    key={starter.playerId}
-                    className={`${styles.starterRow} ${
-                      starter.isCaptain ? styles.starterRowCaptain : ''
+                    key={`starter-slot-${slot.pos}-${idx}`}
+                    className={`${styles.slotItem} ${
+                      player
+                        ? `${styles.slotItemFilled} ${
+                            starterItem?.isCaptain ? styles.slotItemCaptain : ''
+                          }`
+                        : styles.slotItemEmpty
                     }`}
                   >
-                    <div
-                      className={styles.playerMeta}
-                      onClick={() => setModalPlayerId(starter.playerId)}
-                      title="Clique para ver a ficha completa do atleta"
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <PlayerAvatar name={player?.name ?? 'J'} photoUrl={player?.photoUrl ?? null} />
-                      <Badge variant={starter.position as any}>
-                        {starter.position}
-                      </Badge>
-                      <div className={styles.playerInfo}>
-                        <div className={styles.playerName}>{player?.name ?? 'Jogador'}</div>
-                        <ClubBadge shortName={player?.clubShortName ?? ''} logoUrl={player?.clubLogoUrl ?? null} />
-                      </div>
+                    {/* Indicador de Posição (ex: GOL -) */}
+                    <div className={styles.slotPosLabelArea}>
+                      <span className={`${styles.posBadgeText} ${styles[`pos_${slot.pos}`]}`}>
+                        {slot.pos}
+                      </span>
+                      <span className={styles.slotDash}>-</span>
                     </div>
 
-                    <div className={styles.starterActions}>
-                      <button
-                        type="button"
-                        onClick={() => handleMakeCaptain(starter.playerId)}
-                        disabled={data.isLocked}
-                        className={`${styles.captainBtn} ${
-                          starter.isCaptain ? styles.captainBtnActive : ''
-                        }`}
-                        title="Tornar Capitão (Pontos x1.5)"
-                      >
-                        {starter.isCaptain ? '⭐ Capitão (1.5x)' : '⭐ Capitão'}
-                      </button>
+                    {player ? (
+                      /* Slot Preenchido */
+                      <div className={styles.slotFilledContent}>
+                        <div
+                          className={styles.slotPlayerInfo}
+                          onClick={() => setModalPlayerId(player.id)}
+                          title="Clique para ver ficha completa"
+                        >
+                          <PlayerAvatar name={player.name} photoUrl={player.photoUrl} />
+                          <div className={styles.slotPlayerText}>
+                            <div className={styles.slotPlayerName}>{player.name}</div>
+                            <div className={styles.slotPlayerSub}>
+                              <ClubBadge shortName={player.clubShortName} logoUrl={player.clubLogoUrl} />
+                              {player.opponent ? (
+                                <span className={styles.opponentBadge}>
+                                  {player.opponent.label}
+                                </span>
+                              ) : (
+                                <span className={styles.noOpponentBadge}>Sem jogo</span>
+                              )}
+                              <span className={styles.avgPointsText}>
+                                Média: {player.avgPoints.toFixed(1)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
 
-                      {!data.isLocked && (
+                        <div className={styles.slotActionsArea}>
+                          <button
+                            type="button"
+                            onClick={() => handleMakeCaptain(player.id)}
+                            disabled={data.isLocked}
+                            className={`${styles.captainBtn} ${
+                              starterItem?.isCaptain ? styles.captainBtnActive : ''
+                            }`}
+                            title="Tornar Capitão (Pontos x1.5)"
+                          >
+                            {starterItem?.isCaptain ? '⭐ Capitão (1.5x)' : '⭐ Capitão'}
+                          </button>
+
+                          {!data.isLocked && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveStarter(player.id)}
+                              className={styles.removeSlotBtn}
+                              title="Remover titular"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      /* Slot Disponível / Vazio */
+                      <div
+                        className={styles.slotEmptyContent}
+                        onClick={() => setPosFilter(slot.pos)}
+                        title={`Clique para ver atletas de ${slot.pos} disponíveis no elenco`}
+                      >
+                        <span className={styles.slotEmptyHint}>Posição disponível</span>
                         <button
                           type="button"
-                          onClick={() => handleRemoveStarter(starter.playerId)}
-                          className={styles.removeBtn}
-                          title="Remover dos Titulares"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setPosFilter(slot.pos)
+                          }}
+                          className={styles.slotEscalarBtn}
                         >
-                          ✕ Remover
+                          + Escalar {slot.pos}
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 )
               })
-            )}
+            })()}
           </div>
 
-          {/* Banco de Reservas (5 posições) */}
-          <div className={styles.reserveSection}>
-            <div className={styles.reserveHeader}>
-              <div className={styles.reserveTitle}>
-                <span>🔄 Banco de Reservas ({reserves.length}/5)</span>
-              </div>
-              <span className={styles.subHelp}>1 por posição para substituição automática</span>
+          {/* Divisor Banco de Reservas (Imagem 2) */}
+          <div className={styles.benchDividerContainer}>
+            <div className={styles.benchDividerLine} />
+            <div className={styles.benchDividerText}>
+              <span>BANCO DE RESERVAS</span>
+              <span
+                className={styles.benchHelpIcon}
+                title="O banco de reservas substitui automaticamente um titular da mesma posição caso ele não entre em campo na rodada."
+              >
+                ?
+              </span>
             </div>
+            <div className={styles.benchDividerLine} />
+          </div>
 
-            <div className={styles.reserveList}>
-              {(['GOL', 'LAT', 'ZAG', 'MEI', 'ATA'] as const).map((pos) => {
-                const reserveItem = reserves.find((r) => r.position === pos)
-                const player = reserveItem
-                  ? data.roster.find((p) => p.id === reserveItem.playerId)
-                  : null
+          {/* Slots do Banco de Reservas (GOL, LAT, ZAG, MEI, ATA) */}
+          <div className={styles.slotsList}>
+            {(['GOL', 'LAT', 'ZAG', 'MEI', 'ATA'] as const).map((pos) => {
+              const reserveItem = reserves.find((r) => r.position === pos)
+              const player = reserveItem
+                ? data.roster.find((r) => r.id === reserveItem.playerId)
+                : null
 
-                if (reserveItem && player) {
-                  return (
-                    <div key={pos} className={styles.reserveRow}>
+              return (
+                <div
+                  key={`bench-slot-${pos}`}
+                  className={`${styles.slotItem} ${
+                    player ? styles.slotItemFilled : styles.slotItemEmpty
+                  }`}
+                >
+                  <div className={styles.slotPosLabelArea}>
+                    <span className={`${styles.posBadgeText} ${styles[`pos_${pos}`]}`}>
+                      {pos}
+                    </span>
+                    <span className={styles.slotDash}>-</span>
+                  </div>
+
+                  {player ? (
+                    /* Reserva Preenchido */
+                    <div className={styles.slotFilledContent}>
                       <div
-                        className={styles.playerMeta}
+                        className={styles.slotPlayerInfo}
                         onClick={() => setModalPlayerId(player.id)}
-                        title="Clique para ver a ficha completa do atleta"
-                        style={{ cursor: 'pointer' }}
+                        title="Clique para ver ficha completa"
                       >
                         <PlayerAvatar name={player.name} photoUrl={player.photoUrl} />
-                        <Badge variant={pos}>{pos}</Badge>
-                        <div className={styles.playerInfo}>
-                          <div className={styles.playerName}>{player.name}</div>
-                          <ClubBadge shortName={player.clubShortName} logoUrl={player.clubLogoUrl} />
+                        <div className={styles.slotPlayerText}>
+                          <div className={styles.slotPlayerName}>{player.name}</div>
+                          <div className={styles.slotPlayerSub}>
+                            <ClubBadge shortName={player.clubShortName} logoUrl={player.clubLogoUrl} />
+                            {player.opponent ? (
+                              <span className={styles.opponentBadge}>
+                                {player.opponent.label}
+                              </span>
+                            ) : (
+                              <span className={styles.noOpponentBadge}>Sem jogo</span>
+                            )}
+                            <span className={styles.avgPointsText}>
+                              Média: {player.avgPoints.toFixed(1)}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      {!data.isLocked && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveReserve(player.id)}
-                          className={styles.removeBtn}
-                          title="Remover do banco de reservas"
-                        >
-                          ✕ Remover
-                        </button>
-                      )}
-                    </div>
-                  )
-                }
 
-                return (
-                  <div key={pos} className={styles.emptyReserveRow}>
-                    <div className={styles.playerMeta}>
-                      <Badge variant={pos}>{pos}</Badge>
-                      <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                        Nenhum reserva de {pos} selecionado
-                      </span>
+                      <div className={styles.slotActionsArea}>
+                        {!data.isLocked && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveReserve(player.id)}
+                            className={styles.removeSlotBtn}
+                            title="Remover do banco de reservas"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
+                  ) : (
+                    /* Reserva Disponível / Vazio */
+                    <div
+                      className={styles.slotEmptyContent}
+                      onClick={() => setPosFilter(pos)}
+                      title={`Clique para ver reservas de ${pos} no elenco`}
+                    >
+                      <span className={styles.slotEmptyHint}>Reserva disponível</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setPosFilter(pos)
+                        }}
+                        className={styles.slotEscalarBtn}
+                      >
+                        + Escalar {pos}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
 
@@ -584,6 +733,7 @@ export default function LineupPage() {
             {['TODOS', 'GOL', 'LAT', 'ZAG', 'MEI', 'ATA'].map((pos) => (
               <button
                 key={pos}
+                type="button"
                 onClick={() => setPosFilter(pos)}
                 className={`${styles.posBtn} ${
                   posFilter === pos ? styles.posBtnActive : ''
@@ -602,7 +752,7 @@ export default function LineupPage() {
             </label>
           </div>
 
-          {/* Roster List */}
+          {/* Roster List com Adversário */}
           <div className={styles.rosterList}>
             {filteredRoster.map((player) => {
               const isStarter = starterPlayerIds.has(player.id)
@@ -625,17 +775,41 @@ export default function LineupPage() {
                     <Badge variant={player.position as any}>{player.position}</Badge>
                     <div className={styles.playerInfo}>
                       <div className={styles.playerName}>{player.name}</div>
-                      <ClubBadge shortName={player.clubShortName} logoUrl={player.clubLogoUrl} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <ClubBadge shortName={player.clubShortName} logoUrl={player.clubLogoUrl} />
+                        {player.opponent ? (
+                          <span className={styles.opponentBadge}>
+                            {player.opponent.label}
+                          </span>
+                        ) : (
+                          <span className={styles.noOpponentBadge}>Sem jogo</span>
+                        )}
+                        <span className={styles.avgPointsText}>
+                          Média: {player.avgPoints.toFixed(1)}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
                   {isStarter ? (
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-green)' }}>
-                      ✓ Titular
-                    </span>
+                    <div className={styles.rosterActionsGroup}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-green)' }}>
+                        ✓ Titular
+                      </span>
+                      {!data.isLocked && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveStarter(player.id)}
+                          className={styles.removeBtn}
+                          title="Remover titular"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
                   ) : isReserve ? (
                     <div className={styles.rosterActionsGroup}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#818cf8' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#818cf8' }}>
                         ✓ Reserva
                       </span>
                       {!data.isLocked && (

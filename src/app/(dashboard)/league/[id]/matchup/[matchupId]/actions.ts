@@ -11,6 +11,7 @@ import {
   executeAutoSubAndCloseRound,
   type RoundClosingSummary,
 } from '@/lib/round/round-processor'
+import { ensureLockedRoundLineups } from '@/lib/lineup/lock'
 import { sortByPosition } from '@/lib/lineup/lineup-engine'
 import { revalidatePath } from 'next/cache'
 
@@ -116,6 +117,9 @@ export async function getMatchupDetailData(
 
   // Ensure scouts exist
   await ensureRoundScouts(currentLeague.season_id, currentMatchup.fixture_round)
+
+  // Ensure locked lineups are auto-completed
+  await ensureLockedRoundLineups(leagueId, currentMatchup.fixture_round)
 
   // Fetch round fixtures to check for postponed matches
   const { data: roundFixtures } = await supabase

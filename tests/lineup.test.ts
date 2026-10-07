@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { validateLineup } from '@/lib/lineup/lineup-engine'
-import { generateAutoFallbackLineup } from '@/lib/lineup/lock'
+import { generateAutoFallbackLineup, autoCompleteLineup } from '@/lib/lineup/lock'
 
 describe('Lineup Engine & Validation', () => {
   const dummyRoster = [
@@ -16,6 +16,7 @@ describe('Lineup Engine & Validation', () => {
     { id: 'p10', position: 'ATA' as const, avgPoints: 8.0 },
     { id: 'p11', position: 'ATA' as const, avgPoints: 7.5 },
     { id: 'p12', position: 'ATA' as const, avgPoints: 7.2 },
+    { id: 'p13', position: 'MEI' as const, avgPoints: 5.5 },
   ]
 
   const rosterIds = dummyRoster.map((r) => r.id)
@@ -148,5 +149,51 @@ describe('Lineup Engine & Validation', () => {
       rosterPlayerIds: roster.map((p) => p.id),
     })
     expect(result.isValid).toBe(true)
+  })
+
+  it('autoCompleteLineup fills an empty team to 11 starters with a captain', () => {
+    const res = autoCompleteLineup(dummyRoster, '4-3-3', [], [])
+    expect(res.formation).toBe('4-3-3')
+    expect(res.starters).toHaveLength(11)
+    expect(res.starters.some((s) => s.isCaptain)).toBe(true)
+    const captain = res.starters.find((s) => s.isCaptain)
+    expect(captain?.playerId).toBe('p10') // highest avgPoints
+  })
+
+  it('autoCompleteLineup preserves existing starters and fills remaining positions', () => {
+    // Manager only picked 3 starters: 1 GOL, 1 MEI (as captain), 1 ATA
+    const partialStarters = [
+      { playerId: 'p2', position: 'GOL' as const, isCaptain: false },
+      { playerId: 'p8', position: 'MEI' as const, isCaptain: true },
+      { playerId: 'p12', position: 'ATA' as const, isCaptain: false },
+    ]
+
+    const res = autoCompleteLineup(dummyRoster, '4-3-3', partialStarters, [])
+    expect(res.starters).toHaveLength(11)
+
+    // Verify existing choices are preserved
+    expect(res.starters.some((s) => s.playerId === 'p2')).toBe(true)
+    expect(res.starters.some((s) => s.playerId === 'p8' && s.isCaptain)).toBe(true)
+    expect(res.starters.some((s) => s.playerId === 'p12')).toBe(true)
+
+    // No duplicate players
+    const starterIds = res.starters.map((s) => s.playerId)
+    expect(new Set(starterIds).size).toBe(11)
+  })
+
+  it('autoCompleteLineup respects selected formation (e.g. 4-4-2)', () => {
+    const res = autoCompleteLineup(dummyRoster, '4-4-2', [], [])
+    expect(res.formation).toBe('4-4-2')
+    expect(res.starters).toHaveLength(11)
+    const posCounts = res.starters.reduce((acc, s) => {
+      acc[s.position] = (acc[s.position] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+
+    expect(posCounts['GOL']).toBe(1)
+    expect(posCounts['LAT']).toBe(2)
+    expect(posCounts['ZAG']).toBe(2)
+    expect(posCounts['MEI']).toBe(4)
+    expect(posCounts['ATA']).toBe(2)
   })
 })

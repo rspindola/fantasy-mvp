@@ -4,6 +4,7 @@ import {
   type LineupPlayerInput,
   type ProcessedLineupResult,
 } from '@/lib/lineup/auto-sub'
+import { ensureLockedRoundLineups } from '@/lib/lineup/lock'
 import { calculatePlayerScoring } from '@/lib/scoring/scoring-engine'
 
 export interface RoundClosingSummary {
@@ -175,7 +176,10 @@ export async function executeAutoSubAndCloseRound(
   const teamScoreMap = new Map<string, number>()
   const allSubstitutions: RoundClosingSummary['substitutions'] = []
 
-  // 3. Process each team's lineup
+  // 3. Ensure all teams have complete lineups (at least 11 starters) before scoring
+  await ensureLockedRoundLineups(leagueId, fixtureRound)
+
+  // Process each team's lineup
   for (const team of teams) {
     // Fetch lineup
     const { data: lineup } = await supabase

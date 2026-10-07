@@ -59,6 +59,12 @@ export default function LineupPage() {
   const [saveMessage, setSaveMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
   const [modal, setModal] = useState<ModalState>(null)
   const [modalPlayerId, setModalPlayerId] = useState<string | null>(null)
+  const [mobileTab, setMobileTab] = useState<'lineup' | 'roster'>('lineup')
+
+  const handleQuickAdd = (pos: string) => {
+    setPosFilter(pos)
+    setMobileTab('roster')
+  }
 
   const loadData = () => {
     if (leagueId) {
@@ -482,10 +488,34 @@ export default function LineupPage() {
         </div>
       )}
 
+      {/* Mobile Tab Switcher */}
+      <div className={styles.mobileTabsBar}>
+        <button
+          type="button"
+          onClick={() => setMobileTab('lineup')}
+          className={`${styles.mobileTabBtn} ${
+            mobileTab === 'lineup' ? styles.mobileTabBtnActive : ''
+          }`}
+        >
+          <span>⚽ Escalação</span>
+          <span className={styles.tabBadge}>{starters.length}/11</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab('roster')}
+          className={`${styles.mobileTabBtn} ${
+            mobileTab === 'roster' ? styles.mobileTabBtnActive : ''
+          }`}
+        >
+          <span>📋 Elenco</span>
+          <span className={styles.tabBadge}>{data.roster.length}</span>
+        </button>
+      </div>
+
       {/* Two Column Layout: Starters vs Roster */}
       <div className={styles.grid}>
         {/* Coluna 1: Titulares Escalados e Banco de Reservas (Imagem 2) */}
-        <div className={styles.columnCard}>
+        <div className={`${styles.columnCard} ${mobileTab !== 'lineup' ? styles.mobileHidden : ''}`}>
           <div className={styles.columnHeader}>
             <div className={styles.columnTitle}>
               <span>⚽ Titulares Escalados ({starters.length}/11)</span>
@@ -576,7 +606,12 @@ export default function LineupPage() {
                             }`}
                             title="Tornar Capitão (Pontos x1.5)"
                           >
-                            {starterItem?.isCaptain ? '⭐ Capitão (1.5x)' : '⭐ Capitão'}
+                            <span className={styles.captainTextDesktop}>
+                              {starterItem?.isCaptain ? '⭐ Capitão (1.5x)' : '⭐ Capitão'}
+                            </span>
+                            <span className={styles.captainTextMobile}>
+                              {starterItem?.isCaptain ? '⭐ 1.5x' : '⭐'}
+                            </span>
                           </button>
 
                           {!data.isLocked && (
@@ -595,7 +630,7 @@ export default function LineupPage() {
                       /* Slot Disponível / Vazio */
                       <div
                         className={styles.slotEmptyContent}
-                        onClick={() => setPosFilter(slot.pos)}
+                        onClick={() => handleQuickAdd(slot.pos)}
                         title={`Clique para ver atletas de ${slot.pos} disponíveis no elenco`}
                       >
                         <span className={styles.slotEmptyHint}>Posição disponível</span>
@@ -603,7 +638,7 @@ export default function LineupPage() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation()
-                            setPosFilter(slot.pos)
+                            handleQuickAdd(slot.pos)
                           }}
                           className={styles.slotEscalarBtn}
                         >
@@ -698,7 +733,7 @@ export default function LineupPage() {
                     /* Reserva Disponível / Vazio */
                     <div
                       className={styles.slotEmptyContent}
-                      onClick={() => setPosFilter(pos)}
+                      onClick={() => handleQuickAdd(pos)}
                       title={`Clique para ver reservas de ${pos} no elenco`}
                     >
                       <span className={styles.slotEmptyHint}>Reserva disponível</span>
@@ -706,7 +741,7 @@ export default function LineupPage() {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation()
-                          setPosFilter(pos)
+                          handleQuickAdd(pos)
                         }}
                         className={styles.slotEscalarBtn}
                       >
@@ -721,7 +756,7 @@ export default function LineupPage() {
         </div>
 
         {/* Coluna 2: Meu Elenco Completo */}
-        <div className={styles.columnCard}>
+        <div className={`${styles.columnCard} ${mobileTab !== 'roster' ? styles.mobileHidden : ''}`}>
           <div className={styles.columnHeader}>
             <div className={styles.columnTitle}>
               <span>📋 Meu Elenco ({data.roster.length})</span>
@@ -851,6 +886,30 @@ export default function LineupPage() {
           </div>
         </div>
       </div>
+
+      {/* Mobile Sticky Action Bar */}
+      {!data.isLocked && (
+        <div className={styles.mobileStickyBar}>
+          <div className={styles.mobileStickyInfo}>
+            <span className={styles.mobileStickyFormation}>{formation}</span>
+            <span
+              className={`${styles.mobileStickyCount} ${
+                starters.length === 11 ? styles.countFull : styles.countIncomplete
+              }`}
+            >
+              {starters.length}/11 escalados
+            </span>
+          </div>
+          <button
+            type="button"
+            className={styles.mobileStickySaveBtn}
+            disabled={isPending}
+            onClick={handleSaveLineup}
+          >
+            {isPending ? 'Salvando...' : '💾 Salvar'}
+          </button>
+        </div>
+      )}
 
       {/* Player Detail Modal */}
       <PlayerDetailModal

@@ -2,7 +2,11 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { validateLineup, sortByPosition, type Formation, type LineupSlotItem } from '@/lib/lineup/lineup-engine'
-import { checkRoundLockStatus, generateAutoFallbackLineup } from '@/lib/lineup/lock'
+import {
+  checkRoundLockStatus,
+  generateAutoFallbackLineup,
+  ensureLockedRoundLineups,
+} from '@/lib/lineup/lock'
 import { revalidatePath } from 'next/cache'
 
 export type OpponentInfo = {
@@ -87,6 +91,11 @@ export async function getLineupData(leagueId: string): Promise<LineupPageData | 
 
   // Check market lock status
   const lockStatus = await checkRoundLockStatus(league.season_id, currentRound)
+
+  // If market is locked, automatically ensure all teams have complete 11 starters
+  if (lockStatus.isLocked) {
+    await ensureLockedRoundLineups(leagueId, currentRound)
+  }
 
   // Fetch fixtures for current round to determine player opponents
   const { data: fixturesData } = await supabase

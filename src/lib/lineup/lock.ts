@@ -115,3 +115,273 @@ export function generateAutoFallbackLineup(
 
   return { formation, starters, reserves }
 }
+
+/**
+ * Automatically completes an incomplete lineup (or builds a full one if empty).
+ * Preserves already selected starters/reserves/captain, filling any missing positions
+ * with the highest avgPoints players available in the roster.
+ */
+export function autoCompleteLineup(
+  roster: { id: string; position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'; avgPoints: number }[],
+  existingFormation: Formation = '4-3-3',
+  existingStarters: { playerId: string; position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'; isCaptain: boolean }[] = [],
+  existingReserves: { playerId: string; position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'; isCaptain: boolean }[] = []
+): {
+  formation: Formation
+  starters: { playerId: string; position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'; isCaptain: boolean }[]
+  reserves: { playerId: string; position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'; isCaptain: boolean }[]
+} {
+  const formation = existingFormation || '4-3-3'
+  const reqs = FORMATION_REQUIREMENTS[formation]
+
+  // Validate existing starters against roster
+  const validStarterIds = new Set(roster.map((r) => r.id))
+  const cleanExistingStarters = existingStarters.filter((s) => validStarterIds.has(s.playerId))
+
+  // Count existing starters by position and keep up to allowed count
+  const posCounts: Record<string, number> = { GOL: 0, LAT: 0, ZAG: 0, MEI: 0, ATA: 0 }
+  const starters: { playerId: string; position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'; isCaptain: boolean }[] = []
+
+  for (const s of cleanExistingStarters) {
+    if ((posCounts[s.position] || 0) < reqs[s.position]) {
+      posCounts[s.position] = (posCounts[s.position] || 0) + 1
+      starters.push({ ...s })
+    }
+  }
+
+  const assignedPlayerIds = new Set(starters.map((s) => s.playerId))
+
+  // Group remaining roster players by position sorted by avgPoints DESC
+  const groupedRemaining: Record<string, typeof roster> = { GOL: [], LAT: [], ZAG: [], MEI: [], ATA: [] }
+  roster.forEach((p) => {
+    if (!assignedPlayerIds.has(p.id)) {
+      groupedRemaining[p.position]?.push(p)
+    }
+  })
+  for (const pos of Object.keys(groupedRemaining)) {
+    groupedRemaining[pos].sort((a, b) => b.avgPoints - a.avgPoints)
+  }
+
+  // Fill missing starter positions
+  for (const [pos, count] of Object.entries(reqs)) {
+    const currentCount = posCounts[pos] || 0
+    const needed = count - currentCount
+    const pool = groupedRemaining[pos] || []
+
+    for (let i = 0; i < needed && i < pool.length; i++) {
+      starters.push({
+        playerId: pool[i].id,
+        position: pos as any,
+        isCaptain: false,
+      })
+      assignedPlayerIds.add(pool[i].id)
+    }
+  }
+
+  // Ensure Captain
+  const hasCaptain = starters.some((s) => s.isCaptain)
+  if (!hasCaptain && starters.length > 0) {
+    let topStarterId: string | null = null
+    let topAvg = -Infinity
+    for (const s of starters) {
+      const p = roster.find((r) => r.id === s.playerId)
+      if (p && p.avgPoints > topAvg) {
+        topAvg = p.avgPoints
+        topStarterId = s.playerId
+      }
+    }
+    if (topStarterId) {
+      for (const s of starters) {
+        if (s.playerId === topStarterId) {
+          s.isCaptain = true
+          break
+        }
+      }
+    } else {
+      starters[0].isCaptain = true
+    }
+  }
+
+  // Reserves
+  const cleanExistingReserves = existingReserves.filter(
+    (r) => validStarterIds.has(r.playerId) && !assignedPlayerIds.has(r.playerId)
+  )
+  const reserves: { playerId: string; position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA'; isCaptain: boolean }[] = []
+  const reservePositionsFilled = new Set<string>()
+
+  for (const r of cleanExistingReserves) {
+    if (!reservePositionsFilled.has(r.position)) {
+      reservePositionsFilled.add(r.position)
+      reserves.push({ ...r, isCaptain: false })
+      assignedPlayerIds.add(r.playerId)
+    }
+  }
+
+  // Fill remaining reserve positions (1 for each: GOL, LAT, ZAG, MEI, ATA)
+  for (const pos of ['GOL', 'LAT', 'ZAG', 'MEI', 'ATA'] as const) {
+    if (!reservePositionsFilled.has(pos)) {
+      const pool = groupedRemaining[pos]?.filter((p) => !assignedPlayerIds.has(p.id)) || []
+      if (pool.length > 0) {
+        reserves.push({
+          playerId: pool[0].id,
+          position: pos,
+          isCaptain: false,
+        })
+        assignedPlayerIds.add(pool[0].id)
+      }
+    }
+  }
+
+  return { formation, starters, reserves }
+}
+
+/**
+ * Checks all teams in a league for a given fixture round.
+ * If the market is locked, automatically completes any lineup with fewer than 11 starters
+ * and saves it into Supabase.
+ */
+export async function ensureLockedRoundLineups(
+  leagueId: string,
+  fixtureRound: number
+): Promise<{ teamsAutoCompleted: number }> {
+  const supabase = await createClient()
+
+  // 1. Get league and verify lock status
+  const { data: league } = await supabase
+    .from('leagues')
+    .select('id, season_id')
+    .eq('id', leagueId)
+    .single()
+
+  if (!league) return { teamsAutoCompleted: 0 }
+
+  const lockStatus = await checkRoundLockStatus(league.season_id, fixtureRound)
+  if (!lockStatus.isLocked) {
+    // Market is not locked yet - managers can still set their own lineups
+    return { teamsAutoCompleted: 0 }
+  }
+
+  // 2. Fetch all teams in the league
+  const { data: teams } = await supabase
+    .from('fantasy_teams')
+    .select('id, name')
+    .eq('league_id', leagueId)
+
+  if (!teams || teams.length === 0) return { teamsAutoCompleted: 0 }
+
+  let count = 0
+
+  for (const team of teams) {
+    // Check existing lineup
+    const { data: existingLineup } = await supabase
+      .from('lineups')
+      .select('id, formation')
+      .eq('fantasy_team_id', team.id)
+      .eq('fixture_round', fixtureRound)
+      .maybeSingle()
+
+    let startersCount = 0
+    let existingSlots: any[] = []
+
+    if (existingLineup) {
+      const { data: slots } = await supabase
+        .from('lineup_slots')
+        .select('player_id, slot_position, is_captain, is_starter, player:real_players(position)')
+        .eq('lineup_id', existingLineup.id)
+
+      existingSlots = slots || []
+      startersCount = existingSlots.filter((s: any) => s.is_starter).length
+    }
+
+    // If already has 11 starters, skip
+    if (startersCount >= 11) {
+      continue
+    }
+
+    // Fetch team roster
+    const { data: rosterRows } = await supabase
+      .from('roster_players')
+      .select(`
+        player:real_players(
+          id,
+          position,
+          avg_points
+        )
+      `)
+      .eq('fantasy_team_id', team.id)
+
+    const roster = (rosterRows || [])
+      .map((r: any) => ({
+        id: r.player?.id,
+        position: r.player?.position,
+        avgPoints: Number(r.player?.avg_points ?? 0),
+      }))
+      .filter((r: any) => r.id && r.position)
+
+    if (roster.length === 0) continue
+
+    const existingStarters = existingSlots
+      .filter((s: any) => s.is_starter)
+      .map((s: any) => ({
+        playerId: s.player_id,
+        position: s.player?.position,
+        isCaptain: s.is_captain ?? false,
+      }))
+
+    const existingReserves = existingSlots
+      .filter((s: any) => !s.is_starter)
+      .map((s: any) => ({
+        playerId: s.player_id,
+        position: s.player?.position,
+        isCaptain: false,
+      }))
+
+    const completed = autoCompleteLineup(
+      roster,
+      existingLineup?.formation || '4-3-3',
+      existingStarters,
+      existingReserves
+    )
+
+    // Upsert lineup
+    const { data: savedLineup, error: lErr } = await supabase
+      .from('lineups')
+      .upsert(
+        {
+          fantasy_team_id: team.id,
+          fixture_round: fixtureRound,
+          formation: completed.formation,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'fantasy_team_id,fixture_round' }
+      )
+      .select('id')
+      .single()
+
+    if (lErr || !savedLineup) continue
+
+    // Delete old slots and insert new
+    await supabase.from('lineup_slots').delete().eq('lineup_id', savedLineup.id)
+
+    const starterRecords = completed.starters.map((s, idx) => ({
+      lineup_id: savedLineup.id,
+      player_id: s.playerId,
+      slot_position: `${s.position}_${idx + 1}`,
+      is_captain: s.isCaptain,
+      is_starter: true,
+    }))
+
+    const reserveRecords = completed.reserves.map((s) => ({
+      lineup_id: savedLineup.id,
+      player_id: s.playerId,
+      slot_position: `RES_${s.position}`,
+      is_captain: false,
+      is_starter: false,
+    }))
+
+    await supabase.from('lineup_slots').insert([...starterRecords, ...reserveRecords])
+    count++
+  }
+
+  return { teamsAutoCompleted: count }
+}

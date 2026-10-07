@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { calculateTotalStandings, type TotalStandingsRow } from '@/lib/standings/total-standings'
 import { calculateH2HStandings, type H2HStandingsRow } from '@/lib/h2h/h2h-processor'
+import { checkRoundLockStatus } from '@/lib/lineup/lock'
 
 export type MatchupItem = {
   id: string
@@ -14,6 +15,13 @@ export type MatchupItem = {
   homePoints: number | null
   awayPoints: number | null
   result: 'home' | 'away' | 'draw' | null
+}
+
+export type MarketStatusInfo = {
+  isLocked: boolean
+  closingAt: string | null
+  kickoffAt: string | null
+  currentRound: number
 }
 
 export type StandingsPageData = {
@@ -29,6 +37,7 @@ export type StandingsPageData = {
   currentMatchups: MatchupItem[]
   postponedRounds: number[]
   roundInfoMap: Record<number, string>
+  marketStatus: MarketStatusInfo
 }
 
 export async function getStandingsData(leagueId: string): Promise<StandingsPageData | null> {
@@ -179,6 +188,19 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
     }
   })
 
+  // Check market lock and closing time for current round
+  const lockStatus = await checkRoundLockStatus(league.season_id, currentRound)
+  const closingAt = lockStatus.kickoffAt
+    ? new Date(new Date(lockStatus.kickoffAt).getTime() - 30 * 60 * 1000).toISOString()
+    : null
+
+  const marketStatus: MarketStatusInfo = {
+    isLocked: lockStatus.isLocked,
+    closingAt,
+    kickoffAt: lockStatus.kickoffAt,
+    currentRound,
+  }
+
   return {
     leagueId,
     leagueName: league.name,
@@ -192,5 +214,6 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
     currentMatchups,
     postponedRounds,
     roundInfoMap,
+    marketStatus,
   }
 }

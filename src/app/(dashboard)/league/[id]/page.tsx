@@ -7,6 +7,7 @@ import { getLeagueDetails, startDraftAction, type LeagueDetails } from './action
 import { getStandingsData, type StandingsPageData } from './standings/actions'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { MarketCountdownBanner } from '@/components/league/MarketCountdownBanner'
 import styles from './page.module.css'
 
 function TeamCrest({ name }: { name: string }) {
@@ -386,6 +387,16 @@ export default function LeagueDetailsPage() {
           )}
         </div>
       </div>
+
+      {/* Market Countdown / Status Banner */}
+      {isActive && standingsData?.marketStatus && (
+        <MarketCountdownBanner
+          leagueId={league.id}
+          isLocked={standingsData.marketStatus.isLocked}
+          closingAt={standingsData.marketStatus.closingAt}
+          currentRound={standingsData.marketStatus.currentRound}
+        />
+      )}
 
       {/* Main Tournament View: TABELA (Left) and JOGOS (Right) */}
       {isActive && standingsData && (

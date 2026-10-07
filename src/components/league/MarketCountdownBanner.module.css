@@ -1,0 +1,143 @@
+.bannerLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bannerCard {
+  background: #141824;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bannerCard:hover {
+  background: #181d2c;
+  border-color: #3b4256;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+.bannerCardClosed {
+  background: #151922;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.bannerCardClosed:hover {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.leftGroup {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  flex: 1;
+}
+
+.iconWrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f8fafc;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.bannerCard:hover .iconWrapper {
+  transform: scale(1.05);
+}
+
+.iconClosed {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.title {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.titleClosed {
+  color: #fca5a5;
+}
+
+.subtitle {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.arrowWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.bannerCard:hover .arrowWrapper {
+  transform: translateX(3px);
+  color: #ffffff;
+}
+
+@media (max-width: 640px) {
+  .bannerCard {
+    padding: 14px 14px;
+    border-radius: var(--radius-md);
+    gap: 12px;
+  }
+
+  .leftGroup {
+    gap: 12px;
+  }
+
+  .iconWrapper {
+    width: 38px;
+    height: 38px;
+  }
+
+  .title {
+    font-size: 0.875rem;
+  }
+
+  .subtitle {
+    font-size: 0.75rem;
+  }
+}

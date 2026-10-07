@@ -385,12 +385,31 @@ export default function LineupPage() {
         </div>
       </div>
 
-      {/* Locked Banner */}
-      {data.isLocked && (
+      {/* Market Status Banner */}
+      {data.isLocked ? (
         <div className={styles.lockedBanner}>
           🔒 Mercado FECHADO para a Rodada {data.currentRound}. O mercado fecha 30 min antes do primeiro jogo.
         </div>
-      )}
+      ) : data.kickoffAt ? (
+        <div className={styles.openBanner}>
+          <span>🟢</span>
+          <span>
+            <strong>Mercado ABERTO para a Rodada {data.currentRound}</strong> · O mercado fecha às{' '}
+            <strong>
+              {new Date(new Date(data.kickoffAt).getTime() - 30 * 60 * 1000).toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </strong>{' '}
+            (30 min antes do 1º jogo às{' '}
+            {new Date(data.kickoffAt).toLocaleTimeString('pt-BR', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+            ).
+          </span>
+        </div>
+      ) : null}
 
       {/* Feedback Message */}
       {saveMessage && (

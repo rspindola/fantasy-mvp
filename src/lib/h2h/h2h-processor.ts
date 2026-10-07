@@ -14,6 +14,8 @@ export interface H2HStandingsRow {
   rank: number
   fantasyTeamId: string
   teamName: string
+  managerName?: string
+  played: number
   h2hPoints: number // 3 for win, 1 for draw
   wins: number
   draws: number
@@ -36,16 +38,19 @@ export function evaluateH2HMatchupResult(
 }
 
 /**
- * Calculates H2H standings table from completed matchups history.
+ * Calculates H2H standings table from completed matchups history or pre-populates
+ * all participating teams with zeroed stats before matches start.
  */
 export function calculateH2HStandings(
-  matchups: H2HMatchupRecord[]
+  matchups: H2HMatchupRecord[],
+  allTeams?: { id: string; name: string; managerName?: string }[]
 ): H2HStandingsRow[] {
   const map = new Map<
     string,
     {
       fantasyTeamId: string
       teamName: string
+      managerName?: string
       h2hPoints: number
       wins: number
       draws: number
@@ -55,12 +60,13 @@ export function calculateH2HStandings(
     }
   >()
 
-  const getOrInit = (id: string, name: string) => {
+  const getOrInit = (id: string, name: string, managerName?: string) => {
     let t = map.get(id)
     if (!t) {
       t = {
         fantasyTeamId: id,
         teamName: name,
+        managerName,
         h2hPoints: 0,
         wins: 0,
         draws: 0,
@@ -69,8 +75,23 @@ export function calculateH2HStandings(
         pointsAgainst: 0,
       }
       map.set(id, t)
+    } else if (managerName && !t.managerName) {
+      t.managerName = managerName
     }
     return t
+  }
+
+  // Pre-populate if allTeams provided
+  if (allTeams) {
+    for (const t of allTeams) {
+      getOrInit(t.id, t.name, t.managerName)
+    }
+  }
+
+  // Pre-populate all teams present in matchups so the table is never empty
+  for (const m of matchups) {
+    getOrInit(m.homeTeamId, m.homeTeamName)
+    getOrInit(m.awayTeamId, m.awayTeamName)
   }
 
   for (const m of matchups) {
@@ -103,6 +124,8 @@ export function calculateH2HStandings(
   const rows: Omit<H2HStandingsRow, 'rank'>[] = Array.from(map.values()).map((t) => ({
     fantasyTeamId: t.fantasyTeamId,
     teamName: t.teamName,
+    managerName: t.managerName,
+    played: t.wins + t.draws + t.losses,
     h2hPoints: t.h2hPoints,
     wins: t.wins,
     draws: t.draws,

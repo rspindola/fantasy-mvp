@@ -879,9 +879,14 @@ export default function DraftRoomPage() {
           >
             Todos os 24 jogadores foram consolidados no elenco do seu time.
           </p>
-          <Link href={`/league/${leagueId}`}>
-            <Button size="lg">Voltar à Liga</Button>
-          </Link>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href={`/league/${leagueId}`}>
+              <Button size="lg">Voltar à Liga</Button>
+            </Link>
+            <Link href={`/league/${leagueId}/standings`}>
+              <Button variant="secondary" size="lg">🏆 Ver Classificação</Button>
+            </Link>
+          </div>
         </div>
       ) : (
         <div className={styles.grid}>

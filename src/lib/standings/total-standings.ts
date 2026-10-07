@@ -18,10 +18,12 @@ export interface TotalStandingsRow {
 }
 
 /**
- * Calculates TOTAL accumulated standings leaderboard given round scores history.
+ * Calculates TOTAL accumulated standings leaderboard given round scores history or
+ * pre-populates all participating teams with zeroed stats before rounds start.
  */
 export function calculateTotalStandings(
-  scoresHistory: TeamScoreRecord[]
+  scoresHistory: TeamScoreRecord[],
+  allTeams?: { id: string; name: string; managerName?: string }[]
 ): TotalStandingsRow[] {
   const map = new Map<
     string,
@@ -34,6 +36,20 @@ export function calculateTotalStandings(
       roundPointsMap: Map<number, number>
     }
   >()
+
+  // Pre-populate if allTeams provided
+  if (allTeams) {
+    for (const t of allTeams) {
+      map.set(t.id, {
+        fantasyTeamId: t.id,
+        teamName: t.name,
+        managerName: t.managerName ?? 'Técnico',
+        cumulativePoints: 0,
+        totalCaptainBonus: 0,
+        roundPointsMap: new Map(),
+      })
+    }
+  }
 
   // 1. Group points by team
   for (const record of scoresHistory) {

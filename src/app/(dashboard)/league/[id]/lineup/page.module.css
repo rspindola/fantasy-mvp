@@ -65,6 +65,19 @@
   font-size: 0.9375rem;
 }
 
+.openBanner {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: var(--radius-md);
+  padding: 14px 20px;
+  color: var(--accent-green);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 /* Two Column Layout */
 .grid {
   display: grid;

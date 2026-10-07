@@ -83,7 +83,7 @@ export async function getTeamRosterData(
     .eq('id', league.season_id)
     .single()
 
-  const currentRound = season?.current_round ?? 28
+  const currentRound = season?.current_round ?? 29
   const totalRounds = season?.total_rounds ?? 38
 
   // 4. Fetch target team

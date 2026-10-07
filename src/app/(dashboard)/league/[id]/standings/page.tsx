@@ -259,6 +259,7 @@ export default function StandingsPage() {
                 <tr>
                   <th style={{ width: '50px' }}>Pos</th>
                   <th>Time</th>
+                  <th style={{ textAlign: 'center' }}>J</th>
                   <th style={{ textAlign: 'center' }}>V</th>
                   <th style={{ textAlign: 'center' }}>E</th>
                   <th style={{ textAlign: 'center' }}>D</th>
@@ -271,7 +272,7 @@ export default function StandingsPage() {
               <tbody>
                 {data.h2hStandings.length === 0 ? (
                   <tr>
-                    <td colSpan={9} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <td colSpan={10} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
                       Nenhum confronto H2H realizado ainda.
                     </td>
                   </tr>
@@ -294,14 +295,20 @@ export default function StandingsPage() {
                         </span>
                       </td>
                       <td>
-                        <Link
-                          href={`/league/${leagueId}/team/${row.fantasyTeamId}`}
-                          className={styles.teamLink}
-                          title="Ver elenco completo de 24 atletas"
-                        >
-                          {row.teamName} 🛡️
-                        </Link>
+                        <div className={styles.teamCell}>
+                          <Link
+                            href={`/league/${leagueId}/team/${row.fantasyTeamId}`}
+                            className={styles.teamLink}
+                            title="Ver elenco completo de 24 atletas"
+                          >
+                            {row.teamName} 🛡️
+                          </Link>
+                          {row.managerName && (
+                            <span className={styles.managerName}>Técnico: {row.managerName}</span>
+                          )}
+                        </div>
                       </td>
+                      <td style={{ textAlign: 'center', fontWeight: 600 }}>{row.played}</td>
                       <td style={{ textAlign: 'center', color: 'var(--accent-green)' }}>{row.wins}</td>
                       <td style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{row.draws}</td>
                       <td style={{ textAlign: 'center', color: 'var(--accent-red)' }}>{row.losses}</td>

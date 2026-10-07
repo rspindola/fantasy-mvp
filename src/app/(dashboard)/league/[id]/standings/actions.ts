@@ -58,6 +58,24 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
   const currentRound = season?.current_round ?? 1
   const totalRounds = season?.total_rounds ?? 38
 
+  // Fetch all fantasy teams in the league
+  const { data: leagueTeamsData } = await supabase
+    .from('fantasy_teams')
+    .select(`
+      id,
+      name,
+      draft_order,
+      profile:profiles!fantasy_teams_user_id_fkey(display_name)
+    `)
+    .eq('league_id', leagueId)
+    .order('draft_order', { ascending: true })
+
+  const allLeagueTeams = (leagueTeamsData || []).map((t: any) => ({
+    id: t.id,
+    name: t.name,
+    managerName: t.profile?.display_name ?? 'Técnico',
+  }))
+
   // Fetch round scores history for TOTAL standings
   const { data: scoresData } = await supabase
     .from('round_scores')
@@ -83,7 +101,7 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
     captainBonus: Number(s.captain_bonus ?? 0),
   }))
 
-  const totalStandings = calculateTotalStandings(scoresHistory)
+  const totalStandings = calculateTotalStandings(scoresHistory, allLeagueTeams)
 
   // Fetch H2H matchups for H2H standings & current round matchups
   let h2hStandings: H2HStandingsRow[] = []
@@ -119,7 +137,7 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
       result: m.result as any,
     }))
 
-    h2hStandings = calculateH2HStandings(allMatchups)
+    h2hStandings = calculateH2HStandings(allMatchups, allLeagueTeams)
 
     currentMatchups = allMatchups.filter((m) => m.fixtureRound === currentRound)
   }

@@ -101,4 +101,50 @@ describe('Berger H2H Generator & Standings', () => {
     expect(standings[1].fantasyTeamId).toBe('t1')
     expect(standings[1].cumulativePoints).toBe(50.0)
   })
+
+  it('generates initial zeroed H2H standings table when no matches have completed', () => {
+    const unplayedMatchups = [
+      {
+        id: 'm1',
+        fixtureRound: 1,
+        homeTeamId: 't1',
+        homeTeamName: 'Time Alpha',
+        awayTeamId: 't2',
+        awayTeamName: 'Time Beta',
+        homePoints: null,
+        awayPoints: null,
+        result: null,
+      },
+    ]
+
+    const standings = calculateH2HStandings(unplayedMatchups)
+    expect(standings).toHaveLength(2)
+    expect(standings[0].played).toBe(0)
+    expect(standings[0].wins).toBe(0)
+    expect(standings[0].draws).toBe(0)
+    expect(standings[0].losses).toBe(0)
+    expect(standings[0].pointsFor).toBe(0)
+    expect(standings[0].pointsAgainst).toBe(0)
+    expect(standings[0].pointDifference).toBe(0)
+    expect(standings[0].h2hPoints).toBe(0)
+
+    expect(standings[1].played).toBe(0)
+    expect(standings[1].h2hPoints).toBe(0)
+  })
+
+  it('generates initial zeroed TOTAL standings table when allTeams is provided and no scores exist', () => {
+    const teams = [
+      { id: 't1', name: 'Alpha FC', managerName: 'Pedro' },
+      { id: 't2', name: 'Beta FC', managerName: 'Lucas' },
+    ]
+
+    const standings = calculateTotalStandings([], teams)
+    expect(standings).toHaveLength(2)
+    expect(standings[0].cumulativePoints).toBe(0)
+    expect(standings[0].roundsWon).toBe(0)
+    expect(standings[0].totalCaptainBonus).toBe(0)
+    expect(standings[0].rank).toBe(1)
+    expect(standings[1].cumulativePoints).toBe(0)
+    expect(standings[1].rank).toBe(2)
+  })
 })

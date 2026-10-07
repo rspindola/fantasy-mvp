@@ -72,8 +72,8 @@ export default function MatchupDetailPage() {
     return (
       <div className={styles.container}>
         <h2>Confronto não encontrado</h2>
-        <Link href={`/league/${leagueId}/standings`} className={styles.backLink}>
-          ← Voltar para Classificação & Duelos
+        <Link href={`/league/${leagueId}`} className={styles.backLink}>
+          ← Voltar à Liga
         </Link>
       </div>
     )
@@ -258,8 +258,8 @@ export default function MatchupDetailPage() {
 
   return (
     <div className={styles.container}>
-      <Link href={`/league/${leagueId}/standings`} className={styles.backLink}>
-        ← Voltar aos Confrontos da Liga
+      <Link href={`/league/${leagueId}`} className={styles.backLink}>
+        ← Voltar à Liga
       </Link>
 
       {/* Scoreboard Card */}

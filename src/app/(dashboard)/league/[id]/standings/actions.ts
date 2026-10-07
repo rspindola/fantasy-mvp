@@ -24,11 +24,11 @@ export type StandingsPageData = {
   currentRound: number
   totalRounds: number
   finalRound: number
-  totalStandings: TotalStandingsRow[]
-  h2hStandings: H2HStandingsRow[]
+  standings: H2HStandingsRow[]
   allMatchups: MatchupItem[]
   currentMatchups: MatchupItem[]
   postponedRounds: number[]
+  roundInfoMap: Record<number, string>
 }
 
 export async function getStandingsData(leagueId: string): Promise<StandingsPageData | null> {
@@ -76,7 +76,7 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
     managerName: t.profile?.display_name ?? 'Técnico',
   }))
 
-  // Fetch round scores history for TOTAL standings
+  // Fetch round scores history for general cumulative points (used as tiebreaker)
   const { data: scoresData } = await supabase
     .from('round_scores')
     .select(`
@@ -102,45 +102,43 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
   }))
 
   const totalStandings = calculateTotalStandings(scoresHistory, allLeagueTeams)
+  const generalPointsMap = new Map<string, number>()
+  totalStandings.forEach((row) => {
+    generalPointsMap.set(row.fantasyTeamId, row.cumulativePoints)
+  })
 
-  // Fetch H2H matchups for H2H standings & current round matchups
-  let h2hStandings: H2HStandingsRow[] = []
-  let allMatchups: MatchupItem[] = []
-  let currentMatchups: MatchupItem[] = []
+  // Fetch H2H matchups
+  const { data: matchupsData } = await supabase
+    .from('h2h_matchups')
+    .select(`
+      id,
+      fixture_round,
+      home_team_id,
+      away_team_id,
+      home_points,
+      away_points,
+      result,
+      home_team:fantasy_teams!h2h_matchups_home_team_id_fkey(name),
+      away_team:fantasy_teams!h2h_matchups_away_team_id_fkey(name)
+    `)
+    .eq('league_id', leagueId)
+    .order('fixture_round', { ascending: true })
 
-  if (league.scoring_mode === 'H2H') {
-    const { data: matchupsData } = await supabase
-      .from('h2h_matchups')
-      .select(`
-        id,
-        fixture_round,
-        home_team_id,
-        away_team_id,
-        home_points,
-        away_points,
-        result,
-        home_team:fantasy_teams!h2h_matchups_home_team_id_fkey(name),
-        away_team:fantasy_teams!h2h_matchups_away_team_id_fkey(name)
-      `)
-      .eq('league_id', leagueId)
-      .order('fixture_round', { ascending: true })
+  const allMatchups: MatchupItem[] = (matchupsData || []).map((m: any) => ({
+    id: m.id,
+    fixtureRound: m.fixture_round,
+    homeTeamId: m.home_team_id,
+    homeTeamName: m.home_team?.name ?? 'Time A',
+    awayTeamId: m.away_team_id,
+    awayTeamName: m.away_team?.name ?? 'Time B',
+    homePoints: m.home_points !== null ? Number(m.home_points) : null,
+    awayPoints: m.away_points !== null ? Number(m.away_points) : null,
+    result: m.result as any,
+  }))
 
-    allMatchups = (matchupsData || []).map((m: any) => ({
-      id: m.id,
-      fixtureRound: m.fixture_round,
-      homeTeamId: m.home_team_id,
-      homeTeamName: m.home_team?.name ?? 'Time A',
-      awayTeamId: m.away_team_id,
-      awayTeamName: m.away_team?.name ?? 'Time B',
-      homePoints: m.home_points !== null ? Number(m.home_points) : null,
-      awayPoints: m.away_points !== null ? Number(m.away_points) : null,
-      result: m.result as any,
-    }))
-
-    h2hStandings = calculateH2HStandings(allMatchups, allLeagueTeams)
-
-    currentMatchups = allMatchups.filter((m) => m.fixtureRound === currentRound)
-  }
+  // Calculate unified tournament table with generalScore tiebreaker
+  const standings = calculateH2HStandings(allMatchups, allLeagueTeams, generalPointsMap)
+  const currentMatchups = allMatchups.filter((m) => m.fixtureRound === currentRound)
 
   const finalRound =
     allMatchups.length > 0
@@ -158,6 +156,29 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
     new Set((postponedFixtures || []).map((f: any) => f.round))
   ).sort((a: any, b: any) => a - b)
 
+  // Fetch kickoff dates for round headers
+  const { data: fixturesKickoffs } = await supabase
+    .from('fixtures')
+    .select('round, kickoff_at')
+    .eq('season_id', league.season_id)
+    .order('kickoff_at', { ascending: true })
+
+  const roundInfoMap: Record<number, string> = {}
+  ;(fixturesKickoffs || []).forEach((f: any) => {
+    if (f.kickoff_at && !roundInfoMap[f.round]) {
+      const d = new Date(f.kickoff_at)
+      const now = new Date()
+      const isToday = now.toDateString() === d.toDateString()
+      const timeStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      if (isToday) {
+        roundInfoMap[f.round] = `Hoje • ${timeStr}`
+      } else {
+        const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+        roundInfoMap[f.round] = `${dateStr} • ${timeStr}`
+      }
+    }
+  })
+
   return {
     leagueId,
     leagueName: league.name,
@@ -166,10 +187,10 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
     currentRound,
     totalRounds,
     finalRound,
-    totalStandings,
-    h2hStandings,
+    standings,
     allMatchups,
     currentMatchups,
     postponedRounds,
+    roundInfoMap,
   }
 }

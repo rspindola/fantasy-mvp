@@ -881,10 +881,7 @@ export default function DraftRoomPage() {
           </p>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href={`/league/${leagueId}`}>
-              <Button size="lg">Voltar à Liga</Button>
-            </Link>
-            <Link href={`/league/${leagueId}/standings`}>
-              <Button variant="secondary" size="lg">🏆 Ver Classificação</Button>
+              <Button size="lg">🏆 Voltar à Liga (Ver Tabela e Escalar)</Button>
             </Link>
           </div>
         </div>

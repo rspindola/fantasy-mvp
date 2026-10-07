@@ -12,6 +12,7 @@ export interface H2HMatchupRecord {
 
 export interface H2HStandingsRow {
   rank: number
+  rankVariation: number
   fantasyTeamId: string
   teamName: string
   managerName?: string
@@ -20,9 +21,12 @@ export interface H2HStandingsRow {
   wins: number
   draws: number
   losses: number
-  pointsFor: number
-  pointsAgainst: number
-  pointDifference: number
+  pointsFor: number // GP
+  pointsAgainst: number // GC
+  pointDifference: number // SG
+  generalScore: number // Pontuação Geral (critério de desempate)
+  winRate: number // % Aproveitamento
+  recentForm: ('W' | 'D' | 'L')[] // Últimos jogos
 }
 
 /**
@@ -40,10 +44,13 @@ export function evaluateH2HMatchupResult(
 /**
  * Calculates H2H standings table from completed matchups history or pre-populates
  * all participating teams with zeroed stats before matches start.
+ * Uses Pontuação Geral as tiebreaker when h2hPoints and wins are tied.
  */
 export function calculateH2HStandings(
   matchups: H2HMatchupRecord[],
-  allTeams?: { id: string; name: string; managerName?: string }[]
+  allTeams?: { id: string; name: string; managerName?: string }[],
+  teamGeneralPoints?: Map<string, number> | Record<string, number>,
+  skipVariation = false
 ): H2HStandingsRow[] {
   const map = new Map<
     string,
@@ -121,26 +128,69 @@ export function calculateH2HStandings(
     }
   }
 
-  const rows: Omit<H2HStandingsRow, 'rank'>[] = Array.from(map.values()).map((t) => ({
-    fantasyTeamId: t.fantasyTeamId,
-    teamName: t.teamName,
-    managerName: t.managerName,
-    played: t.wins + t.draws + t.losses,
-    h2hPoints: t.h2hPoints,
-    wins: t.wins,
-    draws: t.draws,
-    losses: t.losses,
-    pointsFor: parseFloat(t.pointsFor.toFixed(2)),
-    pointsAgainst: parseFloat(t.pointsAgainst.toFixed(2)),
-    pointDifference: parseFloat((t.pointsFor - t.pointsAgainst).toFixed(2)),
-  }))
+  const rows: Omit<H2HStandingsRow, 'rank' | 'rankVariation'>[] = Array.from(map.values()).map((t) => {
+    const played = t.wins + t.draws + t.losses
+    const winRate = played > 0 ? Math.round((t.h2hPoints / (played * 3)) * 100) : 0
 
+    // Get generalScore
+    let generalScore = 0
+    if (teamGeneralPoints) {
+      if (teamGeneralPoints instanceof Map) {
+        generalScore = teamGeneralPoints.get(t.fantasyTeamId) ?? 0
+      } else {
+        generalScore = (teamGeneralPoints as any)[t.fantasyTeamId] ?? 0
+      }
+    }
+
+    // Get recent form (last 5 completed matches)
+    const teamMatches = matchups
+      .filter((m) => (m.homeTeamId === t.fantasyTeamId || m.awayTeamId === t.fantasyTeamId) && m.result)
+      .sort((a, b) => a.fixtureRound - b.fixtureRound)
+
+    const recentForm: ('W' | 'D' | 'L')[] = teamMatches
+      .map((m) => {
+        if (m.result === 'draw') return 'D'
+        if (m.homeTeamId === t.fantasyTeamId) {
+          return m.result === 'home' ? 'W' : 'L'
+        } else {
+          return m.result === 'away' ? 'W' : 'L'
+        }
+      })
+      .slice(-5)
+
+    return {
+      fantasyTeamId: t.fantasyTeamId,
+      teamName: t.teamName,
+      managerName: t.managerName,
+      played,
+      h2hPoints: t.h2hPoints,
+      wins: t.wins,
+      draws: t.draws,
+      losses: t.losses,
+      pointsFor: parseFloat(t.pointsFor.toFixed(2)),
+      pointsAgainst: parseFloat(t.pointsAgainst.toFixed(2)),
+      pointDifference: parseFloat((t.pointsFor - t.pointsAgainst).toFixed(2)),
+      generalScore: parseFloat(generalScore.toFixed(2)),
+      winRate,
+      recentForm,
+    }
+  })
+
+  // Tiebreakers:
+  // 1. h2hPoints
+  // 2. wins
+  // 3. generalScore (CRITÉRIO DE DESEMPATE SOLICITADO)
+  // 4. pointDifference (SG)
+  // 5. pointsFor (GP)
   rows.sort((a, b) => {
     if (b.h2hPoints !== a.h2hPoints) {
       return b.h2hPoints - a.h2hPoints
     }
     if (b.wins !== a.wins) {
       return b.wins - a.wins
+    }
+    if (b.generalScore !== a.generalScore) {
+      return b.generalScore - a.generalScore
     }
     if (b.pointDifference !== a.pointDifference) {
       return b.pointDifference - a.pointDifference
@@ -151,8 +201,30 @@ export function calculateH2HStandings(
     return a.teamName.localeCompare(b.teamName)
   })
 
-  return rows.map((row, index) => ({
-    rank: index + 1,
-    ...row,
-  }))
+  // Calculate rank variation if applicable
+  const prevRankMap = new Map<string, number>()
+  if (!skipVariation) {
+    const completedRounds = Array.from(
+      new Set(matchups.filter((m) => m.result).map((m) => m.fixtureRound))
+    ).sort((a, b) => a - b)
+
+    if (completedRounds.length > 1) {
+      const lastCompletedRound = completedRounds[completedRounds.length - 1]
+      const prevMatchups = matchups.filter((m) => m.fixtureRound < lastCompletedRound)
+      const prevStandings = calculateH2HStandings(prevMatchups, allTeams, teamGeneralPoints, true)
+      prevStandings.forEach((r) => prevRankMap.set(r.fantasyTeamId, r.rank))
+    }
+  }
+
+  return rows.map((row, index) => {
+    const rank = index + 1
+    const prevRank = prevRankMap.get(row.fantasyTeamId)
+    const rankVariation = prevRank !== undefined ? prevRank - rank : 0
+
+    return {
+      rank,
+      rankVariation,
+      ...row,
+    }
+  })
 }

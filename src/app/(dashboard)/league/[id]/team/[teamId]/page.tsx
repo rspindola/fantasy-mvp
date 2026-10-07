@@ -57,8 +57,8 @@ export default function TeamRosterPage() {
         <p style={{ color: 'var(--text-secondary)' }}>
           O time selecionado não faz parte desta liga.
         </p>
-        <Link href={`/league/${leagueId}/standings`}>
-          <Button size="md">Voltar à Classificação</Button>
+        <Link href={`/league/${leagueId}`}>
+          <Button size="md">Voltar à Liga</Button>
         </Link>
       </div>
     )
@@ -131,8 +131,8 @@ export default function TeamRosterPage() {
 
   return (
     <div className={styles.container}>
-      <Link href={`/league/${leagueId}/standings`} className={styles.backLink}>
-        ← Voltar à Classificação
+      <Link href={`/league/${leagueId}`} className={styles.backLink}>
+        ← Voltar à Liga
       </Link>
 
       {/* Hero Header Card */}

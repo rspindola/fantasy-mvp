@@ -147,4 +147,48 @@ describe('Berger H2H Generator & Standings', () => {
     expect(standings[1].cumulativePoints).toBe(0)
     expect(standings[1].rank).toBe(2)
   })
+
+  it('uses Pontuação Geral (generalScore) as tiebreaker when h2hPoints and wins are tied', () => {
+    // Both t1 and t2 won their matches with same points difference (+10), but t1 has higher overall fantasy score
+    const matchups = [
+      {
+        id: 'm1',
+        fixtureRound: 1,
+        homeTeamId: 't1',
+        homeTeamName: 'Time Alpha',
+        awayTeamId: 't3',
+        awayTeamName: 'Time Gamma',
+        homePoints: 20.0,
+        awayPoints: 10.0,
+        result: 'home' as const,
+      },
+      {
+        id: 'm2',
+        fixtureRound: 1,
+        homeTeamId: 't2',
+        homeTeamName: 'Time Beta',
+        awayTeamId: 't4',
+        awayTeamName: 'Time Delta',
+        homePoints: 20.0,
+        awayPoints: 10.0,
+        result: 'home' as const,
+      },
+    ]
+
+    const generalPoints = new Map([
+      ['t1', 85.5],
+      ['t2', 62.0],
+      ['t3', 10.0],
+      ['t4', 10.0],
+    ])
+
+    const standings = calculateH2HStandings(matchups, undefined, generalPoints)
+    expect(standings[0].fantasyTeamId).toBe('t1')
+    expect(standings[0].generalScore).toBe(85.5)
+    expect(standings[0].rank).toBe(1)
+
+    expect(standings[1].fantasyTeamId).toBe('t2')
+    expect(standings[1].generalScore).toBe(62.0)
+    expect(standings[1].rank).toBe(2)
+  })
 })

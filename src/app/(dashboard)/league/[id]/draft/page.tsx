@@ -9,6 +9,8 @@ import {
   toggleDraftPauseAction,
   addToWishlistAction,
   removeFromWishlistAction,
+  moveWishlistPriorityAction,
+  reorderWishlistAction,
   startDraftFromRoomAction,
   triggerAutoPickAction,
   type DraftStateData,
@@ -118,6 +120,8 @@ export default function DraftRoomPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const autoPickTriggeredRef = useRef<number | null>(null)
+
   useEffect(() => {
     if (!data?.turnStartedAt || data.isPaused || data.status !== 'drafting') {
       setSecondsLeft(null)
@@ -130,12 +134,24 @@ export default function DraftRoomPage() {
       const nowMs = Date.now()
       const diffSec = Math.max(0, Math.floor((deadlineMs - nowMs) / 1000))
       setSecondsLeft(diffSec)
+
+      // Automatic pick on timeout if HYBRID mode
+      if (
+        diffSec === 0 &&
+        data.draftMode === 'HYBRID' &&
+        autoPickTriggeredRef.current !== data.currentPick
+      ) {
+        autoPickTriggeredRef.current = data.currentPick
+        triggerAutoPickAction(leagueId).catch((err) =>
+          console.error('[Draft] Erro no auto-pick ao expirar timer:', err)
+        )
+      }
     }
 
     calcTime()
     const timer = setInterval(calcTime, 1000)
     return () => clearInterval(timer)
-  }, [data?.turnStartedAt, data?.pickTimerSeconds, data?.isPaused, data?.status])
+  }, [data?.turnStartedAt, data?.pickTimerSeconds, data?.isPaused, data?.status, data?.currentPick, data?.draftMode, leagueId])
 
   function formatCountdown(sec: number): string {
     const h = Math.floor(sec / 3600)
@@ -359,6 +375,110 @@ export default function DraftRoomPage() {
       }
       notifyDraftUpdate()
       loadData(true)
+    })
+  }
+
+  const [draggedPlayerId, setDraggedPlayerId] = useState<string | null>(null)
+  const [dragOverPlayerId, setDragOverPlayerId] = useState<string | null>(null)
+  const [isReorderingPriority, setIsReorderingPriority] = useState(false)
+
+  const handleMovePriority = (playerId: string, direction: 'UP' | 'DOWN' | 'TOP') => {
+    if (!data?.myTeamId || !data?.myWishlist || isReorderingPriority) return
+
+    const currentList = [...data.myWishlist]
+    const curIdx = currentList.findIndex((item) => item.playerId === playerId)
+    if (curIdx === -1) return
+
+    let targetIdx: number
+    if (direction === 'UP') targetIdx = curIdx - 1
+    else if (direction === 'DOWN') targetIdx = curIdx + 1
+    else targetIdx = 0
+
+    if (targetIdx < 0 || targetIdx >= currentList.length || targetIdx === curIdx) return
+
+    const [moved] = currentList.splice(curIdx, 1)
+    currentList.splice(targetIdx, 0, moved)
+
+    const updatedList = currentList.map((item, idx) => ({
+      ...item,
+      priority: idx + 1,
+    }))
+
+    setData((prev) => (prev ? { ...prev, myWishlist: updatedList } : prev))
+    setIsReorderingPriority(true)
+
+    startTransition(async () => {
+      try {
+        await moveWishlistPriorityAction(data.myTeamId!, playerId, direction)
+        notifyDraftUpdate()
+      } catch (err) {
+        console.error('Erro ao reordenar prioridade na fila:', err)
+        loadData(true)
+      } finally {
+        setIsReorderingPriority(false)
+      }
+    })
+  }
+
+  const handleDragStart = (e: React.DragEvent, playerId: string) => {
+    setDraggedPlayerId(playerId)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', playerId)
+  }
+
+  const handleDragOver = (e: React.DragEvent, targetPlayerId: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (dragOverPlayerId !== targetPlayerId) {
+      setDragOverPlayerId(targetPlayerId)
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent, targetPlayerId: string) => {
+    e.preventDefault()
+    setDragOverPlayerId(null)
+    const sourcePlayerId = draggedPlayerId || e.dataTransfer.getData('text/plain')
+    setDraggedPlayerId(null)
+
+    if (
+      !sourcePlayerId ||
+      sourcePlayerId === targetPlayerId ||
+      !data?.myTeamId ||
+      !data?.myWishlist ||
+      isReorderingPriority
+    ) {
+      return
+    }
+
+    const currentList = [...data.myWishlist]
+    const fromIdx = currentList.findIndex((i) => i.playerId === sourcePlayerId)
+    const toIdx = currentList.findIndex((i) => i.playerId === targetPlayerId)
+    if (fromIdx === -1 || toIdx === -1) return
+
+    const [moved] = currentList.splice(fromIdx, 1)
+    currentList.splice(toIdx, 0, moved)
+
+    const updatedList = currentList.map((item, idx) => ({
+      ...item,
+      priority: idx + 1,
+    }))
+
+    setData((prev) => (prev ? { ...prev, myWishlist: updatedList } : prev))
+    setIsReorderingPriority(true)
+
+    startTransition(async () => {
+      try {
+        await reorderWishlistAction(
+          data.myTeamId!,
+          updatedList.map((i) => i.playerId)
+        )
+        notifyDraftUpdate()
+      } catch (err) {
+        console.error('Erro ao salvar reordenação por arrasto:', err)
+        loadData(true)
+      } finally {
+        setIsReorderingPriority(false)
+      }
     })
   }
 
@@ -724,6 +844,7 @@ export default function DraftRoomPage() {
             <span>⚠️</span>
             <span>
               O tempo limite de escolha de <strong>{data.currentTurnTeamName}</strong> esgotou!
+              {data.draftMode === 'HYBRID' && ' 🤖 Realizando escolha automática...'}
             </span>
           </div>
           {data.isCommissioner && (
@@ -1517,33 +1638,87 @@ export default function DraftRoomPage() {
                     priorizá-los no auto-pick.
                   </span>
                 ) : (
-                  data.myWishlist.map((item, idx) => (
-                    <div key={item.playerId} className={styles.wishlistItem}>
-                      <div>
-                        <span
-                          style={{
-                            fontWeight: 600,
-                            marginRight: '6px',
-                            color: 'var(--accent-gold)',
-                          }}
-                        >
-                          #{idx + 1}
-                        </span>
-                        <span>{item.playerName}</span>
+                  data.myWishlist.map((item, idx) => {
+                    const isFirst = idx === 0
+                    const isLast = idx === data.myWishlist.length - 1
+                    const isDragging = draggedPlayerId === item.playerId
+                    const isDragOver = dragOverPlayerId === item.playerId
+
+                    return (
+                      <div
+                        key={item.playerId}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, item.playerId)}
+                        onDragOver={(e) => handleDragOver(e, item.playerId)}
+                        onDragLeave={() => {
+                          if (dragOverPlayerId === item.playerId) setDragOverPlayerId(null)
+                        }}
+                        onDrop={(e) => handleDrop(e, item.playerId)}
+                        className={`${styles.wishlistItem} ${
+                          isDragging ? styles.wishlistItemDragging : ''
+                        } ${isDragOver ? styles.wishlistItemDragOver : ''}`}
+                        title="Arraste para reordenar ou use as setas de prioridade"
+                      >
+                        <div className={styles.wishlistItemLeft}>
+                          <span className={styles.dragHandle} title="Arraste para reposicionar">
+                            ⋮⋮
+                          </span>
+                          <span className={styles.wishlistPriorityNum}>#{idx + 1}</span>
+                          <Badge variant={item.position as any}>{item.position}</Badge>
+                          {item.clubShortName && (
+                            <span className={styles.wishlistItemClub}>{item.clubShortName}</span>
+                          )}
+                          <span
+                            className={styles.wishlistItemName}
+                            onClick={() => setModalPlayerId(item.playerId)}
+                            style={{ cursor: 'pointer' }}
+                            title={`${item.playerName} (Clique para ver ficha)`}
+                          >
+                            {item.playerName}
+                          </span>
+                        </div>
+
+                        <div className={styles.wishlistItemActions}>
+                          <button
+                            type="button"
+                            disabled={isFirst || isReorderingPriority}
+                            onClick={() => handleMovePriority(item.playerId, 'TOP')}
+                            className={styles.wishlistTopBtn}
+                            title="Mover direto para o Topo (#1)"
+                          >
+                            ⏫
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isFirst || isReorderingPriority}
+                            onClick={() => handleMovePriority(item.playerId, 'UP')}
+                            className={styles.wishlistReorderBtn}
+                            title="Subir prioridade"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isLast || isReorderingPriority}
+                            onClick={() => handleMovePriority(item.playerId, 'DOWN')}
+                            className={styles.wishlistReorderBtn}
+                            title="Descer prioridade"
+                          >
+                            ▼
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isReorderingPriority}
+                            onClick={() => handleToggleWishlist(item.playerId)}
+                            className={styles.removeWishlistBtn}
+                            title="Remover da fila"
+                          >
+                            ✕
+                          </button>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Badge variant={item.position as any}>{item.position}</Badge>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleWishlist(item.playerId)}
-                          className={styles.removeWishlistBtn}
-                          title="Remover da fila"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  ))
+                    )
+                  })
                 )}
               </div>
             </div>

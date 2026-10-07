@@ -16,6 +16,7 @@ export type DraftStateData = {
   currentPick: number
   totalPicks: number
   pickTimerSeconds: number
+  draftMode: 'MANUAL' | 'AUTO' | 'HYBRID'
   turnStartedAt: string | null
   myTeamId: string | null
   currentTurnTeamId: string
@@ -76,6 +77,7 @@ export type DraftStateData = {
     playerId: string
     playerName: string
     position: string
+    clubShortName?: string
     priority: number
   }[]
   recentPicks: {
@@ -120,11 +122,49 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
   // Fetch league info
   const { data: league } = await supabase
     .from('leagues')
-    .select('id, name, status, current_pick, total_picks, pick_timer_seconds, commissioner_id, is_paused, draft_started_at, turn_started_at, paused_remaining_seconds')
+    .select('id, name, status, current_pick, total_picks, pick_timer_seconds, draft_mode, commissioner_id, is_paused, draft_started_at, turn_started_at, paused_remaining_seconds')
     .eq('id', leagueId)
     .single()
 
   if (!league) return null
+
+  // Auto-pick catchup if HYBRID or AUTO and turn expired
+  if (
+    league.status === 'drafting' &&
+    !league.is_paused &&
+    (league.draft_mode === 'HYBRID' || league.draft_mode === 'AUTO') &&
+    league.turn_started_at
+  ) {
+    let currentTurnStartedAt = league.turn_started_at
+    let curPick = league.current_pick ?? 1
+    let safetyCounter = 5
+
+    while (
+      safetyCounter > 0 &&
+      currentTurnStartedAt &&
+      curPick <= league.total_picks
+    ) {
+      const elapsedSec = (Date.now() - new Date(currentTurnStartedAt).getTime()) / 1000
+      if (elapsedSec < league.pick_timer_seconds) {
+        break
+      }
+
+      const didPick = await executeAutoPickInternal(supabase, leagueId)
+      safetyCounter--
+      if (!didPick) break
+
+      const { data: refreshed } = await supabase
+        .from('leagues')
+        .select('id, name, status, current_pick, total_picks, pick_timer_seconds, draft_mode, commissioner_id, is_paused, draft_started_at, turn_started_at, paused_remaining_seconds')
+        .eq('id', leagueId)
+        .single()
+
+      if (!refreshed || refreshed.current_pick === curPick) break
+      Object.assign(league, refreshed)
+      currentTurnStartedAt = refreshed.turn_started_at
+      curPick = refreshed.current_pick ?? 1
+    }
+  }
 
   // Fetch teams sorted by draft_order
   const { data: teams } = await supabase
@@ -209,16 +249,25 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
   }
 
   // Fetch my wishlist / queue
-  let myWishlist: { playerId: string; playerName: string; position: string; priority: number }[] = []
+  let myWishlist: {
+    playerId: string
+    playerName: string
+    position: string
+    clubShortName?: string
+    priority: number
+  }[] = []
   if (myTeam) {
     myWishlist = leagueQueues
       .filter((q: any) => q.fantasy_team_id === myTeam.id && !pickedPlayerIds.has(q.player_id))
+      .sort((a: any, b: any) => (a.priority ?? 0) - (b.priority ?? 0))
       .map((q: any) => {
         const p = Array.isArray(q.player) ? q.player[0] : q.player
+        const club = Array.isArray(p?.club) ? p?.club[0] : p?.club
         return {
           playerId: q.player_id,
           playerName: p?.name ?? 'Jogador',
           position: p?.position ?? 'MEI',
+          clubShortName: club?.short_name ?? '',
           priority: q.priority,
         }
       })
@@ -441,6 +490,7 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
     currentPick: currentPickNum,
     totalPicks: league.total_picks,
     pickTimerSeconds: league.pick_timer_seconds,
+    draftMode: (league.draft_mode as 'MANUAL' | 'AUTO' | 'HYBRID') ?? 'MANUAL',
     turnStartedAt,
     myTeamId: myTeam?.id ?? null,
     currentTurnTeamId: turnTeam?.id ?? '',
@@ -539,27 +589,134 @@ export async function removeFromWishlistAction(fantasyTeamId: string, playerId: 
   revalidatePath('/league')
 }
 
-export async function triggerAutoPickAction(leagueId: string) {
+export async function moveWishlistPriorityAction(
+  fantasyTeamId: string,
+  playerId: string,
+  direction: 'UP' | 'DOWN' | 'TOP'
+) {
   const supabase = await createClient()
 
-  const data = await getDraftRoomData(leagueId)
-  if (!data || data.status !== 'drafting' || data.isPaused) return
+  const { data: queue } = await supabase
+    .from('draft_queues')
+    .select('id, player_id, priority')
+    .eq('fantasy_team_id', fantasyTeamId)
+    .order('priority', { ascending: true })
 
-  // Fetch current turn team's wishlist queue
+  if (!queue || queue.length < 2) return
+
+  // Normalize list with 1-indexed order
+  const normalized = queue.map((item: any, idx: number) => ({
+    ...item,
+    normPriority: idx + 1,
+  }))
+
+  const currentIndex = normalized.findIndex((q: any) => q.player_id === playerId)
+  if (currentIndex === -1) return
+
+  let targetIndex: number
+  if (direction === 'UP') {
+    targetIndex = currentIndex - 1
+  } else if (direction === 'DOWN') {
+    targetIndex = currentIndex + 1
+  } else {
+    targetIndex = 0
+  }
+
+  if (targetIndex < 0 || targetIndex >= normalized.length || targetIndex === currentIndex) return
+
+  const [moved] = normalized.splice(currentIndex, 1)
+  normalized.splice(targetIndex, 0, moved)
+
+  await Promise.all(
+    normalized.map((item: any, idx: number) => {
+      const newPriority = idx + 1
+      if (item.priority !== newPriority) {
+        return supabase
+          .from('draft_queues')
+          .update({ priority: newPriority })
+          .eq('id', item.id)
+      }
+      return Promise.resolve()
+    })
+  )
+
+  revalidatePath('/league')
+}
+
+export async function reorderWishlistAction(
+  fantasyTeamId: string,
+  playerIdsInOrder: string[]
+) {
+  const supabase = await createClient()
+
+  await Promise.all(
+    playerIdsInOrder.map((playerId, idx) =>
+      supabase
+        .from('draft_queues')
+        .update({ priority: idx + 1 })
+        .eq('fantasy_team_id', fantasyTeamId)
+        .eq('player_id', playerId)
+    )
+  )
+
+  revalidatePath('/league')
+}
+
+export async function executeAutoPickInternal(supabase: any, leagueId: string): Promise<boolean> {
+  // 1. Fetch league
+  const { data: league } = await supabase
+    .from('leagues')
+    .select('id, status, current_pick, total_picks, is_paused')
+    .eq('id', leagueId)
+    .single()
+
+  if (!league || league.status !== 'drafting' || league.is_paused) return false
+
+  // 2. Fetch teams sorted by draft_order
+  const { data: teams } = await supabase
+    .from('fantasy_teams')
+    .select('id, name, draft_order')
+    .eq('league_id', leagueId)
+    .order('draft_order', { ascending: true })
+
+  if (!teams || teams.length < 2) return false
+
+  // Check latest completed pick
+  const { data: latestPick } = await supabase
+    .from('draft_picks')
+    .select('pick_number')
+    .eq('league_id', leagueId)
+    .order('pick_number', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const maxCompleted = latestPick?.pick_number ?? 0
+  const currentPickNum = Math.max(league.current_pick ?? 1, maxCompleted + 1)
+  if (currentPickNum > league.total_picks) return false
+
+  // Determine current slot
+  const teamIds = teams.map((t: any) => t.id)
+  const snakeSlots = generateSnakeOrder(teamIds, 24)
+  const currentSlot = snakeSlots.find((s) => s.pickNumber === currentPickNum)
+  if (!currentSlot) return false
+
+  const turnTeamId = currentSlot.fantasyTeamId
+
+  // 3. Fetch current team's queue
   const { data: queueData } = await supabase
     .from('draft_queues')
     .select('player_id')
-    .eq('fantasy_team_id', data.currentTurnTeamId)
+    .eq('fantasy_team_id', turnTeamId)
     .order('priority', { ascending: true })
 
   const queuedPlayerIds = (queueData || []).map((q: any) => q.player_id)
 
-  // Fetch current turn team's actual roster
+  // 4. Fetch current team's roster
   const { data: turnTeamPicks } = await supabase
     .from('draft_picks')
     .select('player:real_players(id, name, position)')
     .eq('league_id', leagueId)
-    .eq('fantasy_team_id', data.currentTurnTeamId)
+    .eq('fantasy_team_id', turnTeamId)
 
   const turnTeamRoster = (turnTeamPicks || [])
     .filter((p: any) => p.player)
@@ -570,18 +727,62 @@ export async function triggerAutoPickAction(leagueId: string) {
       clubShortName: '',
     }))
 
-  const candidates = data.availablePlayers
-    .filter((p) => !p.isPicked)
-    .map((p) => ({
-      id: p.id,
-      name: p.name,
-      position: p.position,
-      avgPoints: p.avgPoints,
-      totalMinutes: p.totalMinutes,
-    }))
+  // 5. Fetch already picked player IDs in this league
+  const { data: allPicks } = await supabase
+    .from('draft_picks')
+    .select('player_id')
+    .eq('league_id', leagueId)
+
+  const pickedPlayerIds = new Set((allPicks || []).map((p: any) => p.player_id))
+
+  // 6. Fetch unpicked active players
+  const { data: allPlayers } = await supabase
+    .from('real_players')
+    .select('id, name, position, is_active')
+    .eq('is_active', true)
+
+  const unpickedPlayers = (allPlayers || []).filter((p: any) => !pickedPlayerIds.has(p.id))
+
+  // Fetch season stats for unpicked players
+  const unpickedIds = unpickedPlayers.map((p: any) => p.id)
+  const statsMap: Record<string, { avgPoints: number; totalMinutes: number }> = {}
+
+  if (unpickedIds.length > 0) {
+    const { data: statsRows } = await supabase
+      .from('player_season_stats')
+      .select('player_id, avg_points, total_minutes')
+      .in('player_id', unpickedIds)
+
+    for (const row of statsRows || []) {
+      statsMap[row.player_id] = {
+        avgPoints: Number(row.avg_points ?? 0),
+        totalMinutes: Number(row.total_minutes ?? 0),
+      }
+    }
+  }
+
+  const candidates = unpickedPlayers.map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    position: p.position as any,
+    avgPoints: statsMap[p.id]?.avgPoints ?? 0,
+    totalMinutes: statsMap[p.id]?.totalMinutes ?? 0,
+  }))
 
   const chosen = autoPickPlayer(candidates, turnTeamRoster, queuedPlayerIds)
   if (chosen) {
     await makePickEngine(leagueId, '', chosen.id, true)
+    return true
+  }
+
+  return false
+}
+
+export async function triggerAutoPickAction(leagueId: string) {
+  try {
+    const supabase = await createClient()
+    await executeAutoPickInternal(supabase, leagueId)
+  } catch (err: any) {
+    console.error('[triggerAutoPickAction] Error executing auto-pick:', err?.message || err)
   }
 }

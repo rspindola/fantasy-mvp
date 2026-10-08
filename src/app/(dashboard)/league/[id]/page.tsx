@@ -581,33 +581,68 @@ export default function LeagueDetailsPage() {
                         {/* Header info / time */}
                         <div className={styles.matchItemHeader}>
                           <span>{roundDateLabel}</span>
+                          {m.isPartial ? (
+                            <span className={styles.partialBadge} title="Pontuação parcial em tempo real">
+                              ● PARCIAL
+                            </span>
+                          ) : hasScore ? (
+                            <span className={styles.finalBadge} title="Pontuação final consolidada">
+                              ✓ FINAL
+                            </span>
+                          ) : null}
                         </div>
 
                         {/* Duelo Body */}
                         <div className={styles.duelRow}>
                           {/* Home Team */}
                           <div className={styles.duelTeamHome}>
-                            <span className={styles.duelTeamName}>{m.homeTeamName}</span>
-                            <TeamCrest name={m.homeTeamName} />
+                            <span className={styles.duelTeamName} title={m.homeTeamName}>
+                              {m.homeTeamName}
+                            </span>
                           </div>
 
                           {/* Center Score / X */}
                           <div className={styles.duelScoreBox}>
                             {hasScore ? (
                               <div className={styles.duelScoreValues}>
-                                <span className={styles.scoreNum}>{m.homePoints!.toFixed(1)}</span>
+                                <span
+                                  className={`${styles.scoreNum} ${
+                                    m.homePoints! > m.awayPoints!
+                                      ? styles.scoreWinner
+                                      : m.homePoints! < m.awayPoints!
+                                      ? styles.scoreLoser
+                                      : ''
+                                  }`}
+                                >
+                                  {m.homePoints!.toFixed(1)}
+                                </span>
                                 <span className={styles.scoreX}>×</span>
-                                <span className={styles.scoreNum}>{m.awayPoints!.toFixed(1)}</span>
+                                <span
+                                  className={`${styles.scoreNum} ${
+                                    m.awayPoints! > m.homePoints!
+                                      ? styles.scoreWinner
+                                      : m.awayPoints! < m.homePoints!
+                                      ? styles.scoreLoser
+                                      : ''
+                                  }`}
+                                >
+                                  {m.awayPoints!.toFixed(1)}
+                                </span>
                               </div>
                             ) : (
-                              <span className={styles.scoreX}>×</span>
+                              <div className={styles.duelScoreValues}>
+                                <span className={styles.scoreEmpty}>-</span>
+                                <span className={styles.scoreX}>×</span>
+                                <span className={styles.scoreEmpty}>-</span>
+                              </div>
                             )}
                           </div>
 
                           {/* Away Team */}
                           <div className={styles.duelTeamAway}>
-                            <TeamCrest name={m.awayTeamName} />
-                            <span className={styles.duelTeamName}>{m.awayTeamName}</span>
+                            <span className={styles.duelTeamName} title={m.awayTeamName}>
+                              {m.awayTeamName}
+                            </span>
                           </div>
                         </div>
 

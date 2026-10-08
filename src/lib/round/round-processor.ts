@@ -370,7 +370,7 @@ export async function executeAutoSubAndCloseRound(
       seasonAdvanced = true
 
       try {
-        await populateInitialLineupsForLeague(leagueId, newRound)
+        await populateInitialLineupsForLeague(leagueId, newRound!)
       } catch (e) {
         console.error('[advanceRound] Error populating initial lineups for new round:', e)
       }
@@ -1032,5 +1032,171 @@ export async function generateRoundPartials(
     matches: matchDetails,
   }
 }
+
+/**
+ * Computes momentary/partial scores for all fantasy teams in a league for a given round.
+ * Uses current lineups and player_fixture_stats with auto-substitutions and captain bonus.
+ * Does not write to DB.
+ */
+export async function computeRoundLiveScoresMap(
+  leagueId: string,
+  fixtureRound: number
+): Promise<Map<string, number>> {
+  const supabase = await createClient()
+  const scoreMap = new Map<string, number>()
+
+  // 1. Fetch all fantasy teams in this league
+  const { data: teams } = await supabase
+    .from('fantasy_teams')
+    .select('id')
+    .eq('league_id', leagueId)
+
+  if (!teams || teams.length === 0) return scoreMap
+
+  const teamIds = teams.map((t: any) => t.id)
+
+  // 2. Fetch lineups for this round
+  const { data: lineups } = await supabase
+    .from('lineups')
+    .select('id, fantasy_team_id, formation')
+    .in('fantasy_team_id', teamIds)
+    .eq('fixture_round', fixtureRound)
+
+  const lineupMap = new Map<string, any>()
+  ;(lineups || []).forEach((l: any) => lineupMap.set(l.fantasy_team_id, l))
+
+  // For teams without a lineup in this round, look for their latest previous lineup
+  const missingTeamIds = teamIds.filter((id: string) => !lineupMap.has(id))
+  if (missingTeamIds.length > 0) {
+    const { data: prevLineups } = await supabase
+      .from('lineups')
+      .select('id, fantasy_team_id, formation, fixture_round')
+      .in('fantasy_team_id', missingTeamIds)
+      .order('fixture_round', { ascending: false })
+
+    ;(prevLineups || []).forEach((pl: any) => {
+      if (!lineupMap.has(pl.fantasy_team_id)) {
+        lineupMap.set(pl.fantasy_team_id, pl)
+      }
+    })
+  }
+
+  const allLineupIds = Array.from(lineupMap.values()).map((l) => l.id)
+  if (allLineupIds.length === 0) {
+    teams.forEach((t: any) => scoreMap.set(t.id, 0))
+    return scoreMap
+  }
+
+  // 3. Fetch slots
+  const { data: slotsData } = await supabase
+    .from('lineup_slots')
+    .select(`
+      lineup_id,
+      player_id,
+      slot_position,
+      is_captain,
+      is_starter,
+      player:real_players!inner(
+        id,
+        name,
+        position,
+        club_id,
+        club:real_clubs!inner(short_name, logo_url)
+      )
+    `)
+    .in('lineup_id', allLineupIds)
+
+  const slotsByLineup = new Map<string, any[]>()
+  const allPlayerIdsSet = new Set<string>()
+  ;(slotsData || []).forEach((s: any) => {
+    const list = slotsByLineup.get(s.lineup_id) || []
+    list.push(s)
+    slotsByLineup.set(s.lineup_id, list)
+    allPlayerIdsSet.add(s.player_id)
+  })
+
+  // 4. Fetch player stats for this round
+  const allPlayerIds = Array.from(allPlayerIdsSet)
+  const statsMap = new Map<string, { minutes: number; points: number }>()
+
+  if (allPlayerIds.length > 0) {
+    const { data: statsData } = await supabase
+      .from('player_fixture_stats')
+      .select(`
+        player_id,
+        minutes,
+        computed_points,
+        fixture:fixtures!inner(round)
+      `)
+      .in('player_id', allPlayerIds)
+      .eq('fixture.round', fixtureRound)
+
+    ;(statsData || []).forEach((st: any) => {
+      statsMap.set(st.player_id, {
+        minutes: st.minutes ?? 0,
+        points: Number(st.computed_points ?? 0),
+      })
+    })
+  }
+
+  // 5. Compute each team's score using processAutoSubstitutions
+  for (const team of teams) {
+    const lineup = lineupMap.get(team.id)
+    if (!lineup) {
+      scoreMap.set(team.id, 0)
+      continue
+    }
+
+    const slots = slotsByLineup.get(lineup.id) || []
+    if (slots.length === 0) {
+      scoreMap.set(team.id, 0)
+      continue
+    }
+
+    const startersInput: LineupPlayerInput[] = slots
+      .filter((s: any) => s.is_starter)
+      .map((s: any) => {
+        const stat = statsMap.get(s.player_id) || { minutes: 0, points: 0.0 }
+        return {
+          playerId: s.player_id,
+          name: s.player.name,
+          clubShortName: s.player.club?.short_name,
+          clubLogoUrl: s.player.club?.logo_url,
+          photoUrl: null,
+          position: s.player.position,
+          slotPosition: s.slot_position,
+          isCaptain: s.is_captain ?? false,
+          isStarter: true,
+          minutes: stat.minutes,
+          points: stat.points,
+        }
+      })
+
+    const reservesInput: LineupPlayerInput[] = slots
+      .filter((s: any) => !s.is_starter)
+      .map((s: any) => {
+        const stat = statsMap.get(s.player_id) || { minutes: 0, points: 0.0 }
+        return {
+          playerId: s.player_id,
+          name: s.player.name,
+          clubShortName: s.player.club?.short_name,
+          clubLogoUrl: s.player.club?.logo_url,
+          photoUrl: null,
+          position: s.player.position,
+          slotPosition: s.slot_position,
+          isCaptain: false,
+          isStarter: false,
+          minutes: stat.minutes,
+          points: stat.points,
+        }
+      })
+
+    const processed = processAutoSubstitutions(startersInput, reservesInput)
+    scoreMap.set(team.id, processed.totalPoints)
+  }
+
+  return scoreMap
+}
+
 
 

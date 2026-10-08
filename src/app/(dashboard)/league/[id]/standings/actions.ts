@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { calculateTotalStandings, type TotalStandingsRow } from '@/lib/standings/total-standings'
 import { calculateH2HStandings, type H2HStandingsRow } from '@/lib/h2h/h2h-processor'
 import { checkRoundLockStatus } from '@/lib/lineup/lock'
+import { computeRoundLiveScoresMap } from '@/lib/round/round-processor'
 
 export type MatchupItem = {
   id: string
@@ -15,6 +16,7 @@ export type MatchupItem = {
   homePoints: number | null
   awayPoints: number | null
   result: 'home' | 'away' | 'draw' | null
+  isPartial?: boolean
 }
 
 export type MarketStatusInfo = {
@@ -133,17 +135,56 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
     .eq('league_id', leagueId)
     .order('fixture_round', { ascending: true })
 
-  const allMatchups: MatchupItem[] = (matchupsData || []).map((m: any) => ({
-    id: m.id,
-    fixtureRound: m.fixture_round,
-    homeTeamId: m.home_team_id,
-    homeTeamName: m.home_team?.name ?? 'Time A',
-    awayTeamId: m.away_team_id,
-    awayTeamName: m.away_team?.name ?? 'Time B',
-    homePoints: m.home_points !== null ? Number(m.home_points) : null,
-    awayPoints: m.away_points !== null ? Number(m.away_points) : null,
-    result: m.result as any,
-  }))
+  // Check which unclosed rounds need partial scores (rounds <= currentRound with null home_points)
+  const unclosedRounds = Array.from(
+    new Set(
+      (matchupsData || [])
+        .filter((m: any) => m.fixture_round <= currentRound && m.home_points === null)
+        .map((m: any) => m.fixture_round)
+    )
+  )
+
+  const partialScoresByRound = new Map<number, Map<string, number>>()
+  for (const r of unclosedRounds) {
+    try {
+      const scores = await computeRoundLiveScoresMap(leagueId, r)
+      partialScoresByRound.set(r, scores)
+    } catch (e) {
+      console.error(`[getStandingsData] Error computing live partial scores for round ${r}:`, e)
+    }
+  }
+
+  const allMatchups: MatchupItem[] = (matchupsData || []).map((m: any) => {
+    const isConcluded = m.home_points !== null && m.away_points !== null
+    const roundPartials = partialScoresByRound.get(m.fixture_round)
+
+    let homePoints: number | null = null
+    let awayPoints: number | null = null
+    let isPartial = false
+
+    if (isConcluded) {
+      homePoints = Number(m.home_points)
+      awayPoints = Number(m.away_points)
+      isPartial = false
+    } else if (roundPartials) {
+      homePoints = roundPartials.get(m.home_team_id) ?? 0
+      awayPoints = roundPartials.get(m.away_team_id) ?? 0
+      isPartial = true
+    }
+
+    return {
+      id: m.id,
+      fixtureRound: m.fixture_round,
+      homeTeamId: m.home_team_id,
+      homeTeamName: m.home_team?.name ?? 'Time A',
+      awayTeamId: m.away_team_id,
+      awayTeamName: m.away_team?.name ?? 'Time B',
+      homePoints,
+      awayPoints,
+      result: isConcluded ? (m.result as any) : null,
+      isPartial,
+    }
+  })
 
   // Calculate unified tournament table with generalScore tiebreaker
   const standings = calculateH2HStandings(allMatchups, allLeagueTeams, generalPointsMap)

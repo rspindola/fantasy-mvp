@@ -99,7 +99,6 @@ export default function MatchupDetailPage() {
 
   const isHomeWinner = data.result === 'home'
   const isAwayWinner = data.result === 'away'
-  const isDraw = data.result === 'draw'
 
   const allSubs = [
     ...data.homeTeam.substitutions.map((s) => ({ ...s, teamName: data.homeTeam.teamName })),
@@ -221,7 +220,7 @@ export default function MatchupDetailPage() {
     )
   }
 
-  const renderTeamColumn = (team: MatchupTeamDetail, isHome: boolean) => {
+  const renderTeamColumn = (team: MatchupTeamDetail) => {
     return (
       <div className={styles.teamColumn}>
         <div className={styles.columnHeader}>
@@ -469,8 +468,8 @@ export default function MatchupDetailPage() {
 
       {/* Side by Side Lineups */}
       <div className={styles.lineupsGrid}>
-        {renderTeamColumn(data.homeTeam, true)}
-        {renderTeamColumn(data.awayTeam, false)}
+        {renderTeamColumn(data.homeTeam)}
+        {renderTeamColumn(data.awayTeam)}
       </div>
 
       {/* Player Detail Modal */}

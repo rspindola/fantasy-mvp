@@ -289,7 +289,7 @@ export async function getLineupData(leagueId: string): Promise<LineupPageData | 
         isCaptain: s.isCaptain,
         slotPosition: `${s.position}_${idx + 1}`,
       }))
-      reserves = (fallback.reserves || []).map((s: { playerId: string; position: any }, idx: number) => ({
+      reserves = (fallback.reserves || []).map((s: { playerId: string; position: any }) => ({
         playerId: s.playerId,
         position: s.position,
         isCaptain: false,

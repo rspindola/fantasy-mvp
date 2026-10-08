@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useCallback, useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { getLineupData, saveLineupAction, type LineupPageData } from './actions'
@@ -66,7 +66,7 @@ export default function LineupPage() {
     setMobileTab('roster')
   }
 
-  const loadData = () => {
+  const loadData = useCallback(() => {
     if (leagueId) {
       getLineupData(leagueId).then((res) => {
         if (res) {
@@ -92,11 +92,11 @@ export default function LineupPage() {
         setLoading(false)
       })
     }
-  }
+  }, [leagueId])
 
   useEffect(() => {
     loadData()
-  }, [leagueId])
+  }, [loadData])
 
   if (loading) {
     return (
@@ -312,11 +312,6 @@ export default function LineupPage() {
     if (hideStarters && (starterPlayerIds.has(p.id) || reservePlayerIds.has(p.id))) return false
     return true
   })
-
-  const posOrder: Record<string, number> = { GOL: 1, LAT: 2, ZAG: 3, MEI: 4, ATA: 5 }
-  const sortedStarters = [...starters].sort(
-    (a, b) => (posOrder[a.position] || 9) - (posOrder[b.position] || 9)
-  )
 
   // ── Render ──
 

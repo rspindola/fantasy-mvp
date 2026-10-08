@@ -6,7 +6,6 @@ import { useParams } from 'next/navigation'
 import { getLeagueRulesData, type LeagueRulesData } from './actions'
 import { formatTimerSeconds } from '@/lib/utils/format'
 import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
 import styles from './page.module.css'
 
 export default function LeagueRulesPage() {

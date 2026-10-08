@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useEffect, useRef, useState, useTransition } from 'react'
+import { use, useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import {
   getPrepRoomData,
@@ -8,7 +8,6 @@ import {
   removeFromWishlistAction,
   moveWishlistPriorityAction,
   type PrepRoomData,
-  type PrepPlayerData,
 } from './actions'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -45,7 +44,7 @@ export default function PreDraftPrepPage({
 
   const clubDropdownRef = useRef<HTMLDivElement>(null)
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const res = await getPrepRoomData(leagueId)
       setData(res)
@@ -54,11 +53,11 @@ export default function PreDraftPrepPage({
     } finally {
       setLoading(false)
     }
-  }
+  }, [leagueId])
 
   useEffect(() => {
     loadData()
-  }, [leagueId])
+  }, [loadData])
 
   // Close club dropdown on outside click
   useEffect(() => {

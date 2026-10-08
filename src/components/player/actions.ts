@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { calculatePlayerScoring } from '@/lib/scoring/scoring-engine'
 
 export type PlayerDetailScoutsSummary = {
   totalPoints: number

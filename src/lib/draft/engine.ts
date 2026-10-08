@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { generateSnakeOrder } from './snake-order'
-import { autoPickPlayer, type PlayerCandidate, type PositionKey } from './auto-pick'
 import { generateBergerMatchups } from '@/lib/h2h/berger-generator'
 import { h2hRoundsNeeded } from '@/lib/league/h2h-validation'
 import { notifyDraftTurn } from '@/lib/whatsapp/draft-notification'
@@ -98,8 +97,6 @@ export async function makePickEngine(
     .order('draft_order', { ascending: true })
 
   if (tErr || !teams || teams.length < 2) throw new Error('Erro ao carregar times do draft.')
-
-  const numTeams = teams.length
 
   // Check latest completed pick to guarantee accurate pick sequence
   const { data: latestPick } = await supabase

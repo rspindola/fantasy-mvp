@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { calculateTotalStandings, type TotalStandingsRow } from '@/lib/standings/total-standings'
+import { calculateTotalStandings } from '@/lib/standings/total-standings'
 import { calculateH2HStandings, type H2HStandingsRow } from '@/lib/h2h/h2h-processor'
 import { checkRoundLockStatus } from '@/lib/lineup/lock'
 import { computeRoundLiveScoresMap } from '@/lib/round/round-processor'

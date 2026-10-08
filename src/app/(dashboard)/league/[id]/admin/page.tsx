@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useCallback, useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import {
@@ -10,7 +10,6 @@ import {
   recalculatePostponedRoundAction,
   generateRoundPartialsAction,
   type CommissionerPageData,
-  type FixtureItem,
 } from './actions'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -27,17 +26,17 @@ export default function CommissionerAdminPage() {
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [summaryReport, setSummaryReport] = useState<any | null>(null)
 
-  const reloadData = async () => {
+  const reloadData = useCallback(async () => {
     if (leagueId) {
       const res = await getCommissionerData(leagueId)
       setData(res)
       setLoading(false)
     }
-  }
+  }, [leagueId])
 
   useEffect(() => {
     reloadData()
-  }, [leagueId])
+  }, [reloadData])
 
   if (loading) {
     return (
@@ -449,8 +448,6 @@ export default function CommissionerAdminPage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {data.postponedFixturesByRound.map((group) => {
-                const allFinished = group.fixtures.every((f) => f.status === 'FT')
-
                 return (
                   <div key={group.round} className={styles.postponedRoundCard}>
                     <div className={styles.postponedBannerHeader}>

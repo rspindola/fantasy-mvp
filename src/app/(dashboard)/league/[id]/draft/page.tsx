@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition, useMemo } from 'react'
+import { useCallback, useEffect, useRef, useState, useTransition, useMemo } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import {
@@ -167,10 +167,10 @@ export default function DraftRoomPage() {
   const reqIdRef = useRef(0)
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  const loadData = (silent: boolean = false) => {
+  const loadData = useCallback((silent: boolean = false) => {
     if (!leagueId) return
     const currentReqId = ++reqIdRef.current
-    if (!silent && !data) {
+    if (!silent) {
       setLoading(true)
     }
     getDraftRoomData(leagueId)
@@ -186,16 +186,16 @@ export default function DraftRoomPage() {
           setLoading(false)
         }
       })
-  }
+  }, [leagueId])
 
-  const debouncedLoadData = () => {
+  const debouncedLoadData = useCallback(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current)
     }
     debounceTimerRef.current = setTimeout(() => {
       loadData(true)
     }, 80)
-  }
+  }, [loadData])
 
   // Clear selectedPlayer if they were drafted by someone else or if turn changed and not commissioner
   useEffect(() => {
@@ -271,7 +271,7 @@ export default function DraftRoomPage() {
       supabase.removeChannel(channel)
       channelRef.current = null
     }
-  }, [leagueId])
+  }, [leagueId, loadData, debouncedLoadData])
 
   // Polling fallback every 4 seconds while draft is in progress to ensure 100% sync
   useEffect(() => {
@@ -280,13 +280,14 @@ export default function DraftRoomPage() {
       loadData(true)
     }, 4000)
     return () => clearInterval(interval)
-  }, [data?.status, leagueId])
+  }, [data?.status, loadData])
 
   // Group picks by round, ordered from oldest to newest (Round 1, Round 2, ...)
+  const recentPicks = data?.recentPicks
   const picksByRound = useMemo(() => {
-    if (!data?.recentPicks || data.recentPicks.length === 0) return []
-    const groups: { [round: number]: typeof data.recentPicks } = {}
-    for (const pick of data.recentPicks) {
+    if (!recentPicks || recentPicks.length === 0) return []
+    const groups: { [round: number]: typeof recentPicks } = {}
+    for (const pick of recentPicks) {
       if (!groups[pick.round]) {
         groups[pick.round] = []
       }
@@ -295,14 +296,14 @@ export default function DraftRoomPage() {
     return Object.entries(groups)
       .map(([roundStr, picks]) => [Number(roundStr), picks] as const)
       .sort(([a], [b]) => a - b)
-  }, [data?.recentPicks])
+  }, [recentPicks])
 
   const notifyDraftUpdate = () => {
     try {
       channelRef.current?.send({
         type: 'broadcast',
         event: 'draft_update',
-        payload: { timestamp: Date.now() },
+        payload: {},
       })
     } catch {
       // Ignore broadcast send errors

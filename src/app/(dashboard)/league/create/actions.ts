@@ -1,9 +1,9 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { createLeagueSchema, type CreateLeagueInput } from '@/lib/validations/league'
+import { createLeagueSchema } from '@/lib/validations/league'
 import { generateInviteCode } from '@/lib/league/invite'
-import { canStartH2H, h2hRoundsNeeded, type H2HFormat } from '@/lib/league/h2h-validation'
+import { canStartH2H, h2hRoundsNeeded } from '@/lib/league/h2h-validation'
 import { redirect } from 'next/navigation'
 
 export type CreateLeagueState = {

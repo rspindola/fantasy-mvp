@@ -3,7 +3,6 @@ import { generateSnakeOrder } from '@/lib/draft/snake-order'
 import {
   autoPickPlayer,
   getPositionDeficits,
-  TARGET_POSITIONS,
   type PlayerCandidate,
 } from '@/lib/draft/auto-pick'
 

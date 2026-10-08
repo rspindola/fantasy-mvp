@@ -7,7 +7,9 @@ import {
   simulateFixtureMatch,
   recalculatePostponedRound,
   executeAutoSubAndCloseRound,
+  generateRoundPartials,
   type RoundClosingSummary,
+  type RoundPartialsSummary,
 } from '@/lib/round/round-processor'
 import { revalidatePath } from 'next/cache'
 
@@ -133,8 +135,18 @@ export async function getCommissionerData(leagueId: string): Promise<Commissione
     status: f.status,
     homeScore: f.home_score,
     awayScore: f.away_score,
-    homeClub: f.homeClub,
-    awayClub: f.awayClub,
+    homeClub: {
+      id: f.homeClub?.id || '',
+      name: f.homeClub?.name || '',
+      shortName: f.homeClub?.short_name || f.homeClub?.name || '',
+      logoUrl: f.homeClub?.logo_url || null,
+    },
+    awayClub: {
+      id: f.awayClub?.id || '',
+      name: f.awayClub?.name || '',
+      shortName: f.awayClub?.short_name || f.awayClub?.name || '',
+      logoUrl: f.awayClub?.logo_url || null,
+    },
   }))
 
   // 5. Fetch all postponed fixtures across season
@@ -173,8 +185,18 @@ export async function getCommissionerData(leagueId: string): Promise<Commissione
       status: f.status,
       homeScore: f.home_score,
       awayScore: f.away_score,
-      homeClub: f.homeClub,
-      awayClub: f.awayClub,
+      homeClub: {
+        id: f.homeClub?.id || '',
+        name: f.homeClub?.name || '',
+        shortName: f.homeClub?.short_name || f.homeClub?.name || '',
+        logoUrl: f.homeClub?.logo_url || null,
+      },
+      awayClub: {
+        id: f.awayClub?.id || '',
+        name: f.awayClub?.name || '',
+        shortName: f.awayClub?.short_name || f.awayClub?.name || '',
+        logoUrl: f.awayClub?.logo_url || null,
+      },
     })
     roundMap.set(f.round, list)
   })
@@ -325,3 +347,33 @@ export async function recalculatePostponedRoundAction(
   revalidatePath(`/league/${leagueId}/standings`)
   return result
 }
+
+export async function generateRoundPartialsAction(
+  leagueId: string,
+  fixtureRound?: number
+): Promise<RoundPartialsSummary> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Não autenticado')
+
+  const { data: league } = await supabase
+    .from('leagues')
+    .select('commissioner_id')
+    .eq('id', leagueId)
+    .single()
+
+  if (!league || league.commissioner_id !== user.id) {
+    throw new Error('Apenas o comissário pode gerar parciais da rodada.')
+  }
+
+  const result = await generateRoundPartials(leagueId, fixtureRound)
+  revalidatePath(`/league/${leagueId}`)
+  revalidatePath(`/league/${leagueId}/admin`)
+  revalidatePath(`/league/${leagueId}/standings`)
+  revalidatePath(`/league/${leagueId}/lineup`)
+  return result
+}
+

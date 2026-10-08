@@ -237,14 +237,15 @@ export function autoCompleteLineup(
 
 /**
  * Checks all teams in a league for a given fixture round.
- * If the market is locked, automatically completes any lineup with fewer than 11 starters
- * and saves it into Supabase.
+ * If the market is locked (or if force=true), automatically completes any lineup with fewer than 11 starters
+ * using previous round lineup if available, or generating a fallback 4-3-3, and saves it into Supabase.
  */
 export async function ensureLockedRoundLineups(
   leagueId: string,
-  fixtureRound: number
+  fixtureRound: number,
+  options?: { force?: boolean; supabaseClient?: any }
 ): Promise<{ teamsAutoCompleted: number }> {
-  const supabase = await createClient()
+  const supabase = options?.supabaseClient || (await createClient())
 
   // 1. Get league and verify lock status
   const { data: league } = await supabase
@@ -255,10 +256,12 @@ export async function ensureLockedRoundLineups(
 
   if (!league) return { teamsAutoCompleted: 0 }
 
-  const lockStatus = await checkRoundLockStatus(league.season_id, fixtureRound)
-  if (!lockStatus.isLocked) {
-    // Market is not locked yet - managers can still set their own lineups
-    return { teamsAutoCompleted: 0 }
+  if (!options?.force) {
+    const lockStatus = await checkRoundLockStatus(league.season_id, fixtureRound)
+    if (!lockStatus.isLocked) {
+      // Market is not locked yet - managers can still set their own lineups
+      return { teamsAutoCompleted: 0 }
+    }
   }
 
   // 2. Fetch all teams in the league
@@ -272,7 +275,7 @@ export async function ensureLockedRoundLineups(
   let count = 0
 
   for (const team of teams) {
-    // Check existing lineup
+    // Check existing lineup for this round
     const { data: existingLineup } = await supabase
       .from('lineups')
       .select('id, formation')
@@ -282,6 +285,7 @@ export async function ensureLockedRoundLineups(
 
     let startersCount = 0
     let existingSlots: any[] = []
+    let formationToUse: Formation = (existingLineup?.formation as Formation) || '4-3-3'
 
     if (existingLineup) {
       const { data: slots } = await supabase
@@ -296,6 +300,30 @@ export async function ensureLockedRoundLineups(
     // If already has 11 starters, skip
     if (startersCount >= 11) {
       continue
+    }
+
+    // If team has no slots for this round, check if they had a lineup in previous round (carry-over)
+    if (existingSlots.length === 0 && fixtureRound > 1) {
+      const { data: prevLineup } = await supabase
+        .from('lineups')
+        .select('id, formation')
+        .eq('fantasy_team_id', team.id)
+        .eq('fixture_round', fixtureRound - 1)
+        .maybeSingle()
+
+      if (prevLineup) {
+        if (!existingLineup?.formation && prevLineup.formation) {
+          formationToUse = prevLineup.formation as Formation
+        }
+        const { data: prevSlots } = await supabase
+          .from('lineup_slots')
+          .select('player_id, slot_position, is_captain, is_starter, player:real_players(position)')
+          .eq('lineup_id', prevLineup.id)
+
+        if (prevSlots && prevSlots.length > 0) {
+          existingSlots = prevSlots
+        }
+      }
     }
 
     // Fetch team roster
@@ -338,7 +366,7 @@ export async function ensureLockedRoundLineups(
 
     const completed = autoCompleteLineup(
       roster,
-      existingLineup?.formation || '4-3-3',
+      formationToUse,
       existingStarters,
       existingReserves
     )
@@ -358,7 +386,10 @@ export async function ensureLockedRoundLineups(
       .select('id')
       .single()
 
-    if (lErr || !savedLineup) continue
+    if (lErr || !savedLineup) {
+      if (lErr) console.error(`[ensureLockedRoundLineups] Error saving lineup for ${team.id}:`, lErr)
+      continue
+    }
 
     // Delete old slots and insert new
     await supabase.from('lineup_slots').delete().eq('lineup_id', savedLineup.id)
@@ -379,9 +410,26 @@ export async function ensureLockedRoundLineups(
       is_starter: false,
     }))
 
-    await supabase.from('lineup_slots').insert([...starterRecords, ...reserveRecords])
+    const { error: insErr } = await supabase.from('lineup_slots').insert([...starterRecords, ...reserveRecords])
+    if (insErr) {
+      console.error(`[ensureLockedRoundLineups] Error inserting slots for ${team.id}:`, insErr)
+      continue
+    }
+
     count++
   }
 
   return { teamsAutoCompleted: count }
 }
+
+/**
+ * Creates or ensures initial lineups for all teams in a league for a given fixture round,
+ * regardless of whether the market is currently locked.
+ */
+export async function populateInitialLineupsForLeague(
+  leagueId: string,
+  fixtureRound: number
+): Promise<{ teamsAutoCompleted: number }> {
+  return ensureLockedRoundLineups(leagueId, fixtureRound, { force: true })
+}
+

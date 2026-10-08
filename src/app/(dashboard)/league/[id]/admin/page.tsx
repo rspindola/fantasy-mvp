@@ -6,9 +6,9 @@ import { useParams } from 'next/navigation'
 import {
   getCommissionerData,
   toggleFixturePostponedAction,
-  simulateFixtureMatchAction,
   closeAndAdvanceRoundAction,
   recalculatePostponedRoundAction,
+  generateRoundPartialsAction,
   type CommissionerPageData,
   type FixtureItem,
 } from './actions'
@@ -26,11 +26,6 @@ export default function CommissionerAdminPage() {
   const [isPending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [summaryReport, setSummaryReport] = useState<any | null>(null)
-
-  // Simulation score state for modal/input
-  const [simulatingFixture, setSimulatingFixture] = useState<FixtureItem | null>(null)
-  const [simHomeScore, setSimHomeScore] = useState<number>(2)
-  const [simAwayScore, setSimAwayScore] = useState<number>(1)
 
   const reloadData = async () => {
     if (leagueId) {
@@ -67,7 +62,26 @@ export default function CommissionerAdminPage() {
   const currentRound = data.season.currentRound
   const isCurrentRoundPostponed = data.currentRoundFixtures.some((f) => f.status === 'postponed')
   const finishedFixturesCount = data.currentRoundFixtures.filter((f) => f.status === 'FT').length
+  const liveFixturesCount = data.currentRoundFixtures.filter((f) => f.status === 'live').length
   const postponedFixturesCount = data.currentRoundFixtures.filter((f) => f.status === 'postponed').length
+  const scheduledFixturesCount = data.currentRoundFixtures.filter((f) => f.status === 'scheduled').length
+
+  const handleGeneratePartials = () => {
+    setFeedback(null)
+    setSummaryReport(null)
+    startTransition(async () => {
+      try {
+        const res = await generateRoundPartialsAction(leagueId, currentRound)
+        setFeedback({
+          type: 'success',
+          message: `⚡ Parciais da Rodada ${currentRound} geradas com sucesso! ${res.startedCount} partida(s) iniciada(s) atualizada(s) (${res.liveCount} ao vivo, ${res.finishedCount} finalizada(s)). As ${res.scheduledCount} partida(s) futura(s) continuam agendadas. A pontuação oficial da liga e classificação só serão fechadas na aba "Fechamento & Avanço".`,
+        })
+        await reloadData()
+      } catch (err: any) {
+        setFeedback({ type: 'error', message: err.message || 'Erro ao gerar parciais.' })
+      }
+    })
+  }
 
   const handleTogglePostponed = (fixtureId: string, currentStatus: string) => {
     const isCurrentlyPostponed = currentStatus === 'postponed'
@@ -84,29 +98,6 @@ export default function CommissionerAdminPage() {
         await reloadData()
       } catch (err: any) {
         setFeedback({ type: 'error', message: err.message || 'Erro ao alterar partida.' })
-      }
-    })
-  }
-
-  const handleSimulateScore = () => {
-    if (!simulatingFixture) return
-    setFeedback(null)
-    startTransition(async () => {
-      try {
-        await simulateFixtureMatchAction(
-          leagueId,
-          simulatingFixture.id,
-          Number(simHomeScore),
-          Number(simAwayScore)
-        )
-        setFeedback({
-          type: 'success',
-          message: `Partida ${simulatingFixture.homeClub.shortName} ${simHomeScore} x ${simAwayScore} ${simulatingFixture.awayClub.shortName} finalizada e scouts gerados com sucesso!`,
-        })
-        setSimulatingFixture(null)
-        await reloadData()
-      } catch (err: any) {
-        setFeedback({ type: 'error', message: err.message || 'Erro ao simular partida.' })
       }
     })
   }
@@ -292,17 +283,39 @@ export default function CommissionerAdminPage() {
       {/* Tab 1: Current Round Fixtures */}
       {activeTab === 'CURRENT' && (
         <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <div>
+          <div
+            className={styles.sectionHeader}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              flexWrap: 'wrap',
+              gap: '16px',
+            }}
+          >
+            <div style={{ flex: 1, minWidth: '280px' }}>
               <h2 className={styles.sectionTitle}>
                 Partidas da Série A — Rodada {currentRound}
                 {isCurrentRoundPostponed && <span style={{ color: '#fbbf24' }}>*</span>}
               </h2>
               <p className={styles.sectionDesc}>
-                {finishedFixturesCount} de {data.currentRoundFixtures.length} partidas finalizadas
+                {finishedFixturesCount} finalizada(s) · {liveFixturesCount} em andamento / ao vivo · {scheduledFixturesCount} agendada(s)
                 {postponedFixturesCount > 0 && ` · ${postponedFixturesCount} partida(s) adiada(s)`}.
-                Você pode adiar partidas ou simular resultados com scouts para testes.
               </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+              <Button
+                size="md"
+                isLoading={isPending}
+                disabled={isPending}
+                onClick={handleGeneratePartials}
+              >
+                ⚡ Gerar / Atualizar Parciais
+              </Button>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right', maxWidth: '340px' }}>
+                Verifica jogos iniciados (19:45, 20:00...) e computa scouts parciais momentâneos para os atletas. A pontuação oficial só é fechada ao consolidar a rodada.
+              </span>
             </div>
           </div>
 
@@ -310,6 +323,7 @@ export default function CommissionerAdminPage() {
             {data.currentRoundFixtures.map((f) => {
               const isPostponed = f.status === 'postponed'
               const isFT = f.status === 'FT'
+              const isLive = f.status === 'live'
 
               return (
                 <div
@@ -332,45 +346,59 @@ export default function CommissionerAdminPage() {
                       className={`${styles.fixtureStatusBadge} ${
                         isFT
                           ? styles.statusFT
+                          : isLive
+                          ? styles.statusLive
                           : isPostponed
                           ? styles.statusPostponed
                           : styles.statusScheduled
                       }`}
                     >
-                      {isFT ? 'Finalizado' : isPostponed ? '⚠️ Adiado (*)' : 'Agendado'}
+                      {isFT ? 'Finalizado' : isLive ? '🔴 Ao Vivo' : isPostponed ? '⚠️ Adiado (*)' : 'Agendado'}
                     </span>
                   </div>
 
                   <div className={styles.fixtureTeams}>
                     <div className={styles.teamSide}>
-                      {f.homeClub.logoUrl && (
+                      {f.homeClub?.logoUrl ? (
                         <img
                           src={f.homeClub.logoUrl}
-                          alt={f.homeClub.shortName}
+                          alt={f.homeClub.shortName || f.homeClub.name}
                           className={styles.clubLogo}
                         />
+                      ) : (
+                        <div className={styles.clubLogoFallback}>
+                          {(f.homeClub?.shortName || f.homeClub?.name || 'CAS').slice(0, 3).toUpperCase()}
+                        </div>
                       )}
-                      <span className={styles.clubName}>{f.homeClub.shortName}</span>
+                      <span className={styles.clubName}>
+                        {f.homeClub?.name || f.homeClub?.shortName || 'Time da Casa'}
+                      </span>
                     </div>
 
                     <div className={styles.scoreBox}>
-                      {isFT ? (
-                        <span>
-                          {f.homeScore} - {f.awayScore}
+                      {isFT || isLive ? (
+                        <span style={isLive ? { color: '#f87171', fontWeight: 800 } : undefined}>
+                          {f.homeScore ?? 0} x {f.awayScore ?? 0}
                         </span>
                       ) : (
-                        <span className={styles.scoreVs}>vs</span>
+                        <span className={styles.scoreVs}>0 x 0</span>
                       )}
                     </div>
 
                     <div className={`${styles.teamSide} ${styles.teamSideRight}`}>
-                      <span className={styles.clubName}>{f.awayClub.shortName}</span>
-                      {f.awayClub.logoUrl && (
+                      <span className={styles.clubName}>
+                        {f.awayClub?.name || f.awayClub?.shortName || 'Time Visitante'}
+                      </span>
+                      {f.awayClub?.logoUrl ? (
                         <img
                           src={f.awayClub.logoUrl}
-                          alt={f.awayClub.shortName}
+                          alt={f.awayClub.shortName || f.awayClub.name}
                           className={styles.clubLogo}
                         />
+                      ) : (
+                        <div className={styles.clubLogoFallback}>
+                          {(f.awayClub?.shortName || f.awayClub?.name || 'VIS').slice(0, 3).toUpperCase()}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -383,15 +411,6 @@ export default function CommissionerAdminPage() {
                       title={isPostponed ? 'Restaurar para agendado' : 'Marcar como jogo adiado'}
                     >
                       {isPostponed ? '↩️ Desmarcar Adiado' : '⏱️ Marcar Adiado'}
-                    </button>
-
-                    <button
-                      onClick={() => setSimulatingFixture(f)}
-                      disabled={isPending}
-                      className={`${styles.btnActionSm} ${styles.btnActionSimulate}`}
-                      title="Simular placar e gerar scouts oficiais"
-                    >
-                      ⚽ {isFT ? 'Re-simular' : 'Simular Jogo'}
                     </button>
                   </div>
                 </div>
@@ -464,13 +483,6 @@ export default function CommissionerAdminPage() {
                           </div>
 
                           <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                              onClick={() => setSimulatingFixture(f)}
-                              disabled={isPending}
-                              className={`${styles.btnActionSm} ${styles.btnActionSimulate}`}
-                            >
-                              ⚽ {f.status === 'FT' ? 'Editar Placar' : 'Simular Realização'}
-                            </button>
                             <button
                               onClick={() => handleTogglePostponed(f.id, f.status)}
                               disabled={isPending}
@@ -580,112 +592,6 @@ export default function CommissionerAdminPage() {
                 {isCurrentRoundPostponed
                   ? `⚡ Fechamento Provisório & Avançar (Marca Rodada ${currentRound}*)`
                   : `⚡ Consolidar Rodada & Avançar para R${currentRound + 1}`}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Mini Modal for Simulating Fixture Result */}
-      {simulatingFixture && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-            padding: '16px',
-          }}
-        >
-          <div
-            style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-medium)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '24px',
-              maxWidth: '450px',
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-            }}
-          >
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0 }}>
-              ⚽ Simular Placar — {simulatingFixture.homeClub.shortName} vs{' '}
-              {simulatingFixture.awayClub.shortName}
-            </h3>
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: 0 }}>
-              Defina o placar da partida. O sistema gerará scouts individuais de gols, assistências,
-              desarmes e clean sheets para os atletas de ambos os clubes.
-            </p>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', padding: '16px 0' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontWeight: 700 }}>{simulatingFixture.homeClub.shortName}</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="10"
-                  value={simHomeScore}
-                  onChange={(e) => setSimHomeScore(Number(e.target.value))}
-                  style={{
-                    width: '60px',
-                    height: '48px',
-                    fontSize: '1.5rem',
-                    textAlign: 'center',
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-medium)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--text-primary)',
-                    fontWeight: 700,
-                  }}
-                />
-              </div>
-
-              <span style={{ fontSize: '1.5rem', color: 'var(--text-muted)', fontWeight: 800 }}>X</span>
-
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontWeight: 700 }}>{simulatingFixture.awayClub.shortName}</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="10"
-                  value={simAwayScore}
-                  onChange={(e) => setSimAwayScore(Number(e.target.value))}
-                  style={{
-                    width: '60px',
-                    height: '48px',
-                    fontSize: '1.5rem',
-                    textAlign: 'center',
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-medium)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--text-primary)',
-                    fontWeight: 700,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <Button
-                variant="ghost"
-                size="md"
-                disabled={isPending}
-                onClick={() => setSimulatingFixture(null)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                size="md"
-                isLoading={isPending}
-                disabled={isPending}
-                onClick={handleSimulateScore}
-              >
-                Confirmar & Gerar Scouts
               </Button>
             </div>
           </div>

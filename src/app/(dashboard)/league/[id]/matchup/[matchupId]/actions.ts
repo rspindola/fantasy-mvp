@@ -9,7 +9,9 @@ import {
 import {
   ensureRoundScouts,
   executeAutoSubAndCloseRound,
+  generateRoundPartials,
   type RoundClosingSummary,
+  type RoundPartialsSummary,
 } from '@/lib/round/round-processor'
 import { ensureLockedRoundLineups } from '@/lib/lineup/lock'
 import { sortByPosition } from '@/lib/lineup/lineup-engine'
@@ -115,11 +117,15 @@ export async function getMatchupDetailData(
   const currentLeague = league
   const currentUserId = user?.id ?? ''
 
-  // Ensure scouts exist
-  await ensureRoundScouts(currentLeague.season_id, currentMatchup.fixture_round)
+  // Only ensure fallback scouts if the round was already completed in the past
+  if (currentMatchup.fixture_round < currentSeasonRound) {
+    await ensureRoundScouts(currentLeague.season_id, currentMatchup.fixture_round)
+  }
 
-  // Ensure locked lineups are auto-completed
-  await ensureLockedRoundLineups(leagueId, currentMatchup.fixture_round)
+  // Ensure lineups are auto-completed (force for current and past rounds to prevent empty squads)
+  await ensureLockedRoundLineups(leagueId, currentMatchup.fixture_round, {
+    force: currentMatchup.fixture_round <= currentSeasonRound,
+  })
 
   // Fetch round fixtures to check for postponed matches
   const { data: roundFixtures } = await supabase
@@ -178,9 +184,26 @@ export async function getMatchupDetailData(
       .eq('fixture_round', currentMatchup.fixture_round)
       .maybeSingle()
 
-    const formation = lineup?.formation ?? '4-3-3'
+    let lineupRecord = lineup
+    let formation = lineup?.formation ?? '4-3-3'
 
-    if (!lineup) {
+    if (!lineupRecord) {
+      // Check if team has a previous round lineup to use as projected lineup
+      const { data: prevLineup } = await supabase
+        .from('lineups')
+        .select('id, formation')
+        .eq('fantasy_team_id', teamId)
+        .order('fixture_round', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (prevLineup) {
+        lineupRecord = prevLineup
+        formation = prevLineup.formation ?? '4-3-3'
+      }
+    }
+
+    if (!lineupRecord) {
       return {
         teamId,
         teamName,
@@ -216,7 +239,7 @@ export async function getMatchupDetailData(
           )
         )
       `)
-      .eq('lineup_id', lineup.id)
+      .eq('lineup_id', lineupRecord.id)
 
     const playerIds = (slots || []).map((s) => s.player_id)
 
@@ -404,3 +427,16 @@ export async function executeAutoSubAction(
   revalidatePath(`/league/${leagueId}`)
   return summary
 }
+
+/**
+ * Commissioner action to refresh partial stats for started matches without finalizing the round.
+ */
+export async function refreshMatchupPartialsAction(
+  leagueId: string,
+  fixtureRound: number
+): Promise<RoundPartialsSummary> {
+  const summary = await generateRoundPartials(leagueId, fixtureRound)
+  revalidatePath(`/league/${leagueId}`)
+  return summary
+}
+

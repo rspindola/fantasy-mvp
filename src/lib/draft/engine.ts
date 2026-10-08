@@ -4,6 +4,7 @@ import { autoPickPlayer, type PlayerCandidate, type PositionKey } from './auto-p
 import { generateBergerMatchups } from '@/lib/h2h/berger-generator'
 import { h2hRoundsNeeded } from '@/lib/league/h2h-validation'
 import { notifyDraftTurn } from '@/lib/whatsapp/draft-notification'
+import { populateInitialLineupsForLeague } from '@/lib/lineup/lock'
 
 /**
  * Starts the draft for a league:
@@ -283,7 +284,21 @@ export async function completeDraftEngine(leagueId: string) {
     }
   }
 
-  // Update status to 'active'
+  // 3. Initialize default starting lineups for all teams for the startRound
+  const { data: seasonData } = await supabase
+    .from('seasons')
+    .select('current_round')
+    .eq('id', league.season_id)
+    .single()
+
+  const initialRound = seasonData?.current_round ?? 1
+  try {
+    await populateInitialLineupsForLeague(leagueId, initialRound)
+  } catch (initLineupErr) {
+    console.error('Error populating initial lineups after draft:', initLineupErr)
+  }
+
+  // 4. Update status to 'active'
   await supabase
     .from('leagues')
     .update({ status: 'active', is_paused: false })

@@ -4,7 +4,7 @@ import {
   type LineupPlayerInput,
   type ProcessedLineupResult,
 } from '@/lib/lineup/auto-sub'
-import { ensureLockedRoundLineups } from '@/lib/lineup/lock'
+import { ensureLockedRoundLineups, populateInitialLineupsForLeague } from '@/lib/lineup/lock'
 import { calculatePlayerScoring } from '@/lib/scoring/scoring-engine'
 
 export interface RoundClosingSummary {
@@ -368,6 +368,12 @@ export async function executeAutoSubAndCloseRound(
         .eq('id', league.season_id)
 
       seasonAdvanced = true
+
+      try {
+        await populateInitialLineupsForLeague(leagueId, newRound)
+      } catch (e) {
+        console.error('[advanceRound] Error populating initial lineups for new round:', e)
+      }
     }
   }
 
@@ -638,4 +644,393 @@ export async function recalculatePostponedRound(
 ): Promise<RoundClosingSummary> {
   return executeAutoSubAndCloseRound(leagueId, fixtureRound, false)
 }
+
+export interface RoundPartialsSummary {
+  fixtureRound: number
+  totalFixtures: number
+  startedCount: number
+  liveCount: number
+  finishedCount: number
+  scheduledCount: number
+  postponedCount: number
+  playersUpdated: number
+  matches: {
+    id: string
+    homeClub: string
+    awayClub: string
+    status: 'scheduled' | 'live' | 'FT' | 'postponed'
+    homeScore: number | null
+    awayScore: number | null
+    elapsedMinutes: number
+  }[]
+}
+
+/**
+ * Generates momentary/partial statistics for fixtures of a round that have already started.
+ * Only fixtures whose kickoff_at <= now() are updated with live/FT status and player scouts.
+ * Future fixtures remain 'scheduled' with 0 player scouts ("A jogar").
+ *
+ * CRITICAL: This does NOT write to round_scores, does NOT lock H2H matchups, and does NOT advance the season.
+ * Official scores are strictly computed when the commissioner consolidates and closes the round.
+ */
+export async function generateRoundPartials(
+  leagueId: string,
+  fixtureRound?: number
+): Promise<RoundPartialsSummary> {
+  const supabase = await createClient()
+
+  // 1. Fetch league to find season_id and current round
+  const { data: league } = await supabase
+    .from('leagues')
+    .select('id, season_id, season:seasons(current_round)')
+    .eq('id', leagueId)
+    .single()
+
+  if (!league) throw new Error('Liga não encontrada')
+
+  const currentRoundFromSeason = (league.season as any)?.current_round ?? 1
+  const roundToProcess = fixtureRound ?? currentRoundFromSeason
+
+  // 2. Fetch all fixtures for this round
+  const { data: fixtures } = await supabase
+    .from('fixtures')
+    .select(`
+      id,
+      round,
+      kickoff_at,
+      status,
+      home_score,
+      away_score,
+      home_club_id,
+      away_club_id,
+      homeClub:real_clubs!fixtures_home_club_id_fkey(name, short_name),
+      awayClub:real_clubs!fixtures_away_club_id_fkey(name, short_name)
+    `)
+    .eq('season_id', league.season_id)
+    .eq('round', roundToProcess)
+    .order('kickoff_at', { ascending: true })
+
+  if (!fixtures || fixtures.length === 0) {
+    throw new Error(`Nenhuma partida encontrada para a rodada ${roundToProcess}`)
+  }
+
+  const now = Date.now()
+  let startedCount = 0
+  let liveCount = 0
+  let finishedCount = 0
+  let scheduledCount = 0
+  let postponedCount = 0
+  let playersUpdated = 0
+  const matchDetails: RoundPartialsSummary['matches'] = []
+
+  for (const f of fixtures) {
+    const homeClubName = (f.homeClub as any)?.short_name || 'Casa'
+    const awayClubName = (f.awayClub as any)?.short_name || 'Fora'
+
+    // If postponed, keep as postponed
+    if (f.status === 'postponed') {
+      postponedCount++
+      matchDetails.push({
+        id: f.id,
+        homeClub: homeClubName,
+        awayClub: awayClubName,
+        status: 'postponed',
+        homeScore: null,
+        awayScore: null,
+        elapsedMinutes: 0,
+      })
+      continue
+    }
+
+    const kickoffTime = f.kickoff_at ? new Date(f.kickoff_at).getTime() : 0
+    const elapsedMinutes = f.kickoff_at ? Math.floor((now - kickoffTime) / 60000) : -1
+
+    // If kickoff is in the future
+    if (elapsedMinutes < 0) {
+      scheduledCount++
+      await supabase
+        .from('fixtures')
+        .update({ status: 'scheduled', home_score: 0, away_score: 0 })
+        .eq('id', f.id)
+      // Clean up any stale stats for future matches so players show as "A jogar"
+      await supabase.from('player_fixture_stats').delete().eq('fixture_id', f.id)
+
+      matchDetails.push({
+        id: f.id,
+        homeClub: homeClubName,
+        awayClub: awayClubName,
+        status: 'scheduled',
+        homeScore: 0,
+        awayScore: 0,
+        elapsedMinutes,
+      })
+      continue
+    }
+
+    // Match has started (elapsedMinutes >= 0)
+    startedCount++
+    const isAlreadyFT = f.status === 'FT'
+    const isFinished = isAlreadyFT || elapsedMinutes >= 115
+    const newStatus: 'FT' | 'live' = isFinished ? 'FT' : 'live'
+
+    if (isFinished) finishedCount++
+    else liveCount++
+
+    // Determine realistic scores if not already set or keeping existing
+    let homeScore = f.home_score
+    let awayScore = f.away_score
+
+    if (homeScore === null || awayScore === null) {
+      // Deterministic generation based on fixture ID
+      const hash = f.id.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0)
+      if (isFinished) {
+        homeScore = (hash % 3) + (hash % 2 === 0 ? 1 : 0)
+        awayScore = (hash + 1) % 3
+      } else if (elapsedMinutes >= 45) {
+        homeScore = hash % 3
+        awayScore = (hash + 1) % 2
+      } else {
+        homeScore = hash % 2 === 0 ? 1 : 0
+        awayScore = hash % 3 === 0 ? 1 : 0
+      }
+    }
+
+    // Update fixture status and score
+    await supabase
+      .from('fixtures')
+      .update({
+        status: newStatus,
+        home_score: homeScore,
+        away_score: awayScore,
+      })
+      .eq('id', f.id)
+
+    // Generate player stats for both clubs
+    const { data: homePlayers } = await supabase
+      .from('real_players')
+      .select('id, position, name')
+      .eq('club_id', f.home_club_id)
+      .eq('is_active', true)
+
+    const { data: awayPlayers } = await supabase
+      .from('real_players')
+      .select('id, position, name')
+      .eq('club_id', f.away_club_id)
+      .eq('is_active', true)
+
+    const statRecords = []
+    const homeCleanSheet = awayScore === 0
+    let homeGoalsRemaining = homeScore
+    let homeAssistsRemaining = Math.min(homeScore, 2)
+
+    const effectiveMinutes = isFinished
+      ? 90
+      : Math.min(90, Math.max(15, Math.min(elapsedMinutes, 85)))
+
+    // Home Players
+    for (let idx = 0; idx < (homePlayers || []).length; idx++) {
+      const p = homePlayers![idx]
+      const isStarter = idx < 11
+      const isSub = !isStarter && idx < 14 && elapsedMinutes > 55
+
+      const minutes = isStarter
+        ? effectiveMinutes
+        : isSub
+        ? Math.min(30, Math.max(10, elapsedMinutes - 55))
+        : 0
+
+      if (minutes === 0) {
+        statRecords.push({
+          player_id: p.id,
+          fixture_id: f.id,
+          minutes: 0,
+          computed_points: 0,
+        })
+        continue
+      }
+
+      let goals = 0
+      if (homeGoalsRemaining > 0 && (p.position === 'ATA' || p.position === 'MEI')) {
+        goals = 1
+        homeGoalsRemaining--
+      }
+
+      let assists = 0
+      if (homeAssistsRemaining > 0 && goals === 0 && (p.position === 'MEI' || p.position === 'LAT')) {
+        assists = 1
+        homeAssistsRemaining--
+      }
+
+      const cleanSheet =
+        (p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT') && homeCleanSheet
+      const goalsConceded =
+        p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT' ? awayScore : 0
+      const saves = p.position === 'GOL' ? Math.max(1, Math.floor(minutes / 25)) : 0
+      const tackles =
+        p.position === 'ZAG' || p.position === 'LAT'
+          ? Math.min(3, Math.floor(minutes / 25))
+          : p.position === 'MEI'
+          ? 1
+          : 0
+
+      const pts = calculatePlayerScoring({
+        position: p.position as any,
+        minutes,
+        goals,
+        assists,
+        shotsOnWoodwork: 0,
+        shotsOnTarget: goals > 0 ? 2 : p.position === 'ATA' ? 1 : 0,
+        shotsOffTarget: p.position === 'ATA' || p.position === 'MEI' ? 1 : 0,
+        foulsDrawn: Math.floor(minutes / 40),
+        penaltiesWon: 0,
+        passesFailed: Math.floor(minutes / 20),
+        offsides: 0,
+        penaltiesMissed: 0,
+        cleanSheet,
+        saves,
+        penaltySaves: 0,
+        tackles,
+        foulsCommitted: 1,
+        ownGoals: 0,
+        yellowCards: idx === 3 ? 1 : 0,
+        redCards: 0,
+        goalsConceded,
+        penaltiesCommitted: 0,
+      })
+
+      statRecords.push({
+        player_id: p.id,
+        fixture_id: f.id,
+        minutes,
+        goals,
+        assists,
+        tackles,
+        clean_sheet: cleanSheet,
+        saves,
+        yellow_cards: idx === 3 ? 1 : 0,
+        goals_conceded: goalsConceded,
+        computed_points: pts,
+      })
+    }
+
+    // Away Players
+    const awayCleanSheet = homeScore === 0
+    let awayGoalsRemaining = awayScore
+    let awayAssistsRemaining = Math.min(awayScore, 2)
+
+    for (let idx = 0; idx < (awayPlayers || []).length; idx++) {
+      const p = awayPlayers![idx]
+      const isStarter = idx < 11
+      const isSub = !isStarter && idx < 14 && elapsedMinutes > 55
+
+      const minutes = isStarter
+        ? effectiveMinutes
+        : isSub
+        ? Math.min(30, Math.max(10, elapsedMinutes - 55))
+        : 0
+
+      if (minutes === 0) {
+        statRecords.push({
+          player_id: p.id,
+          fixture_id: f.id,
+          minutes: 0,
+          computed_points: 0,
+        })
+        continue
+      }
+
+      let goals = 0
+      if (awayGoalsRemaining > 0 && (p.position === 'ATA' || p.position === 'MEI')) {
+        goals = 1
+        awayGoalsRemaining--
+      }
+
+      let assists = 0
+      if (awayAssistsRemaining > 0 && goals === 0 && (p.position === 'MEI' || p.position === 'LAT')) {
+        assists = 1
+        awayAssistsRemaining--
+      }
+
+      const cleanSheet =
+        (p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT') && awayCleanSheet
+      const goalsConceded =
+        p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT' ? homeScore : 0
+      const saves = p.position === 'GOL' ? Math.max(1, Math.floor(minutes / 25)) : 0
+      const tackles =
+        p.position === 'ZAG' || p.position === 'LAT'
+          ? Math.min(3, Math.floor(minutes / 25))
+          : p.position === 'MEI'
+          ? 1
+          : 0
+
+      const pts = calculatePlayerScoring({
+        position: p.position as any,
+        minutes,
+        goals,
+        assists,
+        shotsOnWoodwork: 0,
+        shotsOnTarget: goals > 0 ? 2 : p.position === 'ATA' ? 1 : 0,
+        shotsOffTarget: p.position === 'ATA' || p.position === 'MEI' ? 1 : 0,
+        foulsDrawn: Math.floor(minutes / 40),
+        penaltiesWon: 0,
+        passesFailed: Math.floor(minutes / 20),
+        offsides: 0,
+        penaltiesMissed: 0,
+        cleanSheet,
+        saves,
+        penaltySaves: 0,
+        tackles,
+        foulsCommitted: 1,
+        ownGoals: 0,
+        yellowCards: idx === 4 ? 1 : 0,
+        redCards: 0,
+        goalsConceded,
+        penaltiesCommitted: 0,
+      })
+
+      statRecords.push({
+        player_id: p.id,
+        fixture_id: f.id,
+        minutes,
+        goals,
+        assists,
+        tackles,
+        clean_sheet: cleanSheet,
+        saves,
+        yellow_cards: idx === 4 ? 1 : 0,
+        goals_conceded: goalsConceded,
+        computed_points: pts,
+      })
+    }
+
+    await supabase.from('player_fixture_stats').upsert(statRecords, {
+      onConflict: 'player_id,fixture_id',
+    })
+
+    playersUpdated += statRecords.length
+
+    matchDetails.push({
+      id: f.id,
+      homeClub: homeClubName,
+      awayClub: awayClubName,
+      status: newStatus,
+      homeScore,
+      awayScore,
+      elapsedMinutes,
+    })
+  }
+
+  return {
+    fixtureRound: roundToProcess,
+    totalFixtures: fixtures.length,
+    startedCount,
+    liveCount,
+    finishedCount,
+    scheduledCount,
+    postponedCount,
+    playersUpdated,
+    matches: matchDetails,
+  }
+}
+
 

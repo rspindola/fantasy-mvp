@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import {
   getMatchupDetailData,
   executeAutoSubAction,
+  refreshMatchupPartialsAction,
   type MatchupDetailPageData,
   type MatchupTeamDetail,
 } from './actions'
@@ -33,6 +34,23 @@ export default function MatchupDetailPage() {
       })
     }
   }, [leagueId, matchupId])
+
+  const handleRefreshPartials = () => {
+    if (!data) return
+    setActionMessage(null)
+    startTransition(async () => {
+      try {
+        const res = await refreshMatchupPartialsAction(leagueId, data.fixtureRound)
+        const updated = await getMatchupDetailData(leagueId, matchupId)
+        if (updated) setData(updated)
+        setActionMessage(
+          `✓ Parciais atualizadas com sucesso! ${res.startedCount} partida(s) em andamento/finalizada(s) e ${res.playersUpdated} estatísticas de atletas computadas.`
+        )
+      } catch (err: any) {
+        setActionMessage(`Erro ao atualizar parciais: ${err.message}`)
+      }
+    })
+  }
 
   const handleSimulateAutoSub = () => {
     if (!data) return
@@ -327,20 +345,56 @@ export default function MatchupDetailPage() {
           </div>
         </div>
 
+        {/* Live Round Notice Banner */}
+        {data.status === 'live' && (
+          <div
+            style={{
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '10px 16px',
+              fontSize: '0.8125rem',
+              color: '#fca5a5',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              marginTop: '12px',
+            }}
+          >
+            <span>🔴</span>
+            <span>
+              <strong>Parciais em Andamento:</strong> A pontuação exibida é momentânea e reflete o andamento dos jogos já iniciados. A pontuação oficial e a resolução final dos confrontos só são consolidadas ao término da rodada pelo Comissário.
+            </span>
+          </div>
+        )}
+
         {/* Commissioner Actions */}
         {data.isCommissioner && (
           <div className={styles.commissionerBar}>
             <span className={styles.commissionerBarText}>
-              ⚙️ <strong>Painel do Comissário:</strong> Teste o cálculo de pontuações e acione as substituições automáticas da Rodada {data.fixtureRound}.
+              ⚙️ <strong>Painel do Comissário:</strong>{' '}
+              {data.status === 'live'
+                ? 'Atualize as estatísticas parciais dos jogos iniciados ou acesse o painel completo.'
+                : `Gerencie o fechamento e scouts da Rodada ${data.fixtureRound}.`}
             </span>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={handleSimulateAutoSub}
-                disabled={isPending}
-                className={styles.btnSimulate}
-              >
-                {isPending ? 'Processando...' : '⚡ Processar Auto-Sub'}
-              </button>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {data.status === 'live' ? (
+                <button
+                  onClick={handleRefreshPartials}
+                  disabled={isPending}
+                  className={styles.btnSimulate}
+                >
+                  {isPending ? 'Atualizando...' : '⚡ Atualizar Parciais'}
+                </button>
+              ) : (
+                <button
+                  onClick={handleSimulateAutoSub}
+                  disabled={isPending}
+                  className={styles.btnSimulate}
+                >
+                  {isPending ? 'Processando...' : '⚡ Processar Auto-Sub'}
+                </button>
+              )}
               <Link href={`/league/${leagueId}/admin`}>
                 <button
                   className={styles.btnSimulate}

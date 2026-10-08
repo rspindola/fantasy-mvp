@@ -5,6 +5,7 @@ import { validateLineup, sortByPosition, type Formation, type LineupSlotItem } f
 import {
   checkRoundLockStatus,
   generateAutoFallbackLineup,
+  autoCompleteLineup,
   ensureLockedRoundLineups,
 } from '@/lib/lineup/lock'
 import { revalidatePath } from 'next/cache'
@@ -216,21 +217,85 @@ export async function getLineupData(leagueId: string): Promise<LineupPageData | 
         slotPosition: s.slot_position,
       }))
   } else if (roster.length > 0) {
-    // Auto populate top starters and reserves for initial visit
-    const fallback = generateAutoFallbackLineup(roster)
-    formation = fallback.formation
-    starters = fallback.starters.map((s: { playerId: string; position: any; isCaptain: boolean }, idx: number) => ({
-      playerId: s.playerId,
-      position: s.position,
-      isCaptain: s.isCaptain,
-      slotPosition: `${s.position}_${idx + 1}`,
-    }))
-    reserves = (fallback.reserves || []).map((s: { playerId: string; position: any }, idx: number) => ({
-      playerId: s.playerId,
-      position: s.position,
-      isCaptain: false,
-      slotPosition: `RES_${s.position}`,
-    }))
+    let prevLineupSlots: any[] | null = null
+    let prevFormation: Formation | null = null
+
+    if (currentRound > 1) {
+      const { data: prevLineup } = await supabase
+        .from('lineups')
+        .select(`
+          id,
+          formation,
+          slots:lineup_slots(
+            player_id,
+            slot_position,
+            is_captain,
+            is_starter,
+            player:real_players(position)
+          )
+        `)
+        .eq('fantasy_team_id', team.id)
+        .eq('fixture_round', currentRound - 1)
+        .maybeSingle()
+
+      if (prevLineup && prevLineup.slots && prevLineup.slots.length > 0) {
+        prevLineupSlots = prevLineup.slots
+        prevFormation = (prevLineup.formation as Formation) || null
+      }
+    }
+
+    if (prevLineupSlots && prevLineupSlots.length > 0) {
+      const existingStarters = prevLineupSlots
+        .filter((s: any) => s.is_starter)
+        .map((s: any) => ({
+          playerId: s.player_id,
+          position: s.player?.position ?? 'MEI',
+          isCaptain: s.is_captain ?? false,
+        }))
+      const existingReserves = prevLineupSlots
+        .filter((s: any) => !s.is_starter)
+        .map((s: any) => ({
+          playerId: s.player_id,
+          position: s.player?.position ?? 'MEI',
+          isCaptain: false,
+        }))
+
+      const completed = autoCompleteLineup(
+        roster.map((r) => ({ id: r.id, position: r.position, avgPoints: r.avgPoints })),
+        prevFormation || '4-3-3',
+        existingStarters,
+        existingReserves
+      )
+      formation = completed.formation
+      starters = completed.starters.map((s, idx) => ({
+        playerId: s.playerId,
+        position: s.position,
+        isCaptain: s.isCaptain,
+        slotPosition: `${s.position}_${idx + 1}`,
+      }))
+      reserves = (completed.reserves || []).map((s) => ({
+        playerId: s.playerId,
+        position: s.position,
+        isCaptain: false,
+        slotPosition: `RES_${s.position}`,
+      }))
+    } else {
+      // Auto populate top starters and reserves for initial visit
+      const fallback = generateAutoFallbackLineup(roster)
+      formation = fallback.formation
+      starters = fallback.starters.map((s: { playerId: string; position: any; isCaptain: boolean }, idx: number) => ({
+        playerId: s.playerId,
+        position: s.position,
+        isCaptain: s.isCaptain,
+        slotPosition: `${s.position}_${idx + 1}`,
+      }))
+      reserves = (fallback.reserves || []).map((s: { playerId: string; position: any }, idx: number) => ({
+        playerId: s.playerId,
+        position: s.position,
+        isCaptain: false,
+        slotPosition: `RES_${s.position}`,
+      }))
+    }
   }
 
   starters.sort(sortByPosition)

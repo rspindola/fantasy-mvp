@@ -147,6 +147,11 @@ export default function MatchupDetailPage() {
                   🔄 Entrou
                 </span>
               )}
+              {p.matchStatus === 'live' && (
+                <span className={styles.liveBadge} title="Partida ao vivo em andamento">
+                  {p.minutes > 0 ? `🟢 Em campo (${p.minutes}')` : `⚡ Em andamento`}
+                </span>
+              )}
               {p.matchStatus === 'postponed' && (
                 <span className={styles.postponedBadge} title="Partida adiada pela CBF">
                   ⏱️ Jogo Adiado
@@ -176,7 +181,11 @@ export default function MatchupDetailPage() {
                 />
               )}
               <span>{p.clubShortName || 'Clube'}</span>
-              {p.minutes > 0 ? (
+              {p.matchStatus === 'live' ? (
+                <span style={{ color: 'var(--accent-green)', fontWeight: 600 }}>
+                  · {p.minutes > 0 ? `${p.minutes} min (Ao vivo)` : 'Em andamento'}
+                </span>
+              ) : p.minutes > 0 ? (
                 <span>· {p.minutes} min</span>
               ) : p.matchStatus === 'postponed' ? (
                 <span style={{ color: '#fbbf24' }}>· Adiado (*)</span>

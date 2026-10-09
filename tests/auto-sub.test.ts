@@ -205,5 +205,43 @@ describe('Auto-Sub Engine', () => {
     expect(result.reserves[0].subbedIn).toBe(false)
     expect(result.totalPoints).toBe(0.0)
   })
+
+  it('does not substitute a starter whose match is LIVE (game currently in progress)', () => {
+    const starters: LineupPlayerInput[] = [
+      {
+        playerId: 'p1',
+        name: 'Léo Ortiz',
+        position: 'ZAG',
+        slotPosition: 'ZAG_1',
+        isCaptain: false,
+        isStarter: true,
+        minutes: 0,
+        points: 0.0,
+        matchStatus: 'live',
+      },
+    ]
+
+    const reserves: LineupPlayerInput[] = [
+      {
+        playerId: 'r1',
+        name: 'Zagueiro Reserva (Jogou ontem)',
+        position: 'ZAG',
+        slotPosition: 'RES_ZAG',
+        isCaptain: false,
+        isStarter: false,
+        minutes: 90,
+        points: 8.5,
+        matchStatus: 'played',
+      },
+    ]
+
+    const result = processAutoSubstitutions(starters, reserves)
+
+    // Léo Ortiz is in a match that is LIVE right now, so he MUST NOT be subbed out!
+    expect(result.substitutions).toHaveLength(0)
+    expect(result.starters[0].subbedOut).toBe(false)
+    expect(result.reserves[0].subbedIn).toBe(false)
+    expect(result.totalPoints).toBe(0.0)
+  })
 })
 

@@ -74,4 +74,42 @@ describe('Partials & Live Scoring Rules', () => {
     expect(result.captainBonus).toBe(5.0)
     expect(result.totalPoints).toBe(15.0)
   })
+
+  it('never executes auto-sub for a starter whose game is LIVE (in progress), even if minutes is 0', () => {
+    const starters: LineupPlayerInput[] = [
+      {
+        playerId: 'star1',
+        name: 'Jogador em Campo no Momento',
+        position: 'MEI',
+        slotPosition: 'MEI_1',
+        isCaptain: false,
+        isStarter: true,
+        minutes: 0,
+        points: 0.0,
+        matchStatus: 'live',
+      },
+    ]
+
+    const reserves: LineupPlayerInput[] = [
+      {
+        playerId: 'res1',
+        name: 'Reserva que Jogou Ontem',
+        position: 'MEI',
+        slotPosition: 'RES_MEI',
+        isCaptain: false,
+        isStarter: false,
+        minutes: 90,
+        points: 7.5,
+        matchStatus: 'played',
+      },
+    ]
+
+    const result = processAutoSubstitutions(starters, reserves)
+
+    // Starter's match is LIVE in progress: DO NOT auto-sub!
+    expect(result.substitutions).toHaveLength(0)
+    expect(result.starters[0].subbedOut).toBe(false)
+    expect(result.reserves[0].subbedIn).toBe(false)
+    expect(result.totalPoints).toBe(0.0)
+  })
 })

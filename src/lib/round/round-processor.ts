@@ -433,6 +433,290 @@ export async function toggleFixturePostponed(
   }
 }
 
+interface SquadSelection {
+  starters: any[]
+  subs: any[]
+  unplayed: any[]
+}
+
+/**
+ * Intelligently constructs a realistic soccer starting 11 and bench for a club match:
+ * - Prioritizes players actively drafted/started in the fantasy league.
+ * - Enforces realistic tactical formation: 1 GOL, 2 LAT, 2 ZAG, 3-4 MEI, 2-3 ATA.
+ * - Prevents arbitrary benching of star or fielded fantasy players.
+ */
+function selectClubMatchSquad(
+  clubPlayers: any[],
+  startersSet: Set<string> = new Set(),
+  reservesSet: Set<string> = new Set()
+): SquadSelection {
+  const byPos: Record<string, any[]> = { GOL: [], LAT: [], ZAG: [], MEI: [], ATA: [] }
+  for (const p of clubPlayers) {
+    if (byPos[p.position]) {
+      byPos[p.position].push(p)
+    } else {
+      byPos.MEI.push(p)
+    }
+  }
+
+  const priorityScore = (p: any) => {
+    if (startersSet.has(p.id)) return 2
+    if (reservesSet.has(p.id)) return 1
+    return 0
+  }
+
+  for (const pos of Object.keys(byPos)) {
+    byPos[pos].sort((a, b) => priorityScore(b) - priorityScore(a))
+  }
+
+  const starters: any[] = []
+  const usedIds = new Set<string>()
+
+  const pickStarters = (pos: string, count: number) => {
+    const list = byPos[pos] || []
+    for (const p of list) {
+      if (starters.length >= 11) break
+      if (!usedIds.has(p.id) && (starters.filter((s) => s.position === pos).length < count || priorityScore(p) > 0)) {
+        starters.push(p)
+        usedIds.add(p.id)
+      }
+    }
+  }
+
+  // Realistic soccer lineup: 1 GOL, 2 LAT, 2 ZAG, 3 MEI, 2 ATA
+  pickStarters('GOL', 1)
+  pickStarters('LAT', 2)
+  pickStarters('ZAG', 2)
+  pickStarters('MEI', 3)
+  pickStarters('ATA', 2)
+
+  // Fill up to 11 if needed with best remaining outfield players
+  const remainingOutfield = clubPlayers
+    .filter((p) => !usedIds.has(p.id) && p.position !== 'GOL')
+    .sort((a, b) => priorityScore(b) - priorityScore(a))
+
+  for (const p of remainingOutfield) {
+    if (starters.length >= 11) break
+    starters.push(p)
+    usedIds.add(p.id)
+  }
+
+  // Select up to 4 substitutes who enter, prioritizing league reserves
+  const potentialSubs = clubPlayers
+    .filter((p) => !usedIds.has(p.id))
+    .sort((a, b) => priorityScore(b) - priorityScore(a))
+
+  const subs: any[] = []
+  for (const p of potentialSubs) {
+    if (subs.length >= 4) break
+    subs.push(p)
+    usedIds.add(p.id)
+  }
+
+  const unplayed = clubPlayers.filter((p) => !usedIds.has(p.id))
+
+  return { starters, subs, unplayed }
+}
+
+/**
+ * Builds realistic player stats records for a club in a given fixture.
+ */
+function buildClubPlayerStats(
+  clubPlayers: any[],
+  fixtureId: string,
+  teamScore: number,
+  opponentScore: number,
+  effectiveMinutes: number,
+  elapsedMinutes: number,
+  isFinished: boolean,
+  startersSet: Set<string> = new Set(),
+  reservesSet: Set<string> = new Set()
+): any[] {
+  const { starters, subs, unplayed } = selectClubMatchSquad(
+    clubPlayers,
+    startersSet,
+    reservesSet
+  )
+
+  const statRecords: any[] = []
+  const teamCleanSheet = opponentScore === 0
+  let goalsRemaining = teamScore
+  let assistsRemaining = Math.min(teamScore, 2)
+
+  // 1. Starters
+  for (let idx = 0; idx < starters.length; idx++) {
+    const p = starters[idx]
+    const minutes = effectiveMinutes
+
+    if (minutes === 0) {
+      statRecords.push({
+        player_id: p.id,
+        fixture_id: fixtureId,
+        minutes: 0,
+        computed_points: 0,
+      })
+      continue
+    }
+
+    let goals = 0
+    if (goalsRemaining > 0 && (p.position === 'ATA' || p.position === 'MEI')) {
+      goals = 1
+      goalsRemaining--
+    }
+
+    let assists = 0
+    if (assistsRemaining > 0 && goals === 0 && (p.position === 'MEI' || p.position === 'LAT')) {
+      assists = 1
+      assistsRemaining--
+    }
+
+    const cleanSheet =
+      (p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT') && teamCleanSheet
+    const goalsConceded =
+      p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT' ? opponentScore : 0
+    const saves = p.position === 'GOL' ? Math.max(1, Math.floor(minutes / 25)) : 0
+    const tackles =
+      p.position === 'ZAG' || p.position === 'LAT'
+        ? Math.min(3, Math.floor(minutes / 25))
+        : p.position === 'MEI'
+        ? 1
+        : 0
+
+    const pts = calculatePlayerScoring({
+      position: p.position as any,
+      minutes,
+      goals,
+      assists,
+      shotsOnWoodwork: 0,
+      shotsOnTarget: goals > 0 ? 2 : p.position === 'ATA' ? 1 : 0,
+      shotsOffTarget: p.position === 'ATA' || p.position === 'MEI' ? 1 : 0,
+      foulsDrawn: Math.floor(minutes / 40),
+      penaltiesWon: 0,
+      passesFailed: Math.floor(minutes / 20),
+      offsides: 0,
+      penaltiesMissed: 0,
+      cleanSheet,
+      saves,
+      penaltySaves: 0,
+      tackles,
+      foulsCommitted: 1,
+      ownGoals: 0,
+      yellowCards: idx === 3 ? 1 : 0,
+      redCards: 0,
+      goalsConceded,
+      penaltiesCommitted: 0,
+    })
+
+    statRecords.push({
+      player_id: p.id,
+      fixture_id: fixtureId,
+      minutes,
+      goals,
+      assists,
+      tackles,
+      clean_sheet: cleanSheet,
+      saves,
+      yellow_cards: idx === 3 ? 1 : 0,
+      goals_conceded: goalsConceded,
+      computed_points: pts,
+    })
+  }
+
+  // 2. Substitutes who entered
+  const subMinutes = isFinished
+    ? 25
+    : elapsedMinutes > 55
+    ? Math.min(30, Math.max(10, elapsedMinutes - 55))
+    : 0
+
+  for (let idx = 0; idx < subs.length; idx++) {
+    const p = subs[idx]
+    const minutes = subMinutes
+
+    if (minutes === 0) {
+      statRecords.push({
+        player_id: p.id,
+        fixture_id: fixtureId,
+        minutes: 0,
+        computed_points: 0,
+      })
+      continue
+    }
+
+    let goals = 0
+    if (goalsRemaining > 0 && (p.position === 'ATA' || p.position === 'MEI')) {
+      goals = 1
+      goalsRemaining--
+    }
+
+    let assists = 0
+    if (assistsRemaining > 0 && goals === 0 && (p.position === 'MEI' || p.position === 'LAT')) {
+      assists = 1
+      assistsRemaining--
+    }
+
+    const cleanSheet =
+      (p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT') &&
+      teamCleanSheet &&
+      minutes >= 45
+    const goalsConceded =
+      p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT' ? opponentScore : 0
+    const saves = p.position === 'GOL' ? Math.max(1, Math.floor(minutes / 30)) : 0
+    const tackles = p.position === 'ZAG' || p.position === 'LAT' ? 1 : 0
+
+    const pts = calculatePlayerScoring({
+      position: p.position as any,
+      minutes,
+      goals,
+      assists,
+      shotsOnWoodwork: 0,
+      shotsOnTarget: goals > 0 ? 1 : 0,
+      shotsOffTarget: 0,
+      foulsDrawn: 1,
+      penaltiesWon: 0,
+      passesFailed: 1,
+      offsides: 0,
+      penaltiesMissed: 0,
+      cleanSheet,
+      saves,
+      penaltySaves: 0,
+      tackles,
+      foulsCommitted: 1,
+      ownGoals: 0,
+      yellowCards: 0,
+      redCards: 0,
+      goalsConceded,
+      penaltiesCommitted: 0,
+    })
+
+    statRecords.push({
+      player_id: p.id,
+      fixture_id: fixtureId,
+      minutes,
+      goals,
+      assists,
+      tackles,
+      clean_sheet: cleanSheet,
+      saves,
+      yellow_cards: 0,
+      goals_conceded: goalsConceded,
+      computed_points: pts,
+    })
+  }
+
+  // 3. Unplayed players (on the bench / 0 minutes)
+  for (const p of unplayed) {
+    statRecords.push({
+      player_id: p.id,
+      fixture_id: fixtureId,
+      minutes: 0,
+      computed_points: 0,
+    })
+  }
+
+  return statRecords
+}
+
 /**
  * Simulates the completion of a postponed or scheduled match, generating realistic Cartola scouts.
  */
@@ -475,159 +759,27 @@ export async function simulateFixtureMatch(
     .eq('club_id', fixture.away_club_id)
     .eq('is_active', true)
 
-  const statRecords = []
+  const homeStats = buildClubPlayerStats(
+    homePlayers || [],
+    fixtureId,
+    homeScore,
+    awayScore,
+    90,
+    90,
+    true
+  )
 
-  // Process Home Players
-  const homeCleanSheet = awayScore === 0
-  let homeGoalsRemaining = homeScore
-  let homeAssistsRemaining = Math.min(homeScore, 2)
+  const awayStats = buildClubPlayerStats(
+    awayPlayers || [],
+    fixtureId,
+    awayScore,
+    homeScore,
+    90,
+    90,
+    true
+  )
 
-  for (let idx = 0; idx < (homePlayers || []).length; idx++) {
-    const p = homePlayers![idx]
-    const isStarter = idx < 11
-    if (!isStarter) {
-      statRecords.push({
-        player_id: p.id,
-        fixture_id: fixtureId,
-        minutes: 0,
-        computed_points: 0,
-      })
-      continue
-    }
-
-    let goals = 0
-    if (homeGoalsRemaining > 0 && (p.position === 'ATA' || p.position === 'MEI')) {
-      goals = 1
-      homeGoalsRemaining--
-    }
-
-    let assists = 0
-    if (homeAssistsRemaining > 0 && goals === 0 && (p.position === 'MEI' || p.position === 'LAT')) {
-      assists = 1
-      homeAssistsRemaining--
-    }
-
-    const cleanSheet =
-      (p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT') && homeCleanSheet
-    const goalsConceded =
-      p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT' ? awayScore : 0
-    const saves = p.position === 'GOL' ? Math.max(1, 4 - awayScore) : 0
-
-    const pts = calculatePlayerScoring({
-      position: p.position as any,
-      minutes: 90,
-      goals,
-      assists,
-      shotsOnWoodwork: 0,
-      shotsOnTarget: goals > 0 ? 2 : 1,
-      shotsOffTarget: 1,
-      foulsDrawn: 2,
-      penaltiesWon: 0,
-      passesFailed: 4,
-      offsides: 0,
-      penaltiesMissed: 0,
-      cleanSheet,
-      saves,
-      penaltySaves: 0,
-      tackles: p.position === 'ZAG' || p.position === 'LAT' ? 3 : 1,
-      foulsCommitted: 1,
-      ownGoals: 0,
-      yellowCards: idx % 5 === 0 ? 1 : 0,
-      redCards: 0,
-      goalsConceded,
-      penaltiesCommitted: 0,
-    })
-
-    statRecords.push({
-      player_id: p.id,
-      fixture_id: fixtureId,
-      minutes: 90,
-      goals,
-      assists,
-      tackles: p.position === 'ZAG' || p.position === 'LAT' ? 3 : 1,
-      clean_sheet: cleanSheet,
-      saves,
-      yellow_cards: idx % 5 === 0 ? 1 : 0,
-      goals_conceded: goalsConceded,
-      computed_points: pts,
-    })
-  }
-
-  // Process Away Players
-  const awayCleanSheet = homeScore === 0
-  let awayGoalsRemaining = awayScore
-  let awayAssistsRemaining = Math.min(awayScore, 2)
-
-  for (let idx = 0; idx < (awayPlayers || []).length; idx++) {
-    const p = awayPlayers![idx]
-    const isStarter = idx < 11
-    if (!isStarter) {
-      statRecords.push({
-        player_id: p.id,
-        fixture_id: fixtureId,
-        minutes: 0,
-        computed_points: 0,
-      })
-      continue
-    }
-
-    let goals = 0
-    if (awayGoalsRemaining > 0 && (p.position === 'ATA' || p.position === 'MEI')) {
-      goals = 1
-      awayGoalsRemaining--
-    }
-
-    let assists = 0
-    if (awayAssistsRemaining > 0 && goals === 0 && (p.position === 'MEI' || p.position === 'LAT')) {
-      assists = 1
-      awayAssistsRemaining--
-    }
-
-    const cleanSheet =
-      (p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT') && awayCleanSheet
-    const goalsConceded =
-      p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT' ? homeScore : 0
-    const saves = p.position === 'GOL' ? Math.max(1, 4 - homeScore) : 0
-
-    const pts = calculatePlayerScoring({
-      position: p.position as any,
-      minutes: 90,
-      goals,
-      assists,
-      shotsOnWoodwork: 0,
-      shotsOnTarget: goals > 0 ? 2 : 1,
-      shotsOffTarget: 1,
-      foulsDrawn: 2,
-      penaltiesWon: 0,
-      passesFailed: 4,
-      offsides: 0,
-      penaltiesMissed: 0,
-      cleanSheet,
-      saves,
-      penaltySaves: 0,
-      tackles: p.position === 'ZAG' || p.position === 'LAT' ? 3 : 1,
-      foulsCommitted: 1,
-      ownGoals: 0,
-      yellowCards: idx % 6 === 0 ? 1 : 0,
-      redCards: 0,
-      goalsConceded,
-      penaltiesCommitted: 0,
-    })
-
-    statRecords.push({
-      player_id: p.id,
-      fixture_id: fixtureId,
-      minutes: 90,
-      goals,
-      assists,
-      tackles: p.position === 'ZAG' || p.position === 'LAT' ? 3 : 1,
-      clean_sheet: cleanSheet,
-      saves,
-      yellow_cards: idx % 6 === 0 ? 1 : 0,
-      goals_conceded: goalsConceded,
-      computed_points: pts,
-    })
-  }
+  const statRecords = [...homeStats, ...awayStats]
 
   // Upsert all stats
   await supabase.from('player_fixture_stats').upsert(statRecords, {
@@ -713,6 +865,28 @@ export async function generateRoundPartials(
   if (!fixtures || fixtures.length === 0) {
     throw new Error(`Nenhuma partida encontrada para a rodada ${roundToProcess}`)
   }
+
+  // Pre-fetch active lineup slots in this league for this round to prioritize active fantasy players!
+  const { data: lineupSlots } = await supabase
+    .from('lineup_slots')
+    .select(`
+      player_id,
+      is_starter,
+      lineup:lineups!inner(fantasy_team_id, fixture_round, fantasy_team:fantasy_teams!inner(league_id))
+    `)
+    .eq('lineup.fantasy_team.league_id', leagueId)
+    .eq('lineup.fixture_round', roundToProcess)
+
+  const leagueStartersSet = new Set<string>()
+  const leagueReservesSet = new Set<string>()
+
+  ;(lineupSlots || []).forEach((s: any) => {
+    if (s.is_starter) {
+      leagueStartersSet.add(s.player_id)
+    } else {
+      leagueReservesSet.add(s.player_id)
+    }
+  })
 
   const now = Date.now()
   let startedCount = 0
@@ -818,190 +992,35 @@ export async function generateRoundPartials(
       .eq('club_id', f.away_club_id)
       .eq('is_active', true)
 
-    const statRecords = []
-    const homeCleanSheet = awayScore === 0
-    let homeGoalsRemaining = homeScore
-    let homeAssistsRemaining = Math.min(homeScore, 2)
-
     const effectiveMinutes = isFinished
       ? 90
       : Math.min(90, Math.max(15, Math.min(elapsedMinutes, 85)))
 
-    // Home Players
-    for (let idx = 0; idx < (homePlayers || []).length; idx++) {
-      const p = homePlayers![idx]
-      const isStarter = idx < 11
-      const isSub = !isStarter && idx < 14 && elapsedMinutes > 55
+    const homeStats = buildClubPlayerStats(
+      homePlayers || [],
+      f.id,
+      homeScore,
+      awayScore,
+      effectiveMinutes,
+      elapsedMinutes,
+      isFinished,
+      leagueStartersSet,
+      leagueReservesSet
+    )
 
-      const minutes = isStarter
-        ? effectiveMinutes
-        : isSub
-        ? Math.min(30, Math.max(10, elapsedMinutes - 55))
-        : 0
+    const awayStats = buildClubPlayerStats(
+      awayPlayers || [],
+      f.id,
+      awayScore,
+      homeScore,
+      effectiveMinutes,
+      elapsedMinutes,
+      isFinished,
+      leagueStartersSet,
+      leagueReservesSet
+    )
 
-      if (minutes === 0) {
-        statRecords.push({
-          player_id: p.id,
-          fixture_id: f.id,
-          minutes: 0,
-          computed_points: 0,
-        })
-        continue
-      }
-
-      let goals = 0
-      if (homeGoalsRemaining > 0 && (p.position === 'ATA' || p.position === 'MEI')) {
-        goals = 1
-        homeGoalsRemaining--
-      }
-
-      let assists = 0
-      if (homeAssistsRemaining > 0 && goals === 0 && (p.position === 'MEI' || p.position === 'LAT')) {
-        assists = 1
-        homeAssistsRemaining--
-      }
-
-      const cleanSheet =
-        (p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT') && homeCleanSheet
-      const goalsConceded =
-        p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT' ? awayScore : 0
-      const saves = p.position === 'GOL' ? Math.max(1, Math.floor(minutes / 25)) : 0
-      const tackles =
-        p.position === 'ZAG' || p.position === 'LAT'
-          ? Math.min(3, Math.floor(minutes / 25))
-          : p.position === 'MEI'
-          ? 1
-          : 0
-
-      const pts = calculatePlayerScoring({
-        position: p.position as any,
-        minutes,
-        goals,
-        assists,
-        shotsOnWoodwork: 0,
-        shotsOnTarget: goals > 0 ? 2 : p.position === 'ATA' ? 1 : 0,
-        shotsOffTarget: p.position === 'ATA' || p.position === 'MEI' ? 1 : 0,
-        foulsDrawn: Math.floor(minutes / 40),
-        penaltiesWon: 0,
-        passesFailed: Math.floor(minutes / 20),
-        offsides: 0,
-        penaltiesMissed: 0,
-        cleanSheet,
-        saves,
-        penaltySaves: 0,
-        tackles,
-        foulsCommitted: 1,
-        ownGoals: 0,
-        yellowCards: idx === 3 ? 1 : 0,
-        redCards: 0,
-        goalsConceded,
-        penaltiesCommitted: 0,
-      })
-
-      statRecords.push({
-        player_id: p.id,
-        fixture_id: f.id,
-        minutes,
-        goals,
-        assists,
-        tackles,
-        clean_sheet: cleanSheet,
-        saves,
-        yellow_cards: idx === 3 ? 1 : 0,
-        goals_conceded: goalsConceded,
-        computed_points: pts,
-      })
-    }
-
-    // Away Players
-    const awayCleanSheet = homeScore === 0
-    let awayGoalsRemaining = awayScore
-    let awayAssistsRemaining = Math.min(awayScore, 2)
-
-    for (let idx = 0; idx < (awayPlayers || []).length; idx++) {
-      const p = awayPlayers![idx]
-      const isStarter = idx < 11
-      const isSub = !isStarter && idx < 14 && elapsedMinutes > 55
-
-      const minutes = isStarter
-        ? effectiveMinutes
-        : isSub
-        ? Math.min(30, Math.max(10, elapsedMinutes - 55))
-        : 0
-
-      if (minutes === 0) {
-        statRecords.push({
-          player_id: p.id,
-          fixture_id: f.id,
-          minutes: 0,
-          computed_points: 0,
-        })
-        continue
-      }
-
-      let goals = 0
-      if (awayGoalsRemaining > 0 && (p.position === 'ATA' || p.position === 'MEI')) {
-        goals = 1
-        awayGoalsRemaining--
-      }
-
-      let assists = 0
-      if (awayAssistsRemaining > 0 && goals === 0 && (p.position === 'MEI' || p.position === 'LAT')) {
-        assists = 1
-        awayAssistsRemaining--
-      }
-
-      const cleanSheet =
-        (p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT') && awayCleanSheet
-      const goalsConceded =
-        p.position === 'GOL' || p.position === 'ZAG' || p.position === 'LAT' ? homeScore : 0
-      const saves = p.position === 'GOL' ? Math.max(1, Math.floor(minutes / 25)) : 0
-      const tackles =
-        p.position === 'ZAG' || p.position === 'LAT'
-          ? Math.min(3, Math.floor(minutes / 25))
-          : p.position === 'MEI'
-          ? 1
-          : 0
-
-      const pts = calculatePlayerScoring({
-        position: p.position as any,
-        minutes,
-        goals,
-        assists,
-        shotsOnWoodwork: 0,
-        shotsOnTarget: goals > 0 ? 2 : p.position === 'ATA' ? 1 : 0,
-        shotsOffTarget: p.position === 'ATA' || p.position === 'MEI' ? 1 : 0,
-        foulsDrawn: Math.floor(minutes / 40),
-        penaltiesWon: 0,
-        passesFailed: Math.floor(minutes / 20),
-        offsides: 0,
-        penaltiesMissed: 0,
-        cleanSheet,
-        saves,
-        penaltySaves: 0,
-        tackles,
-        foulsCommitted: 1,
-        ownGoals: 0,
-        yellowCards: idx === 4 ? 1 : 0,
-        redCards: 0,
-        goalsConceded,
-        penaltiesCommitted: 0,
-      })
-
-      statRecords.push({
-        player_id: p.id,
-        fixture_id: f.id,
-        minutes,
-        goals,
-        assists,
-        tackles,
-        clean_sheet: cleanSheet,
-        saves,
-        yellow_cards: idx === 4 ? 1 : 0,
-        goals_conceded: goalsConceded,
-        computed_points: pts,
-      })
-    }
+    const statRecords = [...homeStats, ...awayStats]
 
     await supabase.from('player_fixture_stats').upsert(statRecords, {
       onConflict: 'player_id,fixture_id',
@@ -1139,7 +1158,36 @@ export async function computeRoundLiveScoresMap(
     })
   }
 
-  // 5. Compute each team's score using processAutoSubstitutions
+  // 5. Fetch fixtures for this round to determine match status accurately
+  const { data: fixtures } = await supabase
+    .from('fixtures')
+    .select('id, status, home_club_id, away_club_id')
+    .eq('round', fixtureRound)
+
+  const clubFixtureStatusMap = new Map<string, string>()
+  ;(fixtures || []).forEach((f: any) => {
+    clubFixtureStatusMap.set(f.home_club_id, f.status)
+    clubFixtureStatusMap.set(f.away_club_id, f.status)
+  })
+
+  function getPlayerMatchStatus(
+    clubId: string,
+    hasStats: boolean,
+    minutes: number
+  ): 'played' | 'benched' | 'not_related' | 'postponed' | 'scheduled' | 'live' {
+    const fixtureStatus = clubFixtureStatusMap.get(clubId)
+    if (fixtureStatus === 'postponed' && minutes === 0) return 'postponed'
+    if (fixtureStatus === 'live') return 'live'
+    if (fixtureStatus === 'scheduled') return 'scheduled'
+    if (fixtureStatus === 'FT') {
+      if (minutes > 0) return 'played'
+      if (hasStats) return 'benched'
+      return 'not_related'
+    }
+    return 'scheduled'
+  }
+
+  // 6. Compute each team's score using processAutoSubstitutions
   for (const team of teams) {
     const lineup = lineupMap.get(team.id)
     if (!lineup) {
@@ -1156,7 +1204,9 @@ export async function computeRoundLiveScoresMap(
     const startersInput: LineupPlayerInput[] = slots
       .filter((s: any) => s.is_starter)
       .map((s: any) => {
+        const hasStats = statsMap.has(s.player_id)
         const stat = statsMap.get(s.player_id) || { minutes: 0, points: 0.0 }
+        const matchStatus = getPlayerMatchStatus(s.player.club_id, hasStats, stat.minutes)
         return {
           playerId: s.player_id,
           name: s.player.name,
@@ -1169,13 +1219,16 @@ export async function computeRoundLiveScoresMap(
           isStarter: true,
           minutes: stat.minutes,
           points: stat.points,
+          matchStatus,
         }
       })
 
     const reservesInput: LineupPlayerInput[] = slots
       .filter((s: any) => !s.is_starter)
       .map((s: any) => {
+        const hasStats = statsMap.has(s.player_id)
         const stat = statsMap.get(s.player_id) || { minutes: 0, points: 0.0 }
+        const matchStatus = getPlayerMatchStatus(s.player.club_id, hasStats, stat.minutes)
         return {
           playerId: s.player_id,
           name: s.player.name,
@@ -1188,6 +1241,7 @@ export async function computeRoundLiveScoresMap(
           isStarter: false,
           minutes: stat.minutes,
           points: stat.points,
+          matchStatus,
         }
       })
 

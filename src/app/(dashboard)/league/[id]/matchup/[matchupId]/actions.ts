@@ -153,20 +153,32 @@ export async function getMatchupDetailData(
     clubId: string,
     hasStats: boolean,
     minutes: number
-  ): 'played' | 'benched' | 'not_related' | 'postponed' | 'scheduled' {
+  ): 'played' | 'benched' | 'not_related' | 'postponed' | 'scheduled' | 'live' {
     const fixtureStatus = clubFixtureStatusMap.get(clubId)
 
     if (fixtureStatus === 'postponed' && minutes === 0) {
       return 'postponed'
     }
-    if (hasStats) {
-      if (minutes > 0) return 'played'
-      if (fixtureStatus === 'scheduled') return 'scheduled'
-      return 'benched'
+
+    // Se a partida está AO VIVO (em andamento no momento):
+    // O atleta está em jogo (seja titular em campo ou no banco com bola rolando).
+    // NUNCA deve ser considerado 'benched' ("Não entrou em campo") nem 'not_related' enquanto o jogo não terminar!
+    if (fixtureStatus === 'live') {
+      return 'live'
     }
-    if (fixtureStatus === 'FT' || fixtureStatus === 'live' || status === 'completed') {
+
+    // Se a partida ainda não começou
+    if (fixtureStatus === 'scheduled') {
+      return 'scheduled'
+    }
+
+    // Se a partida já foi finalizada ('FT') ou a rodada está concluída
+    if (fixtureStatus === 'FT' || status === 'completed') {
+      if (minutes > 0) return 'played'
+      if (hasStats) return 'benched'
       return 'not_related'
     }
+
     return 'scheduled'
   }
 

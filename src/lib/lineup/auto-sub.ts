@@ -13,7 +13,7 @@ export interface LineupPlayerInput {
   isStarter: boolean
   minutes: number
   points: number
-  matchStatus?: 'played' | 'benched' | 'not_related' | 'postponed' | 'scheduled'
+  matchStatus?: 'played' | 'benched' | 'not_related' | 'postponed' | 'scheduled' | 'live'
   scouts?: Record<string, any>
 }
 
@@ -41,7 +41,9 @@ export interface ProcessedLineupResult {
 
 /**
  * Processes automated substitutions for a team's lineup:
- * - If a starter played 0 minutes (DNP), the bench player of the same position is called.
+ * - If a starter played 0 minutes (DNP) AND their match is definitively completed or postponed,
+ *   the bench player of the same position is called.
+ * - CRITICAL: A starter whose match is 'scheduled' (future) OR 'live' (in progress) is NEVER substituted!
  * - The bench player enters if they played > 0 minutes.
  * - If the DNP starter was the captain, the captaincy transfers to the subbed-in player.
  */
@@ -65,8 +67,12 @@ export function processAutoSubstitutions(
   const usedReserveIds = new Set<string>()
 
   for (const starter of starters) {
-    // If starter did not play (0 minutes) and their match is not scheduled for the future
-    if (starter.minutes === 0 && starter.matchStatus !== 'scheduled') {
+    // If starter did not play (0 minutes) and their match is not scheduled or live in progress
+    if (
+      starter.minutes === 0 &&
+      starter.matchStatus !== 'scheduled' &&
+      starter.matchStatus !== 'live'
+    ) {
       // Find eligible reserve for this exact position who played > 0 minutes and hasn't subbed in yet
       const eligibleReserve = reserves.find(
         (r) =>

@@ -97,4 +97,35 @@ describe('Player Detail Modal Scouts & Metrics Calculation', () => {
     // 5.0 (SG) + 5.2 (DE) + 7.0 (DP) - 0.1 (PE) = 17.1 pts
     expect(gkPts).toBeCloseTo(17.1, 1)
   })
+
+  it('correctly calculates round breakdown scouts with positive and negative scores', () => {
+    const roundScouts = {
+      position: 'ATA' as const,
+      minutes: 90,
+      goals: 1, // +8.0
+      assists: 1, // +4.0
+      shotsOnWoodwork: 0,
+      shotsOnTarget: 2, // 2 * 1.2 = +2.4
+      shotsOffTarget: 1, // +0.8
+      foulsDrawn: 2, // 2 * 0.5 = +1.0
+      penaltiesWon: 0,
+      passesFailed: 3, // 3 * -0.1 = -0.3
+      offsides: 0,
+      penaltiesMissed: 0,
+      cleanSheet: false,
+      saves: 0,
+      penaltySaves: 0,
+      tackles: 1, // +1.5
+      foulsCommitted: 2, // 2 * -0.3 = -0.6
+      ownGoals: 0,
+      yellowCards: 1, // -1.0
+      redCards: 0,
+      goalsConceded: 0,
+      penaltiesCommitted: 0,
+    }
+
+    const pts = calculatePlayerScoring(roundScouts)
+    // 8 + 4 + 2.4 + 0.8 + 1.0 - 0.3 + 1.5 - 0.6 - 1.0 = 15.8
+    expect(pts).toBeCloseTo(15.8, 1)
+  })
 })

@@ -62,6 +62,70 @@ export type PlayerRoundHistoryItem = {
   }
 }
 
+export type ScoutBreakdownItem = {
+  code: string
+  label: string
+  count: number
+  unitPoints: number
+  totalPoints: number
+  isPositive: boolean
+}
+
+export type PlayerRoundDetail = {
+  round: number
+  fixtureDate: string | null
+  status: 'scheduled' | 'live' | 'FT' | 'postponed'
+  homeClub: {
+    id: string
+    name: string
+    shortName: string
+    logoUrl: string | null
+  }
+  awayClub: {
+    id: string
+    name: string
+    shortName: string
+    logoUrl: string | null
+  }
+  homeScore: number | null
+  awayScore: number | null
+  scoreText: string | null
+  isHome: boolean
+  opponentClub: {
+    id: string
+    name: string
+    shortName: string
+    logoUrl: string | null
+  }
+  minutes: number
+  points: number
+  hasStats: boolean
+  scouts: {
+    goals: number
+    assists: number
+    shotsOnTarget: number
+    shotsOffTarget: number
+    shotsOnWoodwork: number
+    foulsDrawn: number
+    passesCompleted: number
+    passesFailed: number
+    offsides: number
+    penaltiesWon: number
+    penaltiesMissed: number
+    cleanSheet: boolean
+    saves: number
+    penaltySaves: number
+    tackles: number
+    foulsCommitted: number
+    yellowCards: number
+    redCards: number
+    ownGoals: number
+    goalsConceded: number
+    penaltiesCommitted: number
+  }
+  breakdown: ScoutBreakdownItem[]
+}
+
 export type UpcomingFixtureItem = {
   round: number
   kickoffAt: string | null
@@ -95,14 +159,71 @@ export type PlayerDetailData = {
     teamName: string
     managerName: string
   } | null
+  targetRound?: number
+  roundDetail?: PlayerRoundDetail | null
   summary: PlayerDetailScoutsSummary
   history: PlayerRoundHistoryItem[]
   upcoming: UpcomingFixtureItem[]
 }
 
+function buildScoutBreakdown(
+  position: 'GOL' | 'LAT' | 'ZAG' | 'MEI' | 'ATA',
+  st: any
+): ScoutBreakdownItem[] {
+  if (!st) return []
+  const items: ScoutBreakdownItem[] = []
+
+  const add = (code: string, label: string, count: number, unitPoints: number) => {
+    if (!count || count <= 0) return
+    const totalPoints = Number((count * unitPoints).toFixed(2))
+    items.push({
+      code,
+      label,
+      count,
+      unitPoints,
+      totalPoints,
+      isPositive: totalPoints >= 0,
+    })
+  }
+
+  // Attack
+  add('G', 'Gol Marcado', st.goals ?? 0, 8.0)
+  add('A', 'Assistência', st.assists ?? 0, 4.0)
+  add('FT', 'Finalização na Trave', st.shots_on_woodwork ?? 0, 3.0)
+  add('FD', 'Finalização Defendida', st.shots_on_target ?? 0, 1.2)
+  add('FF', 'Finalização para Fora', st.shots_off_target ?? 0, 0.8)
+  add('FS', 'Falta Sofrida', st.fouls_drawn ?? 0, 0.5)
+  add('PS', 'Pênalti Sofrido', st.penalties_won ?? 0, 1.0)
+  add('PC', 'Passe Certo', st.passes_completed ?? 0, 0.1)
+  add('PE', 'Passe Incompleto', st.passes_failed ?? 0, -0.1)
+  add('I', 'Impedimento', st.offsides ?? 0, -0.1)
+  add('PP', 'Pênalti Perdido', st.penalties_missed ?? 0, -4.0)
+
+  // Defense
+  if (position === 'GOL' || position === 'LAT' || position === 'ZAG') {
+    if (st.clean_sheet) {
+      add('SG', 'Sem Sofrer Gol (SG)', 1, 5.0)
+    }
+  }
+  if (position === 'GOL') {
+    add('DP', 'Defesa de Pênalti', st.penalty_saves ?? 0, 7.0)
+    add('DE', 'Defesa Difícil', st.saves ?? 0, 1.3)
+    add('GS', 'Gol Sofrido', st.goals_conceded ?? 0, -1.0)
+  }
+  add('DS', 'Desarme', st.tackles ?? 0, 1.5)
+  add('FC', 'Falta Cometida', st.fouls_committed ?? 0, -0.3)
+  add('CA', 'Cartão Amarelo', st.yellow_cards ?? 0, -1.0)
+  add('CV', 'Cartão Vermelho', st.red_cards ?? 0, -3.0)
+  add('GC', 'Gol Contra', st.own_goals ?? 0, -3.0)
+  add('PEN_C', 'Pênalti Cometido', st.penalties_committed ?? 0, -1.0)
+
+  return items
+}
+
 export async function getPlayerDetailModalData(
   playerId: string,
-  leagueId?: string
+  leagueId?: string,
+  targetRound?: number
 ): Promise<PlayerDetailData | null> {
   const supabase = await createClient()
 
@@ -326,6 +447,88 @@ export async function getPlayerDetailModalData(
   // Take next 5 upcoming fixtures
   const upcomingSliced = upcoming.slice(0, 5)
 
+  // 7. Build roundDetail for targetRound (or latest active/relevant fixture)
+  const selectedRoundFixture = targetRound
+    ? clubFixtures.find((f: any) => f.round === targetRound)
+    : clubFixtures.find((f: any) => f.status === 'live') ||
+      [...clubFixtures].reverse().find((f: any) => f.status === 'FT' && statsByFixtureId.has(f.id)) ||
+      clubFixtures.find((f: any) => f.status === 'scheduled')
+
+  let roundDetail: PlayerRoundDetail | null = null
+  if (selectedRoundFixture) {
+    const rawHome = selectedRoundFixture.homeClub as any
+    const homeClub = Array.isArray(rawHome) ? rawHome[0] : rawHome
+    const rawAway = selectedRoundFixture.awayClub as any
+    const awayClub = Array.isArray(rawAway) ? rawAway[0] : rawAway
+    const isHome = selectedRoundFixture.home_club_id === club.id
+    const opponentClub = isHome ? awayClub : homeClub
+
+    const st = statsByFixtureId.get(selectedRoundFixture.id)
+    let scoreText: string | null = null
+    if (selectedRoundFixture.home_score !== null && selectedRoundFixture.away_score !== null) {
+      scoreText = `${selectedRoundFixture.home_score} x ${selectedRoundFixture.away_score}`
+    }
+
+    const scouts = {
+      goals: st?.goals ?? 0,
+      assists: st?.assists ?? 0,
+      shotsOnTarget: st?.shots_on_target ?? 0,
+      shotsOffTarget: st?.shots_off_target ?? 0,
+      shotsOnWoodwork: st?.shots_on_woodwork ?? 0,
+      foulsDrawn: st?.fouls_drawn ?? 0,
+      passesCompleted: st?.passes_completed ?? 0,
+      passesFailed: st?.passes_failed ?? 0,
+      offsides: st?.offsides ?? 0,
+      penaltiesWon: st?.penalties_won ?? 0,
+      penaltiesMissed: st?.penalties_missed ?? 0,
+      cleanSheet: Boolean(st?.clean_sheet),
+      saves: st?.saves ?? 0,
+      penaltySaves: st?.penalty_saves ?? 0,
+      tackles: st?.tackles ?? 0,
+      foulsCommitted: st?.fouls_committed ?? 0,
+      yellowCards: st?.yellow_cards ?? 0,
+      redCards: st?.red_cards ?? 0,
+      ownGoals: st?.own_goals ?? 0,
+      goalsConceded: st?.goals_conceded ?? 0,
+      penaltiesCommitted: st?.penalties_committed ?? 0,
+    }
+
+    const breakdown = buildScoutBreakdown(player.position as any, st)
+
+    roundDetail = {
+      round: selectedRoundFixture.round,
+      fixtureDate: selectedRoundFixture.kickoff_at,
+      status: selectedRoundFixture.status,
+      homeClub: {
+        id: homeClub?.id ?? '',
+        name: homeClub?.name ?? '',
+        shortName: homeClub?.short_name ?? '',
+        logoUrl: homeClub?.logo_url ?? null,
+      },
+      awayClub: {
+        id: awayClub?.id ?? '',
+        name: awayClub?.name ?? '',
+        shortName: awayClub?.short_name ?? '',
+        logoUrl: awayClub?.logo_url ?? null,
+      },
+      homeScore: selectedRoundFixture.home_score,
+      awayScore: selectedRoundFixture.away_score,
+      scoreText,
+      isHome,
+      opponentClub: {
+        id: opponentClub?.id ?? '',
+        name: opponentClub?.name ?? '',
+        shortName: opponentClub?.short_name ?? '',
+        logoUrl: opponentClub?.logo_url ?? null,
+      },
+      minutes: st?.minutes ?? 0,
+      points: Number(st?.computed_points ?? 0),
+      hasStats: Boolean(st),
+      scouts,
+      breakdown,
+    }
+  }
+
   return {
     player: {
       id: player.id,
@@ -342,6 +545,8 @@ export async function getPlayerDetailModalData(
       logoUrl: club.logo_url,
     },
     owner,
+    targetRound,
+    roundDetail,
     summary,
     history,
     upcoming: upcomingSliced,

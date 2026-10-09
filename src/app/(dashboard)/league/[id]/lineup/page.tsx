@@ -910,6 +910,7 @@ export default function LineupPage() {
       <PlayerDetailModal
         playerId={modalPlayerId}
         leagueId={leagueId}
+        round={data.currentRound}
         onClose={() => setModalPlayerId(null)}
       />
     </div>

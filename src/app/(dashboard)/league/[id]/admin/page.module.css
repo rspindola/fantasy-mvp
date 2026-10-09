@@ -318,15 +318,6 @@
   border-color: rgba(234, 179, 8, 0.6);
 }
 
-.btnActionSimulate {
-  border-color: rgba(34, 197, 94, 0.3);
-  color: #4ade80;
-}
-
-.btnActionSimulate:hover {
-  background: rgba(34, 197, 94, 0.15);
-  border-color: rgba(34, 197, 94, 0.6);
-}
 
 /* Postponed Rounds Management Cards */
 .postponedBanner {
@@ -487,3 +478,43 @@
   border-radius: var(--radius-sm);
   font-size: 0.875rem;
 }
+
+/* Score Edit Modal */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.modalContent {
+  background: #0f172a;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  animation: fadeIn 0.15s ease;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modalTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+

@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import {
   getPostponedRounds,
   toggleFixturePostponed,
-  simulateFixtureMatch,
   recalculatePostponedRound,
   executeAutoSubAndCloseRound,
   generateRoundPartials,
@@ -261,35 +260,6 @@ export async function toggleFixturePostponedAction(
   return { success: true }
 }
 
-export async function simulateFixtureMatchAction(
-  leagueId: string,
-  fixtureId: string,
-  homeScore: number,
-  awayScore: number
-) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Não autenticado')
-
-  const { data: league } = await supabase
-    .from('leagues')
-    .select('commissioner_id')
-    .eq('id', leagueId)
-    .single()
-
-  if (!league || league.commissioner_id !== user.id) {
-    throw new Error('Apenas o comissário pode simular partidas.')
-  }
-
-  await simulateFixtureMatch(fixtureId, homeScore, awayScore)
-  revalidatePath(`/league/${leagueId}`)
-  revalidatePath(`/league/${leagueId}/admin`)
-  revalidatePath(`/league/${leagueId}/standings`)
-  return { success: true }
-}
 
 export async function closeAndAdvanceRoundAction(
   leagueId: string,
@@ -376,4 +346,7 @@ export async function generateRoundPartialsAction(
   revalidatePath(`/league/${leagueId}/lineup`)
   return result
 }
+
+
+
 

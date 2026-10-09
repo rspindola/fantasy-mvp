@@ -10,28 +10,36 @@ const supabaseKey =
 const THREE_MONTHS_IN_SECONDS = 60 * 60 * 24 * 90 // 90 dias (3 meses)
 
 export async function createClient() {
-  const cookieStore = await cookies()
+  try {
+    const cookieStore = await cookies()
 
-  return createServerClient(supabaseUrl, supabaseKey, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll()
-      },
-      setAll(cookiesToSet) {
-        try {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            const isDelete = !value || options?.maxAge === 0
-            cookieStore.set(name, value, {
-              ...options,
-              maxAge: isDelete ? 0 : THREE_MONTHS_IN_SECONDS,
-              sameSite: 'lax',
-              secure: process.env.NODE_ENV === 'production',
+    return createServerClient(supabaseUrl, supabaseKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              const isDelete = !value || options?.maxAge === 0
+              cookieStore.set(name, value, {
+                ...options,
+                maxAge: isDelete ? 0 : THREE_MONTHS_IN_SECONDS,
+                sameSite: 'lax',
+                secure: process.env.NODE_ENV === 'production',
+              })
             })
-          })
-        } catch {
-          // Called from Server Component
-        }
+          } catch {
+            // Called from Server Component
+          }
+        },
       },
-    },
-  })
+    })
+  } catch {
+    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js')
+    return createSupabaseClient(
+      supabaseUrl,
+      process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseKey
+    ) as any
+  }
 }

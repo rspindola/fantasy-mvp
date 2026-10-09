@@ -136,11 +136,11 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
     .order('fixture_round', { ascending: true })
 
   // Check which unclosed rounds need partial scores (rounds <= currentRound with null home_points)
-  const unclosedRounds = Array.from(
-    new Set(
+  const unclosedRounds: number[] = Array.from(
+    new Set<number>(
       (matchupsData || [])
         .filter((m: any) => m.fixture_round <= currentRound && m.home_points === null)
-        .map((m: any) => m.fixture_round)
+        .map((m: any) => Number(m.fixture_round))
     )
   )
 
@@ -202,9 +202,9 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
     .eq('season_id', league.season_id)
     .eq('status', 'postponed')
 
-  const postponedRounds = Array.from(
-    new Set((postponedFixtures || []).map((f: any) => f.round))
-  ).sort((a: any, b: any) => a - b)
+  const postponedRounds: number[] = Array.from(
+    new Set<number>((postponedFixtures || []).map((f: any) => Number(f.round)))
+  ).sort((a: number, b: number) => a - b)
 
   // Fetch kickoff dates for round headers
   const { data: fixturesKickoffs } = await supabase

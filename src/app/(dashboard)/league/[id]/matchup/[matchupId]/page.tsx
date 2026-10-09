@@ -485,6 +485,7 @@ export default function MatchupDetailPage() {
       <PlayerDetailModal
         playerId={selectedPlayerId}
         leagueId={leagueId}
+        round={data.fixtureRound}
         onClose={() => setSelectedPlayerId(null)}
       />
     </div>

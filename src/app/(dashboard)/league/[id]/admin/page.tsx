@@ -409,7 +409,7 @@ export default function CommissionerAdminPage() {
                       className={`${styles.btnActionSm} ${styles.btnActionPostpone}`}
                       title={isPostponed ? 'Restaurar para agendado' : 'Marcar como jogo adiado'}
                     >
-                      {isPostponed ? '↩️ Desmarcar Adiado' : '⏱️ Marcar Adiado'}
+                      {isPostponed ? '↩️ Desmarcar' : '⏱️ Adiado'}
                     </button>
                   </div>
                 </div>
@@ -594,6 +594,8 @@ export default function CommissionerAdminPage() {
           </div>
         </div>
       )}
+
+      {/* Summary Report Modal */}
     </div>
   )
 }

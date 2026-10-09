@@ -58,6 +58,32 @@ export default function LineupPage() {
   const [selectionSearch, setSelectionSearch] = useState('')
   const [selectionShowUsed, setSelectionShowUsed] = useState(false)
 
+  // Desktop Side Panel State
+  const [panelPosFilter, setPanelPosFilter] = useState<string>('TODOS')
+  const [panelSearch, setPanelSearch] = useState('')
+  const [webActiveSlot, setWebActiveSlot] = useState<{
+    type: 'starter' | 'reserve'
+    position: string
+    slotIndex?: number
+    currentPlayerId?: string
+  } | null>(null)
+  const [isDesktop, setIsDesktop] = useState(false)
+  const [now, setNow] = useState<number>(() => Date.now())
+
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024)
+    checkDesktop()
+    window.addEventListener('resize', checkDesktop)
+    return () => window.removeEventListener('resize', checkDesktop)
+  }, [])
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(Date.now())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
   const [actionSheetTarget, setActionSheetTarget] = useState<ActionSheetTarget>(null)
   const [modalPlayerId, setModalPlayerId] = useState<string | null>(null)
   const [modal, setModal] = useState<ModalState>(null)
@@ -251,11 +277,19 @@ export default function LineupPage() {
     setReserves((prev) => prev.filter((r) => r.playerId !== playerId))
   }
 
-  // ── Single "Selecionar" Handler ──
+  // ── Unified Player Selection Execution ──
 
-  const handleSelectPlayer = (player: LineupPageData['roster'][0]) => {
-    if (data.isLocked || !selectionTarget) return
-    const { type, currentPlayerId } = selectionTarget
+  const executePlayerSelection = (
+    player: LineupPageData['roster'][0],
+    target: {
+      type: 'starter' | 'reserve'
+      position: string
+      slotIndex?: number
+      currentPlayerId?: string
+    }
+  ): boolean => {
+    if (data.isLocked) return false
+    const { type, currentPlayerId } = target
 
     if (type === 'starter') {
       // 1. Remove from reserves if they were there
@@ -289,8 +323,7 @@ export default function LineupPage() {
         // Adding into an empty slot
         if (starterPlayerIds.has(player.id)) {
           setSaveMessage({ type: 'error', text: `${player.name} já está escalado como titular.` })
-          setSelectionTarget(null)
-          return
+          return false
         }
 
         const currentPosCount = starters.filter((s) => s.position === player.position).length
@@ -300,8 +333,7 @@ export default function LineupPage() {
             type: 'error',
             text: `A formação ${formation} permite no máximo ${maxPosAllowed} de ${player.position}.`,
           })
-          setSelectionTarget(null)
-          return
+          return false
         }
 
         const isFirstCaptain = starters.length === 0 || !starters.some((s) => s.isCaptain)
@@ -339,7 +371,29 @@ export default function LineupPage() {
       ])
     }
 
+    return true
+  }
+
+  // Mobile Selection Drawer handler
+  const handleSelectPlayer = (player: LineupPageData['roster'][0]) => {
+    if (!selectionTarget) return
+    executePlayerSelection(player, selectionTarget)
     setSelectionTarget(null)
+  }
+
+  // Desktop Side Panel inline selection handler
+  const handleSelectPlayerFromPanel = (player: LineupPageData['roster'][0]) => {
+    if (!webActiveSlot) return
+    const success = executePlayerSelection(player, webActiveSlot)
+    if (success) {
+      const pos = webActiveSlot.position
+      const slotType = webActiveSlot.type === 'starter' ? 'titular' : 'reserva'
+      setWebActiveSlot(null)
+      setSaveMessage({
+        type: 'success',
+        text: `${player.name} escalado como ${slotType} (${pos})!`,
+      })
+    }
   }
 
   // ── Save Lineup ──
@@ -391,13 +445,77 @@ export default function LineupPage() {
     return true
   })
 
-  // Format kickoff time
-  const kickoffFormatted = data.kickoffAt
-    ? new Date(new Date(data.kickoffAt).getTime() - 30 * 60 * 1000).toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : '19:15'
+  // ── Filtered Roster for Desktop Side Panel ──
+
+  const filteredPanelRoster = data.roster.filter((p) => {
+    if (panelPosFilter !== 'TODOS' && p.position !== panelPosFilter) return false
+    if (panelSearch.trim()) {
+      const q = panelSearch.toLowerCase()
+      const matchName = p.name.toLowerCase().includes(q)
+      const matchClub = p.clubShortName.toLowerCase().includes(q)
+      if (!matchName && !matchClub) return false
+    }
+    return true
+  })
+
+  // ── Market Closing & Live Countdown Calculations ──
+  const marketCloseTimestamp = data.kickoffAt
+    ? new Date(data.kickoffAt).getTime() - 30 * 60 * 1000
+    : null
+
+  const isMarketDynamicallyLocked =
+    data.isLocked || (marketCloseTimestamp !== null && now >= marketCloseTimestamp)
+
+  // Format closing date label (e.g. "Sáb (10/10) às 16:30", "Hoje às 16:30")
+  let marketCloseLabel = '16:30'
+  let countdownText: string | null = null
+
+  if (marketCloseTimestamp) {
+    const closeDate = new Date(marketCloseTimestamp)
+    const today = new Date(now)
+    const isToday =
+      closeDate.getDate() === today.getDate() &&
+      closeDate.getMonth() === today.getMonth() &&
+      closeDate.getFullYear() === today.getFullYear()
+
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const isTomorrow =
+      closeDate.getDate() === tomorrow.getDate() &&
+      closeDate.getMonth() === tomorrow.getMonth() &&
+      closeDate.getFullYear() === tomorrow.getFullYear()
+
+    const timeStr = closeDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+
+    if (isToday) {
+      marketCloseLabel = `Hoje às ${timeStr}`
+    } else if (isTomorrow) {
+      marketCloseLabel = `Amanhã às ${timeStr}`
+    } else {
+      const weekday = closeDate.toLocaleDateString('pt-BR', { weekday: 'short' })
+      const capitalWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1).replace('.', '')
+      const dayMonth = closeDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+      marketCloseLabel = `${capitalWeekday} (${dayMonth}) às ${timeStr}`
+    }
+
+    const diff = marketCloseTimestamp - now
+    if (diff <= 0) {
+      countdownText = 'Fechando...'
+    } else {
+      const totalSecs = Math.floor(diff / 1000)
+      const days = Math.floor(totalSecs / 86400)
+      const hours = Math.floor((totalSecs % 86400) / 3600)
+      const minutes = Math.floor((totalSecs % 3600) / 60)
+      const seconds = totalSecs % 60
+      const pad = (n: number) => n.toString().padStart(2, '0')
+
+      if (days > 0) {
+        countdownText = `${days}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`
+      } else {
+        countdownText = `${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`
+      }
+    }
+  }
 
   return (
     <div className={styles.container}>
@@ -440,17 +558,33 @@ export default function LineupPage() {
       </div>
 
       {/* ── Market Status Banner ── */}
-      {data.isLocked ? (
+      {isMarketDynamicallyLocked ? (
         <div className={styles.marketBannerLocked}>
-          🔒 Mercado FECHADO para a Rodada {data.currentRound}.
+          <span>🔒</span>
+          <span>Mercado FECHADO para a Rodada {data.currentRound}.</span>
+          <span className={styles.marketRuleHint}>(fechou 30 min antes do 1º jogo)</span>
         </div>
       ) : (
         <div className={styles.marketBanner}>
           <div className={styles.marketBannerLeft}>
-            <span className={styles.marketOpenDot}>🟢</span>
-            <span>MERCADO ABERTO · Fecha às {kickoffFormatted}</span>
+            <span className={styles.marketOpenBadge}>
+              <span className={styles.marketOpenDot} />
+              MERCADO ABERTO
+            </span>
+            <span className={styles.marketCloseTimeText}>
+              Fecha <strong className={styles.marketCloseTimeHighlight}>{marketCloseLabel}</strong>
+            </span>
           </div>
-          <span className={styles.marketBannerRight}>30 min p/ 1º jogo</span>
+
+          <div className={styles.marketBannerRight}>
+            {countdownText && (
+              <span className={styles.marketCountdownBadge} title="Tempo restante até o fechamento do mercado">
+                <span>⏱️</span>
+                <span>{countdownText}</span>
+              </span>
+            )}
+            <span className={styles.marketRuleHint}>(30 min p/ 1º jogo)</span>
+          </div>
         </div>
       )}
 
@@ -514,21 +648,208 @@ export default function LineupPage() {
         </div>
       )}
 
-      {/* ── Tactical Soccer Pitch ── */}
-      <SoccerPitch
-        formation={formation}
-        starters={starters}
-        roster={data.roster}
-        isLocked={data.isLocked}
-        onEmptySlotClick={(position, slotIndex) => {
-          setSelectionTarget({ type: 'starter', position, slotIndex })
-        }}
-        onFilledSlotClick={(player, starterItem, slotIndex) => {
-          setActionSheetTarget({ player, starterItem, slotIndex })
-        }}
-      />
+      {/* ── Main Layout: Pitch (Left) + Desktop Roster Side Panel (Right) ── */}
+      <div className={styles.mainContentGrid}>
+        <div className={styles.pitchColumn}>
+          {/* ── Tactical Soccer Pitch ── */}
+          <SoccerPitch
+            formation={formation}
+            starters={starters}
+            roster={data.roster}
+            isLocked={data.isLocked}
+            onEmptySlotClick={(position, slotIndex) => {
+              if (isDesktop) {
+                setPanelPosFilter(position)
+                setPanelSearch('')
+                setWebActiveSlot({ type: 'starter', position, slotIndex })
+                setSelectionTarget(null)
+              } else {
+                setSelectionTarget({ type: 'starter', position, slotIndex })
+              }
+            }}
+            onFilledSlotClick={(player, starterItem, slotIndex) => {
+              setActionSheetTarget({ player, starterItem, slotIndex })
+            }}
+          />
+        </div>
 
-      {/* ── Banco de Reservas (5 Slots) ── */}
+        {/* ── Desktop Roster Side Panel (Hidden on mobile) ── */}
+        <aside className={styles.rosterSidePanel}>
+          <div className={styles.rosterPanelHeader}>
+            <div className={styles.rosterPanelTitleRow}>
+              <h2 className={styles.rosterPanelTitle}>
+                <span>👥</span>
+                <span>Meu Elenco Completo</span>
+              </h2>
+              <span className={styles.rosterPanelBadge}>
+                {starters.length}/11 titulares
+              </span>
+            </div>
+            <p className={styles.rosterPanelSub}>
+              {data.roster.length} atletas disponíveis no seu time
+            </p>
+          </div>
+
+          {/* Active Slot Selection Banner on Web */}
+          {webActiveSlot && (
+            <div className={styles.activeSlotBanner}>
+              <div className={styles.activeSlotBannerText}>
+                <span>Escalando:</span>
+                <strong>
+                  {webActiveSlot.position} ({webActiveSlot.type === 'starter' ? 'Titular' : 'Reserva'})
+                </strong>
+              </div>
+              <button
+                type="button"
+                className={styles.activeSlotCancelBtn}
+                onClick={() => setWebActiveSlot(null)}
+                title="Cancelar seleção"
+              >
+                ✕ Cancelar
+              </button>
+            </div>
+          )}
+
+          <div className={styles.rosterPanelControls}>
+            <div className={styles.posTabsRow}>
+              {['TODOS', 'GOL', 'LAT', 'ZAG', 'MEI', 'ATA'].map((p) => (
+                <button
+                  key={`panel-pos-${p}`}
+                  type="button"
+                  className={`${styles.posTabBtn} ${
+                    panelPosFilter === p ? styles.posTabBtnActive : ''
+                  }`}
+                  onClick={() => setPanelPosFilter(p)}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+
+            <input
+              type="text"
+              placeholder="Buscar por nome ou clube..."
+              value={panelSearch}
+              onChange={(e) => setPanelSearch(e.target.value)}
+              className={styles.searchInput}
+            />
+          </div>
+
+          <div className={styles.rosterPanelScroll}>
+            {filteredPanelRoster.map((player) => {
+              const isStarter = starterPlayerIds.has(player.id)
+              const isReserve = reservePlayerIds.has(player.id)
+              const isMatchingSlot = Boolean(
+                webActiveSlot &&
+                  player.position === webActiveSlot.position &&
+                  !(webActiveSlot.type === 'starter' && isStarter) &&
+                  !(webActiveSlot.type === 'reserve' && isReserve)
+              )
+
+              return (
+                <div
+                  key={`panel-player-${player.id}`}
+                  className={styles.playerRowItem}
+                  onClick={() => {
+                    if (webActiveSlot && isMatchingSlot) {
+                      handleSelectPlayerFromPanel(player)
+                    } else {
+                      setModalPlayerId(player.id)
+                    }
+                  }}
+                  style={{
+                    cursor: 'pointer',
+                    borderColor: isMatchingSlot ? 'rgba(16, 185, 129, 0.6)' : undefined,
+                    background: isMatchingSlot ? 'rgba(16, 185, 129, 0.08)' : undefined,
+                  }}
+                >
+                  <div className={styles.playerRowLeft}>
+                    <div style={{ position: 'relative', width: 38, height: 38, flexShrink: 0 }}>
+                      {player.photoUrl ? (
+                        <img
+                          src={player.photoUrl}
+                          alt={player.name}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            borderRadius: '50%',
+                            background: '#1e293b',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                          }}
+                        >
+                          {player.name
+                            .split(' ')
+                            .slice(0, 2)
+                            .map((w) => w[0])
+                            .join('')}
+                        </div>
+                      )}
+                      <span
+                        className={`${styles.reservePosTag} ${styles[`pos_${player.position}`]}`}
+                      >
+                        {player.position}
+                      </span>
+                    </div>
+
+                    <div className={styles.playerRowMeta}>
+                      <span className={styles.playerRowName}>{player.name}</span>
+                      <div className={styles.playerRowSub}>
+                        <span>{player.clubShortName}</span>
+                        {player.opponent && <span>· {player.opponent.label}</span>}
+                        <span className={styles.avgPointsText}>
+                          · Média {player.avgPoints.toFixed(1)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.playerRowAction}>
+                    {webActiveSlot && isMatchingSlot ? (
+                      <button
+                        type="button"
+                        className={styles.selectPlayerBtn}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleSelectPlayerFromPanel(player)
+                        }}
+                      >
+                        Escalar
+                      </button>
+                    ) : isStarter ? (
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#10b981' }}>
+                        ✓ Titular
+                      </span>
+                    ) : isReserve ? (
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8' }}>
+                        ✓ Reserva
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                        Disponível
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </aside>
+      </div>
+
+      {/* ── Banco de Reservas (5 Slots, Largura Completa abaixo do Campo e Elenco) ── */}
       <div className={styles.benchSection}>
         <div className={styles.benchHeader}>
           <div className={styles.benchTitleGroup}>
@@ -599,11 +920,22 @@ export default function LineupPage() {
                           type="button"
                           className={styles.reserveActionBtn}
                           onClick={() => {
-                            setSelectionTarget({
-                              type: 'reserve',
-                              position: pos,
-                              currentPlayerId: player.id,
-                            })
+                            if (isDesktop) {
+                              setPanelPosFilter(pos)
+                              setPanelSearch('')
+                              setWebActiveSlot({
+                                type: 'reserve',
+                                position: pos,
+                                currentPlayerId: player.id,
+                              })
+                              setSelectionTarget(null)
+                            } else {
+                              setSelectionTarget({
+                                type: 'reserve',
+                                position: pos,
+                                currentPlayerId: player.id,
+                              })
+                            }
                           }}
                           title="Substituir reserva"
                         >
@@ -630,7 +962,14 @@ export default function LineupPage() {
                   disabled={data.isLocked}
                   className={styles.reserveCardEmpty}
                   onClick={() => {
-                    setSelectionTarget({ type: 'reserve', position: pos })
+                    if (isDesktop) {
+                      setPanelPosFilter(pos)
+                      setPanelSearch('')
+                      setWebActiveSlot({ type: 'reserve', position: pos })
+                      setSelectionTarget(null)
+                    } else {
+                      setSelectionTarget({ type: 'reserve', position: pos })
+                    }
                   }}
                   title={`Clique para escalar reserva de ${pos}`}
                 >

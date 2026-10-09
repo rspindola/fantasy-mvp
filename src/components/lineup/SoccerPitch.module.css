@@ -1,102 +1,372 @@
-.pitch {
-  background: linear-gradient(180deg, #15803d 0%, #166534 100%);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-lg);
-  padding: 24px 16px;
+.pitchContainer {
   position: relative;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  aspect-ratio: 3 / 4;
+  min-height: 520px;
+  background: radial-gradient(ellipse at 50% 50%, #0d1527 0%, #080d1a 100%);
+  border: 1.5px solid rgba(56, 189, 248, 0.22);
+  border-radius: 20px;
   overflow: hidden;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), inset 0 0 50px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 520px;
-  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.4);
+  padding: 16px 8px 14px 8px;
+  user-select: none;
 }
 
-/* Pitch Field Markings */
-.pitch::before {
-  content: '';
+@media (max-width: 640px) {
+  .pitchContainer {
+    aspect-ratio: auto;
+    min-height: 540px;
+    padding: 14px 4px 12px 4px;
+    border-radius: 16px;
+  }
+}
+
+/* Tactical SVG Lines Overlay */
+.pitchSvg {
   position: absolute;
-  top: 50%;
+  top: 0;
   left: 0;
-  right: 0;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.25);
-}
-
-.centerCircle {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 120px;
-  height: 120px;
-  border: 2px solid rgba(255, 255, 255, 0.25);
-  border-radius: 50%;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
+  z-index: 1;
 }
 
-.row {
+/* Rows of Tactical Positions */
+.pitchRow {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-around;
-  position: relative;
-  z-index: 2;
-  gap: 8px;
+  width: 100%;
+  padding: 0 4px;
 }
 
-.playerSlot {
+.rowAttackers {
+  margin-top: 4px;
+}
+
+.rowMidfielders {
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.rowDefenders {
+  margin-top: 2px;
+}
+
+.rowGoalkeeper {
+  margin-bottom: 4px;
+  justify-content: center;
+}
+
+/* Individual Player Card / Button */
+.playerCard {
+  background: none;
+  border: none;
+  padding: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
   cursor: pointer;
-  background: rgba(11, 14, 20, 0.85);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
-  padding: 8px 10px;
-  min-width: 80px;
-  text-align: center;
-  transition: transform var(--transition-fast), border-color var(--transition-fast);
-  backdrop-filter: blur(4px);
+  outline: none;
+  position: relative;
+  transition: transform 0.15s ease;
+  max-width: 86px;
+  flex: 0 1 auto;
 }
 
-.playerSlot:hover {
-  transform: scale(1.05);
-  border-color: var(--accent-green);
+.playerCard:hover {
+  transform: translateY(-2px) scale(1.04);
 }
 
-.playerSlotCaptain {
-  border-color: var(--accent-gold);
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+.playerCard:active {
+  transform: scale(0.96);
 }
 
-.slotPosBadge {
-  font-size: 0.6875rem;
+/* Avatar Wrapper */
+.avatarWrapper {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  margin-bottom: 5px;
+}
+
+@media (max-width: 480px) {
+  .avatarWrapper {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 4px;
+  }
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  background: #111625;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.avatarPlaceholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
   font-weight: 700;
-  text-transform: uppercase;
+  color: #e2e8f0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
-.slotName {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-primary);
+/* Captain Golden Highlight */
+.playerCardCaptain .avatarImg,
+.playerCardCaptain .avatarPlaceholder {
+  border: 2px solid #f59e0b !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.65) !important;
+}
+
+.captainBadge {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #000;
+  border-radius: 10px;
+  padding: 1px 5px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.625rem;
+  font-weight: 900;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  z-index: 5;
   white-space: nowrap;
+}
+
+.captainStar {
+  font-size: 0.6875rem;
+  line-height: 1;
+}
+
+.captainText {
+  letter-spacing: 0.02em;
+}
+
+/* Position Badge (Top Right of Avatar) */
+.posTag {
+  position: absolute;
+  top: -3px;
+  right: -5px;
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.03em;
+  z-index: 4;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  line-height: 1.2;
+}
+
+.pos_GOL {
+  background: #f59e0b;
+}
+
+.pos_LAT {
+  background: #0284c7;
+}
+
+.pos_ZAG {
+  background: #3b82f6;
+}
+
+.pos_MEI {
+  background: #0d9488;
+}
+
+.pos_ATA {
+  background: #dc2626;
+}
+
+/* Club Badge (Bottom Left of Avatar) */
+.clubBadgeWrapper {
+  position: absolute;
+  bottom: -3px;
+  left: -5px;
+  z-index: 4;
+}
+
+.clubLogo {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  object-fit: contain;
+}
+
+.clubTextBadge {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 0 3px;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+/* Player Name */
+.playerName {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+  max-width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 90px;
+  white-space: nowrap;
+  line-height: 1.2;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
-.slotClub {
-  font-size: 0.6875rem;
-  color: var(--text-secondary);
+@media (max-width: 480px) {
+  .playerName {
+    font-size: 0.6875rem;
+    max-width: 66px;
+  }
 }
 
-.captainTag {
-  background: var(--accent-gold);
-  color: #000;
+.playerNameCaptain {
+  color: #fbbf24 !important;
   font-weight: 800;
-  font-size: 0.625rem;
-  padding: 1px 5px;
-  border-radius: var(--radius-full);
-  margin-top: 2px;
+}
+
+/* Meta Row (Opponent & Points) */
+.playerMetaRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 1px;
+  font-size: 0.6875rem;
+}
+
+@media (max-width: 480px) {
+  .playerMetaRow {
+    font-size: 0.625rem;
+    gap: 3px;
+  }
+}
+
+.opponentText {
+  color: #94a3b8;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.pointsText {
+  color: #10b981;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.captainAvgText {
+  color: #fbbf24;
+  font-weight: 700;
+  font-size: 0.6875rem;
+}
+
+/* Empty Slot */
+.emptySlot {
+  background: none;
+  border: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.15s ease;
+  max-width: 80px;
+  flex: 0 1 auto;
+}
+
+.emptySlot:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.05);
+}
+
+.emptySlot:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.emptySlotCircle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 1.8px dashed rgba(56, 189, 248, 0.4);
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 5px;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 0 10px rgba(56, 189, 248, 0.08);
+}
+
+@media (max-width: 480px) {
+  .emptySlotCircle {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 4px;
+  }
+}
+
+.emptySlot:hover:not(:disabled) .emptySlotCircle {
+  border-color: rgba(56, 189, 248, 0.85);
+  background: rgba(56, 189, 248, 0.15);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+}
+
+.plusIcon {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #38bdf8;
+  line-height: 1;
+}
+
+.emptySlotPos {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.03em;
+  margin-top: 1px;
+}
+
+.emptySlotLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+@media (max-width: 480px) {
+  .emptySlotLabel {
+    font-size: 0.625rem;
+  }
 }

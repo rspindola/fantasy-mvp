@@ -212,10 +212,14 @@ export default function MatchupDetailPage() {
 
         <div className={styles.playerRight}>
           <span className={hasPoints && !isSubbedOut ? styles.playerPoints : styles.playerPointsZero}>
-            {isSubbedOut ? '0.0 pts' : `${p.points.toFixed(1)} pts`}
+            {data?.status === 'upcoming'
+              ? '- pts'
+              : isSubbedOut
+              ? '0.0 pts'
+              : `${p.points.toFixed(1)} pts`}
           </span>
 
-          {p.scouts && Object.keys(p.scouts).length > 0 && (
+          {data?.status !== 'upcoming' && p.scouts && Object.keys(p.scouts).length > 0 && (
             <span className={styles.playerScouts}>
               {p.scouts.goals ? `⚽ ${p.scouts.goals} ` : ''}
               {p.scouts.assists ? `👟 ${p.scouts.assists} ` : ''}
@@ -316,9 +320,19 @@ export default function MatchupDetailPage() {
             </span>
 
             <div className={styles.scoreNumbers}>
-              <span className={styles.scoreHome}>{data.homeTeam.totalPoints.toFixed(1)}</span>
-              <span className={styles.scoreVs}>✕</span>
-              <span className={styles.scoreAway}>{data.awayTeam.totalPoints.toFixed(1)}</span>
+              {data.status === 'upcoming' ? (
+                <>
+                  <span className={styles.scoreEmpty}>-</span>
+                  <span className={styles.scoreVs}>✕</span>
+                  <span className={styles.scoreEmpty}>-</span>
+                </>
+              ) : (
+                <>
+                  <span className={styles.scoreHome}>{data.homeTeam.totalPoints.toFixed(1)}</span>
+                  <span className={styles.scoreVs}>✕</span>
+                  <span className={styles.scoreAway}>{data.awayTeam.totalPoints.toFixed(1)}</span>
+                </>
+              )}
             </div>
 
             {data.status === 'live' ? (
@@ -383,10 +397,12 @@ export default function MatchupDetailPage() {
               ⚙️ <strong>Painel do Comissário:</strong>{' '}
               {data.status === 'live'
                 ? 'Atualize as estatísticas parciais dos jogos iniciados ou acesse o painel completo.'
-                : `Gerencie o fechamento e scouts da Rodada ${data.fixtureRound}.`}
+                : data.status === 'completed'
+                ? `Gerencie o fechamento e scouts da Rodada ${data.fixtureRound}.`
+                : `A rodada ainda não começou. As parciais ao vivo estarão disponíveis assim que os primeiros jogos iniciarem.`}
             </span>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {data.status === 'live' ? (
+              {data.status === 'live' && (
                 <button
                   onClick={handleRefreshPartials}
                   disabled={isPending}
@@ -394,7 +410,8 @@ export default function MatchupDetailPage() {
                 >
                   {isPending ? 'Atualizando...' : '⚡ Atualizar Parciais'}
                 </button>
-              ) : (
+              )}
+              {data.status === 'completed' && (
                 <button
                   onClick={handleSimulateAutoSub}
                   disabled={isPending}

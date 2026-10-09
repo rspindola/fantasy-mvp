@@ -144,6 +144,10 @@
   color: var(--accent-green);
 }
 
+.scoreEmpty {
+  color: var(--text-muted);
+}
+
 .scoreVs {
   font-size: 1rem;
   font-weight: 700;

@@ -142,10 +142,19 @@ export async function getMatchupDetailData(
     clubFixtureStatusMap.set(f.away_club_id, f.status)
   })
 
+  const hasStartedFixtures = (roundFixtures || []).some(
+    (f: any) => f.status === 'live' || f.status === 'FT'
+  )
+
+  const isMatchupConcluded =
+    matchup.home_points !== null &&
+    matchup.away_points !== null &&
+    matchup.result !== null
+
   const status: MatchupDetailPageData['status'] =
-    matchup.fixture_round < currentSeasonRound
+    isMatchupConcluded || matchup.fixture_round < currentSeasonRound
       ? 'completed'
-      : matchup.fixture_round === currentSeasonRound
+      : hasStartedFixtures
       ? 'live'
       : 'upcoming'
 
@@ -167,8 +176,8 @@ export async function getMatchupDetailData(
       return 'live'
     }
 
-    // Se a partida ainda não começou
-    if (fixtureStatus === 'scheduled') {
+    // Se a rodada ou a partida ainda não começou
+    if (status === 'upcoming' || fixtureStatus === 'scheduled') {
       return 'scheduled'
     }
 

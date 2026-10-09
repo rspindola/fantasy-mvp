@@ -144,8 +144,27 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
     )
   )
 
+  // Verify which rounds have actually started (at least one fixture with status 'live' or 'FT')
+  const startedRoundsSet = new Set<number>()
+  if (unclosedRounds.length > 0) {
+    const { data: fixturesForUnclosed } = await supabase
+      .from('fixtures')
+      .select('round, status')
+      .eq('season_id', league.season_id)
+      .in('round', unclosedRounds)
+
+    ;(fixturesForUnclosed || []).forEach((f: any) => {
+      if (f.status === 'live' || f.status === 'FT') {
+        startedRoundsSet.add(Number(f.round))
+      }
+    })
+  }
+
   const partialScoresByRound = new Map<number, Map<string, number>>()
   for (const r of unclosedRounds) {
+    // Only compute live partial scores if the round has actually started!
+    if (!startedRoundsSet.has(r)) continue
+
     try {
       const scores = await computeRoundLiveScoresMap(leagueId, r)
       partialScoresByRound.set(r, scores)
@@ -157,6 +176,7 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
   const allMatchups: MatchupItem[] = (matchupsData || []).map((m: any) => {
     const isConcluded = m.home_points !== null && m.away_points !== null
     const roundPartials = partialScoresByRound.get(m.fixture_round)
+    const isRoundStarted = startedRoundsSet.has(m.fixture_round)
 
     let homePoints: number | null = null
     let awayPoints: number | null = null
@@ -166,7 +186,7 @@ export async function getStandingsData(leagueId: string): Promise<StandingsPageD
       homePoints = Number(m.home_points)
       awayPoints = Number(m.away_points)
       isPartial = false
-    } else if (roundPartials) {
+    } else if (isRoundStarted && roundPartials) {
       homePoints = roundPartials.get(m.home_team_id) ?? 0
       awayPoints = roundPartials.get(m.away_team_id) ?? 0
       isPartial = true

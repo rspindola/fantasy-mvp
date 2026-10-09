@@ -49,13 +49,13 @@ export async function notifyDraftTurn(
     if (!teams || teams.length < 2) return
 
     // 3. Find which team has the current pick via snake order
-    const teamIds = teams.map((t) => t.id)
+    const teamIds = (teams as any[]).map((t: any) => t.id)
     const snakeOrder = generateSnakeOrder(teamIds, 24)
     const currentSlot = snakeOrder.find((s) => s.pickNumber === pickNumber)
 
     if (!currentSlot) return
 
-    const currentTeam = teams.find((t) => t.id === currentSlot.fantasyTeamId)
+    const currentTeam = (teams as any[]).find((t: any) => t.id === currentSlot.fantasyTeamId)
     if (!currentTeam) return
 
     // 4. Get user profile with phone number
@@ -120,7 +120,7 @@ async function buildWishlistPreview(
   }
 
   // Get player details
-  const playerIds = queue.map((q) => q.player_id)
+  const playerIds = (queue as any[]).map((q: any) => q.player_id)
   const { data: players } = await supabase
     .from('real_players')
     .select('id, name, position, club_id')
@@ -140,14 +140,16 @@ async function buildWishlistPreview(
   const draftedMap = new Map<string, string>()
   if (draftedPicks) {
     // Get team names for drafted players
-    const draftedTeamIds = [...new Set(draftedPicks.map((d) => d.fantasy_team_id))]
+    const draftedTeamIds = [...new Set((draftedPicks as any[]).map((d: any) => d.fantasy_team_id))]
     const { data: draftedTeams } = await supabase
       .from('fantasy_teams')
       .select('id, name')
       .in('id', draftedTeamIds)
 
-    const teamNameMap = new Map(draftedTeams?.map((t) => [t.id, t.name]) ?? [])
-    for (const pick of draftedPicks) {
+    const teamNameMap = new Map<string, string>(
+      (draftedTeams as any[])?.map((t: any) => [t.id, t.name as string]) ?? []
+    )
+    for (const pick of (draftedPicks as any[])) {
       draftedMap.set(pick.player_id, teamNameMap.get(pick.fantasy_team_id) ?? 'outro time')
     }
   }
@@ -156,10 +158,10 @@ async function buildWishlistPreview(
   const lines: string[] = []
   let count = 0
 
-  for (const queueItem of queue) {
+  for (const queueItem of (queue as any[])) {
     if (count >= WISHLIST_PREVIEW_COUNT) break
 
-    const player = players.find((p) => p.id === queueItem.player_id)
+    const player = (players as any[]).find((p: any) => p.id === queueItem.player_id)
     if (!player) continue
 
     count++

@@ -253,7 +253,7 @@ export async function getMatchupDetailData(
       `)
       .eq('lineup_id', lineupRecord.id)
 
-    const playerIds = (slots || []).map((s) => s.player_id)
+    const playerIds = (slots || []).map((s: any) => s.player_id)
 
     // Fetch player stats for this round
     const { data: statsData } = await supabase

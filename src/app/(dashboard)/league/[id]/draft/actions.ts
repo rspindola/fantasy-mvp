@@ -175,7 +175,7 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
 
   if (!teams || teams.length < 2) return null
 
-  const myTeam = teams.find((t) => t.user_id === user.id)
+  const myTeam = (teams as any[]).find((t: any) => t.user_id === user.id)
 
   // Fetch draft picks already made in this league
   const { data: picks } = await supabase
@@ -199,11 +199,11 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
 
   // Compute turn team
   const snakeSlots = generateSnakeOrder(
-    teams.map((t) => t.id),
+    (teams as any[]).map((t: any) => t.id),
     24
   )
   const currentSlot = snakeSlots.find((s) => s.pickNumber === currentPickNum)
-  const turnTeam = teams.find((t) => t.id === currentSlot?.fantasyTeamId)
+  const turnTeam = (teams as any[]).find((t: any) => t.id === currentSlot?.fantasyTeamId)
 
   const pickedPlayerIds = new Set((picks || []).map((p: any) => p.player?.id).filter(Boolean))
 
@@ -219,7 +219,7 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
     }))
 
   // Fetch teams in this league to calculate interest count and pre-draft queues
-  const teamIds = teams.map((t) => t.id)
+  const teamIds = (teams as any[]).map((t: any) => t.id)
   const interestMap: Record<string, number> = {}
   let leagueQueues: any[] = []
 
@@ -360,9 +360,9 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
       isAutoPick: p.is_auto_pick ?? false,
     }))
 
-  const teamMap = new Map(teams.map((t) => [t.id, t]))
+  const teamMap = new Map<string, any>((teams as any[]).map((t: any) => [t.id, t]))
 
-  const picksByNumber = new Map(
+  const picksByNumber = new Map<number, { playerName?: string; playerPosition?: string }>(
     (picks || []).map((p: any) => [
       p.pick_number,
       {
@@ -390,10 +390,10 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
     (s) => s.pickNumber >= currentPickNum && s.pickNumber < currentPickNum + 10
   )
 
-  const draftOrder = teams
-    .filter((t) => t.draft_order !== null)
-    .sort((a, b) => (a.draft_order ?? 0) - (b.draft_order ?? 0))
-    .map((t) => ({
+  const draftOrder = (teams as any[])
+    .filter((t: any) => t.draft_order !== null)
+    .sort((a: any, b: any) => (a.draft_order ?? 0) - (b.draft_order ?? 0))
+    .map((t: any) => ({
       order: t.draft_order ?? 0,
       teamId: t.id,
       teamName: t.name,
@@ -427,8 +427,8 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
       }))
 
     const candidates = availablePlayers
-      .filter((p) => !p.isPicked)
-      .map((p) => ({
+      .filter((p: any) => !p.isPicked)
+      .map((p: any) => ({
         id: p.id,
         name: p.name,
         position: p.position,
@@ -440,7 +440,7 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
     if (chosen) {
       const isFromQueue = turnQueuedPlayerIds.includes(chosen.id)
       const qIndex = turnQueuedPlayerIds.indexOf(chosen.id)
-      const chosenPlayerMeta = availablePlayers.find((p) => p.id === chosen.id)
+      const chosenPlayerMeta = availablePlayers.find((p: any) => p.id === chosen.id)
 
       nextAutoPick = {
         playerId: chosen.id,
@@ -456,7 +456,7 @@ export async function getDraftRoomData(leagueId: string): Promise<DraftStateData
 
   // Pre-draft queues of all teams (accessible to commissioner)
   const allTeamQueues = isCommissioner
-    ? teams.map((t) => {
+    ? (teams as any[]).map((t: any) => {
         const teamQueues = leagueQueues
           .filter((q: any) => q.fantasy_team_id === t.id)
           .sort((a: any, b: any) => a.priority - b.priority)

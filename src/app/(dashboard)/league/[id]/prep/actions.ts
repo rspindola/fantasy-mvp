@@ -225,7 +225,7 @@ export async function moveWishlistPriorityAction(
 
   if (!queue || queue.length < 2) return
 
-  const currentIndex = queue.findIndex((q) => q.player_id === playerId)
+  const currentIndex = (queue as any[]).findIndex((q: any) => q.player_id === playerId)
   if (currentIndex === -1) return
 
   const targetIndex = direction === 'UP' ? currentIndex - 1 : currentIndex + 1

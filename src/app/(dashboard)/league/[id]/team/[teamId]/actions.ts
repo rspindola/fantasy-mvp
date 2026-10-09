@@ -143,7 +143,7 @@ export async function getTeamRosterData(
         }
       > = {}
 
-      h2hStandings.forEach((m) => {
+      h2hStandings.forEach((m: any) => {
         if (m.home_points === null || m.away_points === null) return
 
         if (!records[m.home_team_id]) {
@@ -226,7 +226,7 @@ export async function getTeamRosterData(
   >()
 
   if (fixtures) {
-    fixtures.forEach((fix) => {
+    fixtures.forEach((fix: any) => {
       const homeClub = fix.home_club as any
       const awayClub = fix.away_club as any
 

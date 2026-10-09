@@ -111,13 +111,13 @@ export async function makePickEngine(
   const currentPickNum = Math.max(league.current_pick ?? 1, maxCompleted + 1)
 
   // Compute snake order for all picks
-  const teamIds = teams.map((t) => t.id)
+  const teamIds = (teams as any[]).map((t: any) => t.id)
   const snakeOrder = generateSnakeOrder(teamIds, 24)
   const currentSlot = snakeOrder.find((s) => s.pickNumber === currentPickNum)
 
   if (!currentSlot) throw new Error('Fim das escolhas do draft.')
 
-  const expectedTeam = teams.find((t) => t.id === currentSlot.fantasyTeamId)
+  const expectedTeam = (teams as any[]).find((t: any) => t.id === currentSlot.fantasyTeamId)
   if (!expectedTeam) throw new Error('Time não encontrado para este slot.')
 
   const isOwner = expectedTeam.user_id === userId
@@ -221,7 +221,7 @@ export async function completeDraftEngine(leagueId: string) {
   if (picksErr || !picks) throw new Error('Erro ao buscar escolhas do draft.')
 
   // Insert into roster_players
-  const rosterRecords = picks.map((p) => ({
+  const rosterRecords = (picks as any[]).map((p: any) => ({
     fantasy_team_id: p.fantasy_team_id,
     player_id: p.player_id,
   }))
@@ -244,7 +244,7 @@ export async function completeDraftEngine(leagueId: string) {
       .order('draft_order', { ascending: true })
 
     if (teams && teams.length >= 2) {
-      const teamIds = teams.map((t) => t.id)
+      const teamIds = (teams as any[]).map((t: any) => t.id)
 
       // Get season rounds to schedule all fixtures until tournament end
       const { data: season } = await supabase

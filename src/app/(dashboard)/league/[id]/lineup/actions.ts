@@ -261,7 +261,7 @@ export async function getLineupData(leagueId: string): Promise<LineupPageData | 
         }))
 
       const completed = autoCompleteLineup(
-        roster.map((r) => ({ id: r.id, position: r.position, avgPoints: r.avgPoints })),
+        roster.map((r: any) => ({ id: r.id, position: r.position, avgPoints: r.avgPoints })),
         prevFormation || '4-3-3',
         existingStarters,
         existingReserves

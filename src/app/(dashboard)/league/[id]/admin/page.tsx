@@ -9,10 +9,13 @@ import {
   closeAndAdvanceRoundAction,
   recalculatePostponedRoundAction,
   generateRoundPartialsAction,
+  getRoundTopScorersAction,
   type CommissionerPageData,
+  type RoundTopScorer,
 } from './actions'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { PlayerDetailModal } from '@/components/player/PlayerDetailModal'
 import styles from './page.module.css'
 
 export default function CommissionerAdminPage() {
@@ -25,11 +28,20 @@ export default function CommissionerAdminPage() {
   const [isPending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [summaryReport, setSummaryReport] = useState<any | null>(null)
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
+  const [modalRound, setModalRound] = useState<number | undefined>(undefined)
+  const [topScorersRound, setTopScorersRound] = useState<number>(29)
+  const [topScorersList, setTopScorersList] = useState<RoundTopScorer[]>([])
+  const [loadingTopScorers, setLoadingTopScorers] = useState(false)
 
   const reloadData = useCallback(async () => {
     if (leagueId) {
       const res = await getCommissionerData(leagueId)
       setData(res)
+      if (res) {
+        setTopScorersRound(res.topScorersRound)
+        setTopScorersList(res.topScorers || [])
+      }
       setLoading(false)
     }
   }, [leagueId])
@@ -137,6 +149,140 @@ export default function CommissionerAdminPage() {
         setFeedback({ type: 'error', message: err.message || 'Erro ao recalcular rodada.' })
       }
     })
+  }
+
+  const handleSelectTopScorersRound = async (roundNum: number) => {
+    setTopScorersRound(roundNum)
+    setLoadingTopScorers(true)
+    try {
+      const scorers = await getRoundTopScorersAction(leagueId, roundNum)
+      setTopScorersList(scorers)
+    } catch (e) {
+      console.error('Error fetching top scorers for round:', e)
+    } finally {
+      setLoadingTopScorers(false)
+    }
+  }
+
+  const renderTopScorersList = (scorers: RoundTopScorer[], roundNum?: number) => {
+    if (!scorers || scorers.length === 0) {
+      return (
+        <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+          Nenhum scout registrado para esta rodada ainda.
+        </div>
+      )
+    }
+
+    return (
+      <div className={styles.topScorersGrid}>
+        {scorers.map((s) => {
+          const isPodium1 = s.rank === 1
+          const isPodium2 = s.rank === 2
+          const isPodium3 = s.rank === 3
+
+          const cardClass = `${styles.topScorerCard} ${
+            isPodium1
+              ? styles.topScorerCardPodium1
+              : isPodium2
+              ? styles.topScorerCardPodium2
+              : isPodium3
+              ? styles.topScorerCardPodium3
+              : ''
+          }`
+
+          const rankClass = `${styles.rankBadge} ${
+            isPodium1
+              ? styles.rankGold
+              : isPodium2
+              ? styles.rankSilver
+              : isPodium3
+              ? styles.rankBronze
+              : styles.rankDefault
+          }`
+
+          return (
+            <div
+              key={s.playerId}
+              className={cardClass}
+              onClick={() => {
+                setModalRound(roundNum)
+                setSelectedPlayerId(s.playerId)
+              }}
+              title="Clique para ver os scouts detalhados do atleta"
+            >
+              <div className={styles.topScorerLeft}>
+                <div className={rankClass}>
+                  {isPodium1 ? '🥇' : isPodium2 ? '🥈' : isPodium3 ? '🥉' : `#${s.rank}`}
+                </div>
+
+                <div className={styles.topScorerAvatarBox}>
+                  {s.photoUrl ? (
+                    <img src={s.photoUrl} alt={s.name} className={styles.topScorerPhoto} />
+                  ) : (
+                    <div className={styles.topScorerPhotoFallback}>
+                      {s.name.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  {s.clubLogoUrl && (
+                    <img src={s.clubLogoUrl} alt={s.clubShortName} className={styles.topScorerCrest} />
+                  )}
+                </div>
+
+                <div className={styles.topScorerInfo}>
+                  <div className={styles.topScorerNameRow}>
+                    <span className={styles.topScorerName}>{s.name}</span>
+                    <Badge variant={s.position as any}>
+                      {s.position}
+                    </Badge>
+                  </div>
+
+                  <div className={styles.topScorerMeta}>
+                    <span>{s.clubShortName || s.clubName}</span>
+                    <span>•</span>
+                    {s.fantasyTeamName ? (
+                      <span className={styles.teamOwnerBadge} title={`Escalado por ${s.fantasyTeamName}`}>
+                        🛡️ {s.fantasyTeamName}
+                      </span>
+                    ) : (
+                      <span className={styles.teamFreeBadge}>Livre</span>
+                    )}
+                  </div>
+
+                  <div className={styles.topScorerPills}>
+                    {s.goals > 0 && (
+                      <span className={styles.statHighlightPill}>
+                        ⚽ {s.goals} {s.goals > 1 ? 'gols' : 'gol'}
+                      </span>
+                    )}
+                    {s.assists > 0 && (
+                      <span className={styles.statHighlightPill}>
+                        🎯 {s.assists} {s.assists > 1 ? 'ast' : 'ast'}
+                      </span>
+                    )}
+                    {s.cleanSheet && (s.position === 'ZAG' || s.position === 'LAT' || s.position === 'GOL') && (
+                      <span className={styles.statHighlightPill}>🛡️ SG</span>
+                    )}
+                    {s.saves > 0 && s.position === 'GOL' && (
+                      <span className={styles.statHighlightPill}>🧤 {s.saves} def</span>
+                    )}
+                    {s.tackles > 0 && (
+                      <span className={styles.statHighlightPill}>⚔️ {s.tackles} des</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.topScorerScore}>
+                <span className={styles.topScorerPoints}>
+                  {s.points >= 0 ? `+${s.points.toFixed(1)}` : s.points.toFixed(1)}
+                </span>
+                <span className={styles.topScorerMinutes}>{s.minutes}&apos; jogados</span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
   }
 
   return (
@@ -274,6 +420,20 @@ export default function CommissionerAdminPage() {
                   </span>
                 </div>
               ))}
+            </div>
+          )}
+
+          {summaryReport.topScorers && summaryReport.topScorers.length > 0 && (
+            <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-subtle)', paddingTop: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <strong style={{ fontSize: '0.9375rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  🏆 Top 10 Maiores Pontuadores da Rodada {summaryReport.fixtureRound}
+                </strong>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  Clique no atleta para ver o extrato de scouts
+                </span>
+              </div>
+              {renderTopScorersList(summaryReport.topScorers, summaryReport.fixtureRound)}
             </div>
           )}
         </div>
@@ -592,10 +752,72 @@ export default function CommissionerAdminPage() {
               </Button>
             </div>
           </div>
+
+          {/* Top 10 Scorers of the Round Card */}
+          <div className={styles.topScorersSection}>
+            <div className={styles.topScorersHeader}>
+              <div>
+                <span className={styles.topScorersTitle}>
+                  🌟 Top 10 Maiores Pontuadores da Rodada {topScorersRound}
+                </span>
+                <span className={styles.topScorersSub}>
+                  Atletas com maior pontuação oficial Cartola. Clique em um jogador para ver seus scouts detalhados.
+                </span>
+              </div>
+
+              {/* Round Toggle */}
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  Ver Rodada:
+                </span>
+                {Array.from(new Set([topScorersRound, currentRound, Math.max(1, currentRound - 1)]))
+                  .sort((a, b) => b - a)
+                  .map((rnd) => (
+                    <button
+                      key={rnd}
+                      onClick={() => handleSelectTopScorersRound(rnd)}
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1px solid',
+                        borderColor: topScorersRound === rnd ? 'var(--accent-green)' : 'var(--border-subtle)',
+                        background: topScorersRound === rnd ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                        color: topScorersRound === rnd ? 'var(--accent-green)' : 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      R{rnd}
+                    </button>
+                  ))}
+              </div>
+            </div>
+
+            {loadingTopScorers ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '24px' }}>
+                Carregando maiores pontuadores...
+              </p>
+            ) : (
+              renderTopScorersList(topScorersList, topScorersRound)
+            )}
+          </div>
         </div>
       )}
 
-      {/* Summary Report Modal */}
+      {/* Player Detail Modal */}
+      {selectedPlayerId && (
+        <PlayerDetailModal
+          playerId={selectedPlayerId}
+          leagueId={leagueId}
+          round={modalRound}
+          onClose={() => {
+            setSelectedPlayerId(null)
+            setModalRound(undefined)
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -7,6 +7,25 @@ import {
 import { ensureLockedRoundLineups, populateInitialLineupsForLeague } from '@/lib/lineup/lock'
 import { syncRoundFromApiFootball } from './sync-api-round'
 
+export interface RoundTopScorer {
+  rank: number
+  playerId: string
+  name: string
+  position: string
+  photoUrl: string | null
+  clubName: string
+  clubShortName: string
+  clubLogoUrl: string | null
+  points: number
+  minutes: number
+  goals: number
+  assists: number
+  cleanSheet: boolean
+  saves: number
+  tackles: number
+  fantasyTeamName: string | null
+}
+
 export interface RoundClosingSummary {
   fixtureRound: number
   teamsProcessed: number
@@ -25,6 +44,7 @@ export interface RoundClosingSummary {
     awayPoints: number
     winner: 'home' | 'away' | 'draw'
   }[]
+  topScorers?: RoundTopScorer[]
   seasonAdvanced: boolean
   newRound?: number
 }
@@ -303,10 +323,15 @@ export async function executeAutoSubAndCloseRound(
 
     if (season && season.current_round === fixtureRound && season.current_round < season.total_rounds) {
       newRound = season.current_round + 1
-      await supabase
+      const { error: seasonErr } = await supabase
         .from('seasons')
         .update({ current_round: newRound })
         .eq('id', league.season_id)
+
+      if (seasonErr) {
+        console.error('[advanceRound] Error updating seasons current_round:', seasonErr)
+        throw new Error(`Falha ao avançar rodada na temporada: ${seasonErr.message}`)
+      }
 
       seasonAdvanced = true
 
@@ -318,14 +343,89 @@ export async function executeAutoSubAndCloseRound(
     }
   }
 
+  const topScorers = await getRoundTopScorers(leagueId, fixtureRound, 10)
+
   return {
     fixtureRound,
     teamsProcessed: teamScoreMap.size,
     substitutions: allSubstitutions,
     matchupResults,
+    topScorers,
     seasonAdvanced,
     newRound,
   }
+}
+
+/**
+ * Fetches the top scoring players for a given round, cross-referenced with league fantasy rosters.
+ */
+export async function getRoundTopScorers(
+  leagueId: string,
+  fixtureRound: number,
+  limit: number = 10
+): Promise<RoundTopScorer[]> {
+  const supabase = await createClient()
+
+  const { data: stats } = await supabase
+    .from('player_fixture_stats')
+    .select(`
+      player_id,
+      computed_points,
+      minutes,
+      goals,
+      assists,
+      saves,
+      tackles,
+      clean_sheet,
+      player:real_players(
+        id,
+        name,
+        position,
+        photo_url,
+        club:real_clubs(name, short_name, logo_url)
+      ),
+      fixture:fixtures!inner(round)
+    `)
+    .eq('fixture.round', fixtureRound)
+    .order('computed_points', { ascending: false })
+    .limit(limit)
+
+  if (!stats || stats.length === 0) return []
+
+  const { data: rosters } = await supabase
+    .from('roster_players')
+    .select('player_id, team:fantasy_teams!inner(name, league_id)')
+    .eq('team.league_id', leagueId)
+
+  const rosterMap = new Map<string, string>()
+  ;(rosters || []).forEach((r: any) => {
+    if (r.player_id && r.team?.name) {
+      rosterMap.set(r.player_id, r.team.name)
+    }
+  })
+
+  return (stats as any[]).map((s: any, idx: number) => {
+    const p = s.player || {}
+    const c = p.club || {}
+    return {
+      rank: idx + 1,
+      playerId: s.player_id,
+      name: p.name || 'Jogador',
+      position: p.position || 'MEI',
+      photoUrl: p.photo_url || null,
+      clubName: c.name || '',
+      clubShortName: c.short_name || '',
+      clubLogoUrl: c.logo_url || null,
+      points: Number(s.computed_points || 0),
+      minutes: Number(s.minutes || 0),
+      goals: Number(s.goals || 0),
+      assists: Number(s.assists || 0),
+      cleanSheet: Boolean(s.clean_sheet),
+      saves: Number(s.saves || 0),
+      tackles: Number(s.tackles || 0),
+      fantasyTeamName: rosterMap.get(s.player_id) || null,
+    }
+  })
 }
 
 /**

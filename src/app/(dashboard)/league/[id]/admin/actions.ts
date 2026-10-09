@@ -7,10 +7,14 @@ import {
   recalculatePostponedRound,
   executeAutoSubAndCloseRound,
   generateRoundPartials,
+  getRoundTopScorers,
   type RoundClosingSummary,
   type RoundPartialsSummary,
+  type RoundTopScorer,
 } from '@/lib/round/round-processor'
 import { revalidatePath } from 'next/cache'
+
+export type { RoundTopScorer }
 
 export type FixtureItem = {
   id: string
@@ -56,6 +60,8 @@ export type CommissionerPageData = {
     hasScoresCalculated: boolean
   }[]
   postponedRounds: number[]
+  topScorersRound: number
+  topScorers: RoundTopScorer[]
 }
 
 export async function getCommissionerData(leagueId: string): Promise<CommissionerPageData | null> {
@@ -91,6 +97,8 @@ export async function getCommissionerData(leagueId: string): Promise<Commissione
       currentRoundFixtures: [],
       postponedFixturesByRound: [],
       postponedRounds: [],
+      topScorersRound: 1,
+      topScorers: [],
     }
   }
 
@@ -208,6 +216,12 @@ export async function getCommissionerData(leagueId: string): Promise<Commissione
 
   const postponedRounds = await getPostponedRounds(league.season_id)
 
+  const hasCurrentPlayed = currentRoundFixtures.some(
+    (f) => f.status === 'FT' || f.status === 'live'
+  )
+  const topScorersRound = hasCurrentPlayed ? currentRound : Math.max(1, currentRound - 1)
+  const topScorers = await getRoundTopScorers(leagueId, topScorersRound, 10)
+
   return {
     isCommissioner: true,
     league: {
@@ -227,7 +241,16 @@ export async function getCommissionerData(leagueId: string): Promise<Commissione
     currentRoundFixtures,
     postponedFixturesByRound,
     postponedRounds,
+    topScorersRound,
+    topScorers,
   }
+}
+
+export async function getRoundTopScorersAction(
+  leagueId: string,
+  roundNumber: number
+): Promise<RoundTopScorer[]> {
+  return getRoundTopScorers(leagueId, roundNumber, 10)
 }
 
 export async function toggleFixturePostponedAction(

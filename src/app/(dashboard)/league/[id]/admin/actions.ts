@@ -370,6 +370,29 @@ export async function generateRoundPartialsAction(
   return result
 }
 
+export async function sendMarketClosingAlertAction(
+  leagueId: string
+) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
+  if (!user) throw new Error('Não autenticado')
 
+  const { data: league } = await supabase
+    .from('leagues')
+    .select('commissioner_id')
+    .eq('id', leagueId)
+    .single()
 
+  if (!league || league.commissioner_id !== user.id) {
+    throw new Error('Apenas o comissário pode disparar avisos da rodada.')
+  }
+
+  const { notifyMarketClosing } = await import('@/lib/whatsapp/market-notification')
+  const result = await notifyMarketClosing(leagueId, { force: true })
+
+  revalidatePath(`/league/${leagueId}/admin`)
+  return result
+}

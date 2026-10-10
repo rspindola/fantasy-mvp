@@ -65,6 +65,11 @@ export async function startDraftEngine(leagueId: string) {
     console.error('Error updating league status:', leagueUpdateErr)
     throw new Error(`Erro ao atualizar status da liga: ${leagueUpdateErr.message}`)
   }
+
+  // Notify first player via WhatsApp (fire-and-forget)
+  notifyDraftTurn(leagueId, 1).catch((err) =>
+    console.error('[Draft] WhatsApp notification for pick 1 failed:', err)
+  )
 }
 
 /**

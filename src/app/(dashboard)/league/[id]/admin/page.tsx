@@ -10,6 +10,7 @@ import {
   recalculatePostponedRoundAction,
   generateRoundPartialsAction,
   getRoundTopScorersAction,
+  sendMarketClosingAlertAction,
   type CommissionerPageData,
   type RoundTopScorer,
 } from './actions'
@@ -90,6 +91,28 @@ export default function CommissionerAdminPage() {
         await reloadData()
       } catch (err: any) {
         setFeedback({ type: 'error', message: err.message || 'Erro ao gerar parciais.' })
+      }
+    })
+  }
+
+  const handleSendMarketAlert = () => {
+    if (
+      !confirm(
+        'Deseja enviar a notificação no WhatsApp de fechamento do mercado para todos os participantes da liga com telefone cadastrado?'
+      )
+    ) {
+      return
+    }
+    setFeedback(null)
+    startTransition(async () => {
+      try {
+        const res = await sendMarketClosingAlertAction(leagueId)
+        setFeedback({
+          type: 'success',
+          message: `📢 Aviso de mercado disparado! ${res.sentCount} enviado(s), ${res.skippedCount} sem telefone cadastrado, ${res.failedCount} com falha. Horário informado: "${res.marketCloseLabel}".`,
+        })
+      } catch (err: any) {
+        setFeedback({ type: 'error', message: err.message || 'Erro ao enviar aviso de mercado.' })
       }
     })
   }
@@ -463,17 +486,29 @@ export default function CommissionerAdminPage() {
               </p>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-              <Button
-                size="md"
-                isLoading={isPending}
-                disabled={isPending}
-                onClick={handleGeneratePartials}
-              >
-                ⚡ Gerar / Atualizar Parciais
-              </Button>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right', maxWidth: '340px' }}>
-                Verifica jogos iniciados (19:45, 20:00...) e computa scouts parciais momentâneos para os atletas. A pontuação oficial só é fechada ao consolidar a rodada.
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <Button
+                  size="md"
+                  variant="secondary"
+                  isLoading={isPending}
+                  disabled={isPending}
+                  onClick={handleSendMarketAlert}
+                  title="Envia WhatsApp para todos os participantes avisando o fechamento do mercado"
+                >
+                  📢 Avisar Fechamento (WhatsApp)
+                </Button>
+                <Button
+                  size="md"
+                  isLoading={isPending}
+                  disabled={isPending}
+                  onClick={handleGeneratePartials}
+                >
+                  ⚡ Gerar / Atualizar Parciais
+                </Button>
+              </div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right', maxWidth: '380px' }}>
+                Dispare avisos no WhatsApp aos gestores ou atualize os scouts em tempo real das partidas em andamento.
               </span>
             </div>
           </div>

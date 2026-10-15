@@ -8,6 +8,7 @@ import { getStandingsData, type StandingsPageData } from './standings/actions'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { MarketCountdownBanner } from '@/components/league/MarketCountdownBanner'
+import { LeagueBannerUploader } from '@/components/league/LeagueBannerUploader'
 import styles from './page.module.css'
 
 function TeamCrest({ name }: { name: string }) {
@@ -83,6 +84,7 @@ export default function LeagueDetailsPage() {
   const leagueId = params.id as string
 
   const [league, setLeague] = useState<LeagueDetails | null>(null)
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null)
   const [standingsData, setStandingsData] = useState<StandingsPageData | null>(null)
   const [selectedRound, setSelectedRound] = useState<number>(1)
   const [mobileTab, setMobileTab] = useState<'table' | 'matches'>('table')
@@ -99,6 +101,7 @@ export default function LeagueDetailsPage() {
         getStandingsData(leagueId),
       ]).then(([lRes, sRes]) => {
         setLeague(lRes)
+        setBannerUrl(lRes?.bannerImageUrl ?? null)
         setStandingsData(sRes)
         if (sRes) {
           setSelectedRound(sRes.currentRound)
@@ -206,6 +209,42 @@ export default function LeagueDetailsPage() {
         ← Voltar ao painel
       </Link>
 
+      {/* League Banner Area */}
+      <div className={styles.leagueBannerArea}>
+        {bannerUrl ? (
+          <img src={bannerUrl} alt="" className={styles.leagueBannerImg} />
+        ) : (
+          <div className={styles.leagueBannerFallback} />
+        )}
+        <div className={styles.leagueBannerOverlay} />
+
+        {/* Championship Pill top-left */}
+        <div className={styles.leagueChampionshipBadge}>
+          {league.championshipLogoUrl ? (
+            <img
+              src={league.championshipLogoUrl}
+              alt=""
+              className={styles.championshipLogo}
+              style={{ width: '20px', height: '20px', objectFit: 'contain' }}
+            />
+          ) : (
+            <span>🏆</span>
+          )}
+          <span>{league.championshipName || 'Brasileirão Série A'}</span>
+        </div>
+
+        {/* Edit Banner Button (Commissioner only) */}
+        {league.isCommissioner && (
+          <div className={styles.leagueBannerEditBox}>
+            <LeagueBannerUploader
+              leagueId={league.id}
+              currentBannerUrl={bannerUrl}
+              onSuccess={(newUrl) => setBannerUrl(newUrl)}
+            />
+          </div>
+        )}
+      </div>
+
       {/* Header Card */}
       <div className={styles.headerCard}>
         <div className={styles.headerTop}>
@@ -274,18 +313,19 @@ export default function LeagueDetailsPage() {
           )}
 
           {isActive && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              <Link href={`/league/${league.id}/lineup`} style={{ flex: 1, minWidth: '220px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+              <Link href={`/league/${league.id}/lineup`} style={{ width: '100%' }}>
                 <Button size="lg" style={{ width: '100%' }}>
                   ⚽ Escalar Meu Time
                 </Button>
               </Link>
               {league.isCommissioner && (
-                <Link href={`/league/${league.id}/admin`}>
+                <Link href={`/league/${league.id}/admin`} style={{ width: '100%' }}>
                   <Button
                     variant="secondary"
                     size="lg"
                     style={{
+                      width: '100%',
                       borderColor: 'rgba(234, 179, 8, 0.5)',
                       color: '#fbbf24',
                       background: 'rgba(234, 179, 8, 0.08)',

@@ -1,18 +1,15 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import {
   getMatchupDetailData,
-  executeAutoSubAction,
-  refreshMatchupPartialsAction,
   type MatchupDetailPageData,
   type MatchupTeamDetail,
 } from './actions'
-import { Badge } from '@/components/ui/Badge'
-import { sortByPosition } from '@/lib/lineup/lineup-engine'
 import { PlayerDetailModal } from '@/components/player/PlayerDetailModal'
+import { MatchupDetailsModal } from './MatchupDetailsModal'
 import styles from './page.module.css'
 
 export default function MatchupDetailPage() {
@@ -22,9 +19,11 @@ export default function MatchupDetailPage() {
 
   const [data, setData] = useState<MatchupDetailPageData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isPending, startTransition] = useTransition()
-  const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
+
+  // Mobile Tabs State (Switch between teams, keeping field on top and bench below)
+  const [activeMobileTeam, setActiveMobileTeam] = useState<'home' | 'away'>('home')
 
   useEffect(() => {
     if (leagueId && matchupId) {
@@ -35,51 +34,10 @@ export default function MatchupDetailPage() {
     }
   }, [leagueId, matchupId])
 
-  const handleRefreshPartials = () => {
-    if (!data) return
-    setActionMessage(null)
-    startTransition(async () => {
-      try {
-        const res = await refreshMatchupPartialsAction(leagueId, data.fixtureRound)
-        const updated = await getMatchupDetailData(leagueId, matchupId)
-        if (updated) setData(updated)
-        setActionMessage(
-          `✓ Parciais atualizadas com sucesso! ${res.startedCount} partida(s) em andamento/finalizada(s) e ${res.playersUpdated} estatísticas de atletas computadas.`
-        )
-      } catch (err: any) {
-        setActionMessage(`Erro ao atualizar parciais: ${err.message}`)
-      }
-    })
-  }
-
-  const handleSimulateAutoSub = () => {
-    if (!data) return
-    setActionMessage(null)
-    startTransition(async () => {
-      try {
-        const res = await executeAutoSubAction(leagueId, data.fixtureRound, false)
-        const updated = await getMatchupDetailData(leagueId, matchupId)
-        if (updated) setData(updated)
-
-        if (res.substitutions.length > 0) {
-          setActionMessage(
-            `✓ Scouts processados! ${res.substitutions.length} substituição(ões) automática(s) realizada(s) nesta rodada.`
-          )
-        } else {
-          setActionMessage(
-            `✓ Scouts atualizados com sucesso! Nenhuma substituição necessária para os times.`
-          )
-        }
-      } catch (err: any) {
-        setActionMessage(`Erro ao processar: ${err.message}`)
-      }
-    })
-  }
-
   if (loading) {
     return (
       <div className={styles.container}>
-        <p style={{ color: 'var(--text-secondary)', padding: '40px 0', textAlign: 'center' }}>
+        <p style={{ color: '#94a3b8', padding: '60px 0', textAlign: 'center' }}>
           Carregando Raio-X do confronto...
         </p>
       </div>
@@ -100,403 +58,673 @@ export default function MatchupDetailPage() {
   const isHomeWinner = data.result === 'home'
   const isAwayWinner = data.result === 'away'
 
-  const allSubs = [
-    ...data.homeTeam.substitutions.map((s) => ({ ...s, teamName: data.homeTeam.teamName })),
-    ...data.awayTeam.substitutions.map((s) => ({ ...s, teamName: data.awayTeam.teamName })),
-  ]
+  // Helper to format player's key scout note
+  const formatPlayerKeyScout = (p: any): string => {
+    if (p.minutes === 0) return 'Sem minutos'
+    const scouts = p.scouts || {}
+    const parts: string[] = []
 
-  const renderPlayerCard = (p: any, isBench: boolean = false) => {
-    const isSubbedOut = p.subbedOut
-    const isSubbedIn = p.subbedIn
-    const hasPoints = p.points !== null && p.points > 0
+    if (scouts.goals && scouts.goals > 0) {
+      parts.push(`${scouts.goals} ${scouts.goals === 1 ? 'gol' : 'gols'}`)
+    }
+    if (scouts.assists && scouts.assists > 0) {
+      parts.push(`${scouts.assists} ast`)
+    }
+    if (scouts.cleanSheet) {
+      parts.push('SG')
+    }
+    if (p.position === 'GOL' && scouts.saves && scouts.saves > 0) {
+      parts.push(`${scouts.saves} ${scouts.saves === 1 ? 'defesa' : 'defesas'}`)
+    }
+    if (scouts.tackles && scouts.tackles > 0) {
+      parts.push(`${scouts.tackles} ${scouts.tackles === 1 ? 'desarme' : 'desarmes'}`)
+    }
+    if (parts.length > 0) {
+      return parts.slice(0, 2).join(' - ')
+    }
+    return `${p.minutes} min`
+  }
+
+  // Helper to arrange tactical lines for starting 11
+  const getTacticalLines = (starters: any[]) => {
+    // If a starter was subbed out, we show the subbed-in reserve in their slot on the pitch with isAutoSub = true
+    const effectiveStarters = starters.map((s) => {
+      if (s.subbedOut && s.subbedInBy) {
+        return {
+          ...s.subbedInBy,
+          isAutoSub: true,
+          subbedForStarter: s,
+        }
+      }
+      return {
+        ...s,
+        isAutoSub: false,
+        isAbsent: s.minutes === 0,
+      }
+    })
+
+    const gols = effectiveStarters.filter((p) => p.position === 'GOL')
+    const lats = effectiveStarters.filter((p) => p.position === 'LAT')
+    const zags = effectiveStarters.filter((p) => p.position === 'ZAG')
+    const mids = effectiveStarters.filter((p) => p.position === 'MEI')
+    const atts = effectiveStarters.filter((p) => p.position === 'ATA')
+
+    // Flank laterals on the sides if present
+    let defs: any[] = []
+    if (lats.length >= 2) {
+      defs = [lats[0], ...zags, lats[1]]
+    } else if (lats.length === 1) {
+      defs = [lats[0], ...zags]
+    } else {
+      defs = [...zags]
+    }
+
+    return { gols, defs, mids, atts }
+  }
+
+  // Render a tactical player token node on the pitch
+  const renderTacticalToken = (p: any, teamColor: 'home' | 'away') => {
+    const isMitou = p.points >= 15.0 && !p.isCaptain && !p.isAutoSub
+    const displayPts = p.isCaptain ? (p.points * 1.5).toFixed(1) : p.points.toFixed(1)
+    const isAbsent = p.minutes === 0
 
     return (
       <div
         key={p.playerId}
         onClick={() => setSelectedPlayerId(p.playerId)}
-        title="Clique para ver a ficha completa do atleta"
-        style={{ cursor: 'pointer' }}
-        className={`${styles.playerCard} ${
-          isSubbedOut ? styles.playerCardSubbedOut : ''
-        } ${isSubbedIn ? styles.playerCardSubbedIn : ''}`}
+        title={`${p.name} - Clique para ver ficha completa`}
+        className={styles.tokenNode}
       >
-        <div className={styles.playerLeft}>
-          {p.photoUrl ? (
-            <img src={p.photoUrl} alt={p.name} className={styles.playerAvatar} />
-          ) : (
-            <div className={styles.playerAvatarFallback}>
-              {p.position}
-            </div>
+        {/* Top Badges */}
+        {p.isAutoSub && (
+          <div className={styles.tokenBadgeTop}>
+            <span className={styles.badgeAutoSub}>AUTO-SUB</span>
+          </div>
+        )}
+        {p.isCaptain && (
+          <div className={styles.tokenBadgeTop}>
+            <span className={styles.badgeCaptain}>👑 1.5x</span>
+          </div>
+        )}
+        {isMitou && (
+          <div className={styles.tokenBadgeTop}>
+            <span className={styles.badgeMitou}>🔥 MITOU</span>
+          </div>
+        )}
+        {isAbsent && !p.isAutoSub && (
+          <div className={styles.tokenBadgeTop}>
+            <span className={styles.badgeAbsent}>⊘</span>
+          </div>
+        )}
+
+        {/* Token Circle */}
+        <div
+          className={`${styles.tokenCircle} ${
+            p.isCaptain
+              ? styles.tokenCaptain
+              : p.isAutoSub
+              ? styles.tokenAutoSub
+              : isMitou
+              ? styles.tokenMitou
+              : isAbsent
+              ? styles.tokenAbsent
+              : ''
+          }`}
+        >
+          {/* Icon based on position */}
+          {p.position === 'GOL' && (
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M12 2a4 4 0 0 0-4 4v3H6a2 2 0 0 0-2 2v7a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-7a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
+            </svg>
+          )}
+          {(p.position === 'LAT' || p.position === 'ZAG') && (
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          )}
+          {p.position === 'MEI' && (
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <line x1="3.6" y1="9" x2="20.4" y2="9" />
+              <line x1="3.6" y1="15" x2="20.4" y2="15" />
+              <path d="M11.5 3a17 17 0 0 0 0 18" />
+              <path d="M12.5 3a17 17 0 0 1 0 18" />
+            </svg>
+          )}
+          {p.position === 'ATA' && (
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
           )}
 
-          <div className={styles.playerInfo}>
-            <div className={styles.playerNameRow}>
-              <span className={styles.playerName}>{p.name}</span>
-              {p.isCaptain && (
-                <span className={styles.captainCrown} title="Capitão (1.5x pontos)">
-                  👑 Capitão
-                </span>
-              )}
-              {isSubbedOut && (
-                <span className={styles.subBadgeOut} title="Substituído pelo banco via Auto-Sub">
-                  🔻 Substituído
-                </span>
-              )}
+          {/* Position Pill */}
+          <span
+            className={`${styles.tokenPosPill} ${
+              styles[`posPill${p.position}`] || ''
+            }`}
+          >
+            {p.position}
+          </span>
+        </div>
+
+        {/* Text Col */}
+        <div className={styles.tokenTextCol}>
+          <span className={styles.tokenName}>{p.name}</span>
+          <div className={styles.tokenScoreLine}>
+            {isAbsent ? (
+              <span className={styles.tokenScoreZero}>0.0</span>
+            ) : (
+              <span
+                className={
+                  teamColor === 'home'
+                    ? styles.tokenScorePts
+                    : styles.tokenScorePtsGold
+                }
+              >
+                {displayPts} pts
+              </span>
+            )}{' '}
+            <span>({p.clubShortName || 'CLU'})</span>
+          </div>
+          <span className={styles.tokenScoutNote}>{formatPlayerKeyScout(p)}</span>
+        </div>
+      </div>
+    )
+  }
+
+  // Render a full Tactical Field Card
+  const renderFieldCard = (
+    team: MatchupTeamDetail,
+    isWinner: boolean,
+    teamType: 'home' | 'away'
+  ) => {
+    const { gols, defs, mids, atts } = getTacticalLines(team.starters)
+
+    const isHiddenOnMobile = activeMobileTeam !== teamType
+
+    return (
+      <div
+        className={`${styles.fieldCard} ${
+          isHiddenOnMobile ? styles.fieldCardHiddenMobile : ''
+        }`}
+      >
+        {/* Header */}
+        <div className={styles.fieldCardHeader}>
+          <div className={styles.fieldHeaderLeft}>
+            <span
+              className={
+                teamType === 'home'
+                  ? styles.fieldTeamDotHome
+                  : styles.fieldTeamDotAway
+              }
+            />
+            <Link
+              href={`/league/${leagueId}/team/${team.teamId}`}
+              className={styles.fieldTeamLink}
+            >
+              <span className={styles.fieldTeamTitle}>{team.teamName}</span>
+            </Link>
+            <span className={styles.fieldFormationTag}>
+              Esquema {team.formation}
+            </span>
+            {isWinner && (
+              <span className={styles.fieldWinnerTag}>VENCEDOR</span>
+            )}
+          </div>
+          <div className={styles.fieldHeaderRight}>
+            <span className={styles.fieldPtsLabel}>Titulares:</span>
+            <span
+              className={
+                teamType === 'home'
+                  ? styles.fieldHeaderPtsHome
+                  : styles.fieldHeaderPtsAway
+              }
+            >
+              {team.totalPoints.toFixed(1)} pts
+            </span>
+          </div>
+        </div>
+
+        {/* Pitch Canvas with Markings */}
+        <div className={styles.pitchCanvas}>
+          {/* Pitch Lines */}
+          <div className={styles.pitchMarkingTopBox} />
+          <div className={styles.pitchMarkingTopGoalArea} />
+          <div className={styles.pitchMarkingTopArc} />
+
+          <div className={styles.pitchMarkingCenterLine} />
+          <div className={styles.pitchMarkingCenterCircle} />
+          <div className={styles.pitchMarkingCenterSpot} />
+
+          <div className={styles.pitchMarkingBottomBox} />
+          <div className={styles.pitchMarkingBottomGoalArea} />
+          <div className={styles.pitchMarkingBottomArc} />
+
+          {/* Row 1: GOL */}
+          <div className={styles.pitchRow}>
+            {gols.map((p) => renderTacticalToken(p, teamType))}
+          </div>
+
+          {/* Row 2: DEF */}
+          <div className={styles.pitchRow}>
+            {defs.map((p) => renderTacticalToken(p, teamType))}
+          </div>
+
+          {/* Row 3: MEI */}
+          <div className={styles.pitchRow}>
+            {mids.map((p) => renderTacticalToken(p, teamType))}
+          </div>
+
+          {/* Row 4: ATA */}
+          <div className={styles.pitchRow}>
+            {atts.map((p) => renderTacticalToken(p, teamType))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Render a Reserve Player Row Card
+  const renderReserveCard = (p: any) => {
+    const isSubbedIn = p.subbedIn
+    const hasMinutes = p.minutes > 0
+    const isBenched = p.matchStatus === 'benched'
+    const isNotRelated = p.matchStatus === 'not_related'
+
+    return (
+      <div
+        key={p.playerId}
+        onClick={() => setSelectedPlayerId(p.playerId)}
+        title={`${p.name} - Clique para ver ficha completa`}
+        className={`${styles.reserveCard} ${
+          isSubbedIn ? styles.reserveCardSubbedIn : ''
+        }`}
+      >
+        <div className={styles.reserveLeft}>
+          <div
+            className={`${styles.reservePosCircle} ${
+              isSubbedIn ? styles.reservePosCircleSubbed : ''
+            }`}
+          >
+            {p.position}
+            {isSubbedIn && <span className={styles.checkSubBadge}>✓</span>}
+          </div>
+
+          <div className={styles.reserveMeta}>
+            <div className={styles.reserveNameRow}>
+              <span className={styles.reserveName}>{p.name}</span>
+              <span className={styles.reserveClubText}>
+                · {p.clubShortName || 'Clube'}
+              </span>
+
               {isSubbedIn && (
-                <span className={styles.subBadgeIn} title="Entrou via Auto-Sub">
-                  🔄 Entrou
+                <span className={styles.reserveTagSubbed}>
+                  ✓ Auto-Sub Efetivada
                 </span>
               )}
-              {p.matchStatus === 'live' && (
-                <span className={styles.liveBadge} title="Partida ao vivo em andamento">
-                  {p.minutes > 0 ? `🟢 Em campo (${p.minutes}')` : `⚡ Em andamento`}
+              {isBenched && !isSubbedIn && (
+                <span className={styles.reserveTagBenched}>
+                  Não entrou em campo
                 </span>
               )}
-              {p.matchStatus === 'postponed' && (
-                <span className={styles.postponedBadge} title="Partida adiada pela CBF">
-                  ⏱️ Jogo Adiado
-                </span>
-              )}
-              {p.matchStatus === 'not_related' && (
-                <span className={styles.notRelatedBadge} title="Atleta não foi relacionado para a partida">
-                  ❌ Não foi relacionado ao jogo
-                </span>
-              )}
-              {p.matchStatus === 'benched' && (
-                <span className={styles.benchedBadge} title="Atleta ficou no banco de reservas e não entrou em campo (0 min)">
-                  ⚠️ Não entrou em campo
+              {isNotRelated && !isSubbedIn && (
+                <span className={styles.reserveTagNotRelated}>
+                  Não relacionado
                 </span>
               )}
             </div>
 
-            <div className={styles.playerMetaRow}>
-              <Badge variant={p.position as any}>
-                {p.position}
-              </Badge>
-              {p.clubLogoUrl && (
-                <img
-                  src={p.clubLogoUrl}
-                  alt={p.clubShortName || ''}
-                  className={styles.clubBadgeImg}
-                />
-              )}
-              <span>{p.clubShortName || 'Clube'}</span>
-              {p.matchStatus === 'live' ? (
-                <span style={{ color: 'var(--accent-green)', fontWeight: 600 }}>
-                  · {p.minutes > 0 ? `${p.minutes} min (Ao vivo)` : 'Em andamento'}
-                </span>
-              ) : p.minutes > 0 ? (
-                <span>· {p.minutes} min</span>
-              ) : p.matchStatus === 'postponed' ? (
-                <span style={{ color: '#fbbf24' }}>· Adiado (*)</span>
-              ) : p.matchStatus === 'benched' ? (
-                <span>· Banco (0 min)</span>
-              ) : p.matchStatus === 'scheduled' ? (
-                <span style={{ color: 'var(--text-muted)' }}>· A jogar</span>
+            <div className={styles.reserveStatusDesc}>
+              {isSubbedIn ? (
+                <>
+                  {p.clubShortName} • {p.minutes} min • Entrou na vaga de{' '}
+                  <strong style={{ color: '#f1f5f9' }}>
+                    {p.subbedFor?.name || 'Titular'}
+                  </strong>{' '}
+                  (0 min)
+                </>
+              ) : hasMinutes ? (
+                `Jogou ${p.minutes} min • ${
+                  p.points >= 10 ? 'Alta pontuação no banco' : 'Reserva direto'
+                }`
+              ) : isBenched ? (
+                'Ficou como opção no banco e não atuou'
+              ) : isNotRelated ? (
+                'Atleta não relacionado para a partida'
               ) : (
-                <span>· 0 min</span>
-              )}
-              {isBench && isSubbedIn && p.subbedFor && (
-                <span style={{ color: 'var(--accent-green)', fontWeight: 600 }}>
-                  (No lugar de {p.subbedFor.name})
-                </span>
-              )}
-              {!isBench && isSubbedOut && p.subbedInBy && (
-                <span style={{ color: 'var(--accent-red)', fontWeight: 600 }}>
-                  (Substituído por {p.subbedInBy.name})
-                </span>
+                'Aguardando início do jogo'
               )}
             </div>
           </div>
         </div>
 
-        <div className={styles.playerRight}>
-          <span className={hasPoints && !isSubbedOut ? styles.playerPoints : styles.playerPointsZero}>
-            {data?.status === 'upcoming'
-              ? '- pts'
-              : isSubbedOut
-              ? '0.0 pts'
-              : `${p.points.toFixed(1)} pts`}
-          </span>
-
-          {data?.status !== 'upcoming' && p.scouts && Object.keys(p.scouts).length > 0 && (
-            <span className={styles.playerScouts}>
-              {p.scouts.goals ? `⚽ ${p.scouts.goals} ` : ''}
-              {p.scouts.assists ? `👟 ${p.scouts.assists} ` : ''}
-              {p.scouts.tackles ? `🛡️ ${p.scouts.tackles} ` : ''}
-              {p.scouts.saves ? `🧤 ${p.scouts.saves} ` : ''}
-              {p.scouts.cleanSheet ? `SG ` : ''}
-            </span>
+        <div className={styles.reserveRight}>
+          {isSubbedIn ? (
+            <>
+              <span className={styles.reserveScoreAdded}>
+                +{p.points.toFixed(1)} pts
+              </span>
+              <span className={styles.reserveScoreSubtextAdded}>
+                Somados ao Placar
+              </span>
+            </>
+          ) : (
+            <>
+              <span className={styles.reserveScorePts}>
+                {p.minutes === 0 ? '0.0 pts' : `${p.points.toFixed(1)} pts`}
+              </span>
+              <span className={styles.reserveScoreSubtext}>
+                {p.minutes === 0
+                  ? 'Sem pontuação'
+                  : 'Banco mantido'}
+              </span>
+            </>
           )}
         </div>
       </div>
     )
   }
 
-  const renderTeamColumn = (team: MatchupTeamDetail) => {
+  // Render a Bench Column
+  const renderBenchColumn = (
+    team: MatchupTeamDetail,
+    teamType: 'home' | 'away'
+  ) => {
+    const isHiddenOnMobile = activeMobileTeam !== teamType
+
     return (
-      <div className={styles.teamColumn}>
-        <div className={styles.columnHeader}>
-          <div>
-            <Link
-              href={`/league/${leagueId}/team/${team.teamId}`}
-              style={{ textDecoration: 'none', color: 'inherit' }}
-              title="Clique para ver o elenco completo de 24 atletas"
-            >
-              <h2 className={styles.columnTitle} style={{ cursor: 'pointer' }}>
-                {team.teamName} 📋
-              </h2>
-            </Link>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className={styles.managerName}>Técnico: {team.managerName}</span>
-              <Link
-                href={`/league/${leagueId}/team/${team.teamId}`}
-                style={{ fontSize: '0.75rem', color: 'var(--accent-green)', textDecoration: 'none', fontWeight: 600 }}
-              >
-                · Ver Elenco →
-              </Link>
-            </div>
+      <div
+        className={`${styles.benchColumn} ${
+          isHiddenOnMobile ? styles.benchColumnHiddenMobile : ''
+        }`}
+      >
+        <div className={styles.benchColHeader}>
+          <div className={styles.benchColTitle}>
+            <span
+              className={
+                teamType === 'home'
+                  ? styles.fieldTeamDotHome
+                  : styles.fieldTeamDotAway
+              }
+            />
+            <span>
+              {team.teamName} — Reservas ({team.reserves.length})
+            </span>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <span className={styles.columnScore}>{team.totalPoints.toFixed(1)} pts</span>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Esquema {team.formation} · Bônus +{team.captainBonus.toFixed(1)} pts
-            </div>
-          </div>
+
+          {team.substitutions.length > 0 ? (
+            <span className={styles.badgeSubEffective}>
+              🔄 {team.substitutions.length} Substituição(ões) Efetivada(s)
+            </span>
+          ) : (
+            <span className={styles.badgeNoSub}>
+              Nenhuma substituição necessária
+            </span>
+          )}
         </div>
 
-        {/* Titulares */}
-        <div className={styles.playersList}>
-          <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-            Titulares ({team.starters.length})
-          </div>
-          {[...team.starters].sort(sortByPosition).map((p) => renderPlayerCard(p, false))}
+        <div className={styles.benchList}>
+          {team.reserves.map((p) => renderReserveCard(p))}
         </div>
-
-        {/* Reservas */}
-        {team.reserves.length > 0 && (
-          <div className={styles.benchSection}>
-            <div className={styles.benchTitle}>
-              <span>Banco de Reservas ({team.reserves.length})</span>
-            </div>
-            <div className={styles.playersList}>
-              {[...team.reserves].sort(sortByPosition).map((p) => renderPlayerCard(p, true))}
-            </div>
-          </div>
-        )}
       </div>
     )
   }
 
   return (
     <div className={styles.container}>
-      <Link href={`/league/${leagueId}`} className={styles.backLink}>
-        ← Voltar à Liga
-      </Link>
+      {/* Breadcrumbs Bar */}
+      <div className={styles.breadcrumbBar}>
+        <div className={styles.breadcrumbLeft}>
+          <Link href={`/league/${leagueId}`} className={styles.backLink}>
+            ← Voltar à Liga
+          </Link>
+          <span className={styles.breadcrumbSep}>/</span>
+          <Link href={`/league/${leagueId}`} className={styles.breadcrumbLeague}>
+            {data.leagueName}
+          </Link>
+          <span className={styles.breadcrumbSep}>/</span>
+          <span className={styles.breadcrumbRound}>
+            Rodada {data.fixtureRound}
+          </span>
+        </div>
+
+        <div className={styles.statusIndicatorRight}>
+          <span
+            className={`${styles.statusDot} ${
+              data.status === 'live' ? styles.statusDotLive : ''
+            }`}
+          />
+          <span>
+            {data.status === 'completed'
+              ? 'DADOS CONSOLIDADOS'
+              : data.status === 'live'
+              ? 'AO VIVO'
+              : 'A DISPUTAR'}
+          </span>
+        </div>
+      </div>
 
       {/* Scoreboard Card */}
       <div className={styles.scoreboardCard}>
-        <div className={styles.scoreboardTop}>
-          {/* Time Casa */}
-          <div className={styles.teamScoreBlock}>
-            <div className={styles.teamAvatar}>
-              {data.homeTeam.teamName.slice(0, 2).toUpperCase()}
-            </div>
-            <div className={styles.teamMeta}>
-              <h1 className={styles.teamName}>
-                {data.homeTeam.teamName}
-                {isHomeWinner && <span className={styles.winnerCrown}>👑 Vencedor</span>}
-              </h1>
-              <span className={styles.managerName}>Técnico: {data.homeTeam.managerName}</span>
-              <span className={styles.formationBadge}>{data.homeTeam.formation}</span>
-            </div>
+        {/* Home Team */}
+        <div className={styles.teamSide}>
+          <div className={`${styles.teamAvatar} ${styles.avatarHome}`}>
+            {data.homeTeam.teamName.slice(0, 2).toUpperCase()}
           </div>
-
-          {/* Placar Central */}
-          <div className={styles.centerDivider}>
-            <span className={styles.roundPill}>
-              Rodada {data.fixtureRound}
-              {data.isPostponedRound && '*'}
-            </span>
-
-            <div className={styles.scoreNumbers}>
-              {data.status === 'upcoming' ? (
-                <>
-                  <span className={styles.scoreEmpty}>-</span>
-                  <span className={styles.scoreVs}>✕</span>
-                  <span className={styles.scoreEmpty}>-</span>
-                </>
-              ) : (
-                <>
-                  <span className={styles.scoreHome}>{data.homeTeam.totalPoints.toFixed(1)}</span>
-                  <span className={styles.scoreVs}>✕</span>
-                  <span className={styles.scoreAway}>{data.awayTeam.totalPoints.toFixed(1)}</span>
-                </>
+          <div className={styles.teamMeta}>
+            <div className={styles.teamNameRow}>
+              <h1 className={styles.teamName}>{data.homeTeam.teamName}</h1>
+              <span className={styles.formationBadge}>
+                {data.homeTeam.formation}
+              </span>
+              {isHomeWinner && (
+                <span className={styles.winnerPill}>👑 Vencedor</span>
               )}
             </div>
-
-            {data.status === 'live' ? (
-              <span className={styles.statusBadgeLive}>
-                <span className={styles.liveDot} />
-                AO VIVO
-              </span>
-            ) : data.status === 'completed' ? (
-              <span className={styles.statusBadgeDone}>
-                {data.isPostponedRound ? '⚠️ APURAÇÃO PROVISÓRIA (*)' : '✓ ENCERRADO'}
-              </span>
-            ) : (
-              <span className={styles.statusBadgeUpcoming}>
-                A DISPUTAR
-              </span>
-            )}
-          </div>
-
-          {/* Time Fora */}
-          <div className={`${styles.teamScoreBlock} ${styles.teamScoreBlockRight}`}>
-            <div className={styles.teamAvatar}>
-              {data.awayTeam.teamName.slice(0, 2).toUpperCase()}
-            </div>
-            <div className={styles.teamMeta}>
-              <h1 className={styles.teamName}>
-                {isAwayWinner && <span className={styles.winnerCrown}>👑 Vencedor</span>}
-                {data.awayTeam.teamName}
-              </h1>
-              <span className={styles.managerName}>Técnico: {data.awayTeam.managerName}</span>
-              <span className={styles.formationBadge}>{data.awayTeam.formation}</span>
-            </div>
+            <p className={styles.managerText}>
+              Técnico: {data.homeTeam.managerName}
+            </p>
           </div>
         </div>
 
-        {/* Live Round Notice Banner */}
-        {data.status === 'live' && (
-          <div
-            style={{
-              background: 'rgba(239, 68, 68, 0.08)',
-              border: '1px solid rgba(239, 68, 68, 0.25)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '10px 16px',
-              fontSize: '0.8125rem',
-              color: '#fca5a5',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              marginTop: '12px',
-            }}
+        {/* Center Score */}
+        <div className={styles.scoreCenter}>
+          <span className={styles.roundLabel}>RODADA {data.fixtureRound}</span>
+          <div className={styles.scoreNumbers}>
+            <span
+              className={`${styles.scoreHome} ${
+                isHomeWinner ? styles.scoreWinner : ''
+              }`}
+            >
+              {data.status === 'upcoming'
+                ? '-'
+                : data.homeTeam.totalPoints.toFixed(1)}
+            </span>
+            <span className={styles.scoreMultiply}>×</span>
+            <span
+              className={`${styles.scoreAway} ${
+                isAwayWinner ? styles.scoreWinner : ''
+              }`}
+            >
+              {data.status === 'upcoming'
+                ? '-'
+                : data.awayTeam.totalPoints.toFixed(1)}
+            </span>
+          </div>
+          <span
+            className={`${styles.statusPill} ${
+              data.status === 'live'
+                ? styles.statusPillLive
+                : data.status === 'upcoming'
+                ? styles.statusPillUpcoming
+                : ''
+            }`}
           >
-            <span>🔴</span>
-            <span>
-              <strong>Parciais em Andamento:</strong> A pontuação exibida é momentânea e reflete o andamento dos jogos já iniciados. A pontuação oficial e a resolução final dos confrontos só são consolidadas ao término da rodada pelo Comissário.
-            </span>
-          </div>
-        )}
+            {data.status === 'completed'
+              ? '● ENCERRADO'
+              : data.status === 'live'
+              ? '● AO VIVO'
+              : 'A DISPUTAR'}
+          </span>
+        </div>
 
-        {/* Commissioner Actions */}
-        {data.isCommissioner && (
-          <div className={styles.commissionerBar}>
-            <span className={styles.commissionerBarText}>
-              ⚙️ <strong>Painel do Comissário:</strong>{' '}
-              {data.status === 'live'
-                ? 'Atualize as estatísticas parciais dos jogos iniciados ou acesse o painel completo.'
-                : data.status === 'completed'
-                ? `Gerencie o fechamento e scouts da Rodada ${data.fixtureRound}.`
-                : `A rodada ainda não começou. As parciais ao vivo estarão disponíveis assim que os primeiros jogos iniciarem.`}
-            </span>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {data.status === 'live' && (
-                <button
-                  onClick={handleRefreshPartials}
-                  disabled={isPending}
-                  className={styles.btnSimulate}
-                >
-                  {isPending ? 'Atualizando...' : '⚡ Atualizar Parciais'}
-                </button>
+        {/* Away Team */}
+        <div className={`${styles.teamSide} ${styles.teamSideRight}`}>
+          <div className={`${styles.teamAvatar} ${styles.avatarAway}`}>
+            {data.awayTeam.teamName.slice(0, 2).toUpperCase()}
+          </div>
+          <div className={`${styles.teamMeta} ${styles.teamMetaRight}`}>
+            <div className={styles.teamNameRow}>
+              <h1 className={styles.teamName}>{data.awayTeam.teamName}</h1>
+              <span className={styles.formationBadge}>
+                {data.awayTeam.formation}
+              </span>
+              {isAwayWinner && (
+                <span className={styles.winnerPill}>👑 Vencedor</span>
               )}
-              {data.status === 'completed' && (
-                <button
-                  onClick={handleSimulateAutoSub}
-                  disabled={isPending}
-                  className={styles.btnSimulate}
-                >
-                  {isPending ? 'Processando...' : '⚡ Processar Auto-Sub'}
-                </button>
-              )}
-              <Link href={`/league/${leagueId}/admin`}>
-                <button
-                  className={styles.btnSimulate}
-                  style={{
-                    background: 'rgba(234, 179, 8, 0.15)',
-                    border: '1px solid rgba(234, 179, 8, 0.4)',
-                    color: '#fbbf24',
-                  }}
-                >
-                  👑 Painel do Comissário
-                </button>
-              </Link>
             </div>
-          </div>
-        )}
-
-        {actionMessage && (
-          <div style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', fontSize: '0.8125rem', color: 'var(--accent-green)' }}>
-            {actionMessage}
-          </div>
-        )}
-
-        {/* Substitutions Report Banner */}
-        {allSubs.length > 0 && (
-          <div className={styles.subsBanner}>
-            <div className={styles.subsBannerTitle}>
-              <span>🔄 Substituições Automáticas Aplicadas neste Duelo:</span>
-            </div>
-            <div className={styles.subsList}>
-              {allSubs.map((sub, idx) => (
-                <div key={idx} className={styles.subItem}>
-                  <span className={styles.subTeamTag}>[{sub.teamName}]</span>
-                  <span>{sub.outPlayerName} (0 min)</span>
-                  <span className={styles.subArrow}>➔</span>
-                  <span style={{ fontWeight: 600 }}>{sub.inPlayerName} ({sub.position})</span>
-                  <span className={styles.subPtsTag}>+{sub.pointsAdded.toFixed(1)} pts somados</span>
-                  {sub.captainTransferred && (
-                    <span style={{ color: 'var(--accent-gold)', fontSize: '0.75rem', fontWeight: 700 }}>
-                      (👑 Capitania herdada)
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Postponed Round Warning Banner */}
-      {data.isPostponedRound && (
-        <div
-          style={{
-            background: 'rgba(234, 179, 8, 0.08)',
-            border: '1px solid rgba(234, 179, 8, 0.35)',
-            borderRadius: 'var(--radius-md)',
-            padding: '14px 20px',
-            fontSize: '0.875rem',
-            color: '#fef08a',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
-        >
-          <span style={{ fontSize: '1.25rem' }}>⭐</span>
-          <div>
-            <strong>Rodada com Partidas Adiadas (*):</strong> As pontuações e o resultado deste confronto
-            são provisórios. Atletas com a marcação <code>⏱️ Jogo Adiado</code> terão seus scouts computados
-            e este duelo será retificado retroativamente assim que as partidas pendentes forem disputadas pela CBF.
+            <p className={styles.managerText}>
+              Técnico: {data.awayTeam.managerName}
+            </p>
           </div>
         </div>
-      )}
-
-      {/* Side by Side Lineups */}
-      <div className={styles.lineupsGrid}>
-        {renderTeamColumn(data.homeTeam)}
-        {renderTeamColumn(data.awayTeam)}
       </div>
+
+      {/* Action / Info Bar (No processar auto-sub, no commissioner button) */}
+      <div className={styles.actionInfoBar}>
+        <div className={styles.actionInfoLeft}>
+          <span className={styles.actionInfoIcon}>⚙️</span>
+          <span>
+            <strong>Painel do Confronto:</strong> Gerencie o fechamento e scouts
+            da Rodada {data.fixtureRound}.
+          </span>
+        </div>
+        <button
+          onClick={() => setIsDetailsModalOpen(true)}
+          className={styles.btnDetails}
+        >
+          <span>ℹ️</span> Detalhes adicionais
+        </button>
+      </div>
+
+      {/* Mobile Abas / Tabs Switcher de Times */}
+      <div className={styles.mobileTabControls}>
+        <div className={styles.tabSegment}>
+          <button
+            onClick={() => setActiveMobileTeam('home')}
+            className={`${styles.tabBtn} ${
+              activeMobileTeam === 'home' ? styles.tabBtnActiveHome : ''
+            }`}
+          >
+            🔵 {data.homeTeam.teamName} ({data.homeTeam.totalPoints.toFixed(1)} pts)
+          </button>
+          <button
+            onClick={() => setActiveMobileTeam('away')}
+            className={`${styles.tabBtn} ${
+              activeMobileTeam === 'away' ? styles.tabBtnActiveAway : ''
+            }`}
+          >
+            🟡 {data.awayTeam.teamName} ({data.awayTeam.totalPoints.toFixed(1)} pts)
+          </button>
+        </div>
+      </div>
+
+      {/* Section 1: Campo Tático Comparativo */}
+      <section className={styles.tacticalSection}>
+        <div className={styles.tacticalHeaderBar}>
+          <div className={styles.tacticalHeaderLeft}>
+            <span className={styles.tacticalBadge}>
+              <span>🟩</span> CAMPO TÁTICO COMPARATIVO
+            </span>
+            <span className={styles.tacticalSubtitle}>
+              11 Titulares em Campo
+            </span>
+          </div>
+
+          <div className={styles.tacticalLegend}>
+            <div className={styles.legendItem}>
+              <span style={{ color: '#f59e0b' }}>👑</span>
+              <span>Capitão = 1.5x</span>
+            </div>
+            <div className={styles.legendItem}>
+              <span className={styles.legendDotGreen} />
+              <span>Em Campo</span>
+            </div>
+            <div className={styles.legendItem}>
+              <span style={{ color: '#2dd4bf' }}>⚡</span>
+              <span>Auto-Sub</span>
+            </div>
+            <div className={styles.legendItem}>
+              <span style={{ color: '#ef4444' }}>⊘</span>
+              <span>Ausente/0 min</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Tactical Pitch Grid (Home vs Away) */}
+        <div className={styles.fieldsGrid}>
+          {renderFieldCard(data.homeTeam, isHomeWinner, 'home')}
+          {renderFieldCard(data.awayTeam, isAwayWinner, 'away')}
+        </div>
+      </section>
+
+      {/* Section 2: Banco de Reservas */}
+      <section className={styles.benchSectionWrapper}>
+        <div className={styles.benchHeaderBar}>
+          <div className={styles.benchHeaderLeft}>
+            <div className={styles.benchIconBadge}>👥</div>
+            <div>
+              <h2 className={styles.benchTitle}>Banco de Reservas</h2>
+              <p className={styles.benchSubtitle}>
+                5 suplentes por equipe com critérios de substituição automática
+                aplicados
+              </p>
+            </div>
+          </div>
+          <span className={styles.benchRuleBadge}>Regra: Banco Prioritário</span>
+        </div>
+
+        {/* Bench Columns Grid (Home vs Away) */}
+        <div className={styles.benchGrid}>
+          {renderBenchColumn(data.homeTeam, 'home')}
+          {renderBenchColumn(data.awayTeam, 'away')}
+        </div>
+      </section>
+
+      {/* Matchup Details Modal (Image 2) */}
+      <MatchupDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        data={data}
+      />
 
       {/* Player Detail Modal */}
       <PlayerDetailModal

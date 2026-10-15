@@ -6,6 +6,8 @@ import { startDraftEngine } from '@/lib/draft/engine'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
+import { getChampionshipInfo } from '@/lib/api/championship'
+
 export type LeagueDetails = {
   id: string
   name: string
@@ -20,6 +22,9 @@ export type LeagueDetails = {
   pickTimerSeconds: number
   currentPick: number
   totalPicks: number
+  bannerImageUrl: string | null
+  championshipName: string | null
+  championshipLogoUrl: string | null
   teams: {
     id: string
     name: string
@@ -53,13 +58,34 @@ export async function getLeagueDetails(leagueId: string): Promise<LeagueDetails 
       commissioner_id,
       pick_timer_seconds,
       current_pick,
-      total_picks
+      total_picks,
+      banner_image_url,
+      season:seasons (
+        name,
+        league_api_id
+      )
     `)
     .eq('id', leagueId)
     .single()
 
   if (error || !league) {
     return null
+  }
+
+  // Fetch championship details
+  const season = (league as any).season
+  const apiId = season?.league_api_id
+  let championshipName = season?.name || 'Brasileirão Série A'
+  let championshipLogoUrl: string | null = null
+
+  if (apiId) {
+    try {
+      const info = await getChampionshipInfo(apiId)
+      championshipName = info.name
+      championshipLogoUrl = info.logoUrl
+    } catch {
+      // fallback
+    }
   }
 
   // Fetch teams in this league
@@ -100,6 +126,9 @@ export async function getLeagueDetails(leagueId: string): Promise<LeagueDetails 
     pickTimerSeconds: league.pick_timer_seconds,
     currentPick: league.current_pick,
     totalPicks: league.total_picks,
+    bannerImageUrl: (league as any).banner_image_url || null,
+    championshipName,
+    championshipLogoUrl,
     teams,
   }
 }

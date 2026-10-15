@@ -1,0 +1,381 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 16px;
+  animation: fadeIn 0.18s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal {
+  background: #0d1520;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(16, 185, 129, 0.1);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px;
+  color: #f1f5f9;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.infoIconBox {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  margin: 3px 0 0 0;
+  font-size: 0.8125rem;
+  color: #94a3b8;
+}
+
+.closeBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+/* Section */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: #10b981;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.greenIcon {
+  font-size: 0.9375rem;
+}
+
+.ruleBadge {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #34d399;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+
+/* Substitutions List */
+.subsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subCard {
+  background: #091018;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.15s;
+}
+
+.subCard:hover {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.subCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.subCardMatch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  flex-wrap: wrap;
+}
+
+.subTeamTag {
+  color: #38bdf8;
+  font-weight: 700;
+  font-size: 0.8125rem;
+}
+
+.subOutPlayer {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.dnpBadge {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.subArrow {
+  color: #10b981;
+  font-weight: 800;
+}
+
+.subInPlayer {
+  color: #f1f5f9;
+  font-weight: 700;
+}
+
+.subCardScore {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.subPtsAdded {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #22c55e;
+  display: block;
+}
+
+.subPtsLabel {
+  font-size: 0.6875rem;
+  color: #64748b;
+  display: block;
+}
+
+.subCardCriterion {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.captainTransferTag {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.emptySubsBox {
+  background: #091018;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 0.8125rem;
+  color: #94a3b8;
+}
+
+.emptySubsBox p {
+  margin: 0;
+}
+
+/* Summary Grid */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.summaryCard {
+  background: #091018;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.summaryCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.goldCrown {
+  color: #f59e0b;
+  font-size: 0.9375rem;
+}
+
+.summaryCardTitle {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.summaryCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.captainLine strong,
+.summaryLine strong {
+  color: #e2e8f0;
+}
+
+.goldValue {
+  color: #fbbf24;
+  font-weight: 700;
+}
+
+.diffValue {
+  color: #22c55e;
+  font-weight: 700;
+}
+
+/* Audit Box */
+.auditBox {
+  background: #091018;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auditHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auditIcon {
+  font-size: 0.875rem;
+}
+
+.auditTitle {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.auditText {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.confirmBtn {
+  background: #10b981;
+  color: #042f1a;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 800;
+  padding: 9px 26px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.confirmBtn:hover {
+  background: #059669;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+@media (max-width: 600px) {
+  .modal {
+    padding: 18px 14px;
+    gap: 14px;
+  }
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+  .confirmBtn {
+    width: 100%;
+  }
+}

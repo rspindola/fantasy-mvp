@@ -158,5 +158,37 @@ export async function createLeagueAction(
     return { error: 'Liga criada, mas ocorreu um erro ao registrar seu time.' }
   }
 
+  // 7. Optional banner image upload
+  const bannerFile = formData.get('banner') as File | null
+  if (bannerFile && bannerFile.size > 0) {
+    try {
+      const ext = bannerFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif']
+      if (allowed.includes(ext) && bannerFile.size <= 5 * 1024 * 1024) {
+        const filePath = `${league.id}/banner.${ext}`
+        const { error: uploadError } = await supabase.storage
+          .from('league-banners')
+          .upload(filePath, bannerFile, { upsert: true, contentType: bannerFile.type })
+
+        if (!uploadError) {
+          const { data: publicUrlData } = supabase.storage
+            .from('league-banners')
+            .getPublicUrl(filePath)
+
+          if (publicUrlData?.publicUrl) {
+            await supabase
+              .from('leagues')
+              .update({ banner_image_url: publicUrlData.publicUrl })
+              .eq('id', league.id)
+          }
+        } else {
+          console.warn('Banner upload warning during creation:', uploadError)
+        }
+      }
+    } catch (bannerErr) {
+      console.warn('Failed to upload banner during league creation:', bannerErr)
+    }
+  }
+
   redirect(`/league/${league.id}`)
 }

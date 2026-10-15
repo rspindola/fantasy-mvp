@@ -1,113 +1,57 @@
 import Link from 'next/link'
 import { getMyLeagues } from './actions'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
+import { LeagueGrid } from '@/components/league/LeagueGrid'
 import styles from './page.module.css'
-
-function getStatusBadge(status: string) {
-  switch (status) {
-    case 'open':
-      return <Badge variant="status">Aberto</Badge>
-    case 'drafting':
-      return <Badge variant="MEI">Em Draft</Badge>
-    case 'active':
-      return <Badge variant="GOL">Ativa</Badge>
-    case 'closed':
-      return <Badge variant="default">Encerrada</Badge>
-    default:
-      return <Badge variant="default">{status}</Badge>
-  }
-}
 
 export default async function DashboardPage() {
   const leagues = await getMyLeagues()
 
   return (
     <div className={styles.container}>
-      {/* Top Header & Actions */}
+      {/* Top Hero Section */}
       <div className={styles.topSection}>
         <div className={styles.greeting}>
+          <span className={styles.seasonBadge}>Temporada 2025/2026 Oficial</span>
           <h1 className={styles.title}>Painel do Jogador</h1>
           <p className={styles.subtitle}>
-            Gerencie suas ligas ou entre em uma nova competição.
+            Gerencie suas ligas ativas, dispute confrontos diretos ou entre em uma nova competição agora mesmo.
           </p>
         </div>
 
         <div className={styles.actionControls}>
           <form action="/join" method="GET" className={styles.joinForm}>
-            <input
-              type="text"
-              name="code"
-              placeholder="Código"
-              maxLength={8}
-              required
-              className={styles.joinInput}
-            />
-            <Button variant="secondary" size="md" type="submit">
+            <div className={styles.joinInputWrapper}>
+              <svg className={styles.joinIcon} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                name="code"
+                placeholder="Código da Liga"
+                maxLength={8}
+                required
+                className={styles.joinInput}
+              />
+            </div>
+            <button type="submit" className={styles.joinSubmitBtn}>
               Entrar
-            </Button>
+            </button>
           </form>
 
-          <Link href="/league/create">
-            <Button size="md">+ Criar Liga</Button>
+          <Link href="/league/create" className={styles.createBtn}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="16" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+            </svg>
+            Criar Nova Liga
           </Link>
         </div>
       </div>
 
-      {/* Minhas Ligas Section */}
-      <div className={styles.sectionHeader}>
-        <h2 className={styles.sectionTitle}>Minhas Ligas</h2>
-        <span className={styles.leagueCount}>{leagues.length} {leagues.length === 1 ? 'liga' : 'ligas'}</span>
-      </div>
-
-      {leagues.length === 0 ? (
-        <div className={styles.emptyState}>
-          <span className={styles.emptyIcon}>🏆</span>
-          <h3 className={styles.emptyTitle}>Você ainda não está em nenhuma liga</h3>
-          <p className={styles.emptyText}>
-            Crie sua própria liga para jogar com amigos ou insira o código de convite recebido.
-          </p>
-          <Link href="/league/create">
-            <Button size="lg">Criar Minha Primeiríssima Liga</Button>
-          </Link>
-        </div>
-      ) : (
-        <div className={styles.grid}>
-          {leagues.map((league) => (
-            <Link
-              key={league.id}
-              href={`/league/${league.id}`}
-              className={styles.card}
-            >
-              <div className={styles.cardTop}>
-                <div className={styles.cardHeader}>
-                  <h3 className={styles.leagueName}>{league.name}</h3>
-                  {getStatusBadge(league.status)}
-                </div>
-
-                <div className={styles.teamMeta}>
-                  <span>Time:</span>
-                  <span className={styles.myTeam}>{league.teamName}</span>
-                </div>
-
-                <div className={styles.badges}>
-                  <Badge variant="default">{league.scoringMode}</Badge>
-                  <Badge variant="default">Draft {league.draftMode}</Badge>
-                </div>
-              </div>
-
-              <div className={styles.cardFooter}>
-                <span>
-                  👥 {league.teamCount} / {league.teamCap} times
-                </span>
-                {league.isCommissioner && (
-                  <span className={styles.commissionerBadge}>⭐ Comissário</span>
-                )}
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      {/* Leagues List & Grid with Filter Tabs */}
+      <LeagueGrid initialLeagues={leagues} />
     </div>
   )
 }

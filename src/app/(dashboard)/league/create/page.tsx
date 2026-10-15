@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
+import { useActionState, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import {
   createLeagueAction,
@@ -15,6 +15,7 @@ import {
   type H2HFormat,
 } from '@/lib/league/h2h-validation'
 import { Button } from '@/components/ui/Button'
+import { ImageCropModal } from '@/components/league/ImageCropModal'
 import styles from './page.module.css'
 
 const initialState: CreateLeagueState = {}
@@ -29,6 +30,10 @@ export default function CreateLeaguePage() {
   const [teamCap, setTeamCap] = useState<number>(10)
   const [scoringMode, setScoringMode] = useState<'H2H' | 'TOTAL'>('H2H')
   const [h2hFormat, setH2HFormat] = useState<H2HFormat>('DOUBLE_ROUND')
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null)
+  const [rawBannerSrc, setRawBannerSrc] = useState<string | null>(null)
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false)
+  const bannerInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     getSeasonInfoAction().then(setSeasonInfo)
@@ -264,6 +269,77 @@ export default function CreateLeaguePage() {
               )}
             </div>
           )}
+
+          {/* Banner da Liga (Upload do Comissário) */}
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>
+              Imagem de Fundo / Banner do Card (Opcional)
+            </label>
+            <div
+              className={styles.bannerUploadBox}
+              onClick={() => bannerInputRef.current?.click()}
+            >
+              {bannerPreview ? (
+                <div className={styles.bannerPreviewContainer}>
+                  <img
+                    src={bannerPreview}
+                    alt="Pré-visualização do banner"
+                    className={styles.bannerPreviewImg}
+                  />
+                  <div className={styles.bannerPreviewOverlay}>
+                    <span className={styles.bannerChangeNotice}>
+                      ✓ Imagem Recortada (16:9) • Clique para ajustar ou trocar
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className={styles.bannerUploadIcon}>🖼️</div>
+                  <div className={styles.bannerUploadTitle}>
+                    Clique ou arraste uma imagem de fundo para recortar e definir como banner
+                  </div>
+                  <div className={styles.bannerUploadSubtext}>
+                    Recomendado: 1200x600 (16:9) • Formatos JPG, PNG ou WebP (Máx. 5MB)
+                  </div>
+                </>
+              )}
+              <input
+                ref={bannerInputRef}
+                type="file"
+                name="banner"
+                id="banner"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className={styles.bannerFileInput}
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    setRawBannerSrc(URL.createObjectURL(file))
+                    setIsCropModalOpen(true)
+                    e.target.value = ''
+                  }
+                }}
+              />
+            </div>
+            <span className={styles.helpText}>
+              Como comissário, você pode recortar e personalizar essa imagem agora ou editá-la a qualquer momento durante o campeonato.
+            </span>
+          </div>
+
+          {/* Modal de Recorte para a Criação */}
+          <ImageCropModal
+            isOpen={isCropModalOpen}
+            imageSrc={rawBannerSrc}
+            onClose={() => setIsCropModalOpen(false)}
+            onCropComplete={(croppedFile, previewUrl) => {
+              if (bannerInputRef.current) {
+                const dt = new DataTransfer()
+                dt.items.add(croppedFile)
+                bannerInputRef.current.files = dt.files
+              }
+              setBannerPreview(previewUrl)
+              setIsCropModalOpen(false)
+            }}
+          />
 
           <div className={styles.actions}>
             <Link href="/dashboard">

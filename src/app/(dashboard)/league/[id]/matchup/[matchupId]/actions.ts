@@ -66,8 +66,6 @@ export async function getMatchupDetailData(
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return null
-
   // 1. Fetch matchup info
   const { data: matchup, error: mErr } = await supabase
     .from('h2h_matchups')
@@ -427,7 +425,7 @@ export async function getMatchupDetailData(
     homeTeam,
     awayTeam,
     result: matchup.result as any,
-    isCommissioner: user.id === league.commissioner_id,
+    isCommissioner: user?.id === league.commissioner_id,
     isPostponedRound,
   }
 }

@@ -2,22 +2,19 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-main);
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.05) 0%, transparent 60%),
-    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-  background-size: 100% 100%, 40px 40px, 40px 40px;
+  background-color: var(--bg);
+  transition: background-color 0.2s ease;
 }
 
 .header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(11, 14, 20, 0.85);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .headerInner {
@@ -69,8 +66,8 @@
   display: none;
   align-items: center;
   gap: 6px;
-  background: rgba(25, 32, 46, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
   border-radius: var(--radius-full);
   padding: 4px;
 }
@@ -98,9 +95,10 @@
 }
 
 .navItemActive {
-  background: rgba(16, 185, 129, 0.18);
-  color: var(--accent-green);
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: var(--surface);
+  color: var(--primary);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 /* User Area */
@@ -115,8 +113,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(25, 32, 46, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
   border-radius: var(--radius-full);
   padding: 4px 14px 4px 5px;
 }
@@ -165,8 +163,8 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
   color: var(--text-muted);
   display: flex;
   align-items: center;
@@ -178,7 +176,7 @@
 .signOutBtn:hover {
   background: rgba(239, 68, 68, 0.15);
   border-color: rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  color: var(--danger);
 }
 
 /* Main */
@@ -193,9 +191,10 @@
 
 /* Footer */
 .footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(11, 14, 20, 0.95);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
   margin-top: auto;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .footerInner {
@@ -255,7 +254,7 @@
 }
 
 .footerVersion {
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--text-muted);
   font-family: monospace;
   font-size: 0.75rem;
 }

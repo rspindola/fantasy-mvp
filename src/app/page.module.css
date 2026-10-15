@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: center;
   padding: 32px 16px;
-  background: radial-gradient(circle at 50% 30%, #151d2c 0%, #0b0e14 70%);
+  background: radial-gradient(circle at 50% 30%, var(--surface-alt) 0%, var(--bg) 70%);
 }
 
 .hero {

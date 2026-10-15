@@ -1,10 +1,14 @@
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import styles from './page.module.css'
 
 export default function Home() {
   return (
     <main className={styles.main}>
+      <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }}>
+        <ThemeToggle />
+      </div>
       <div className={styles.hero}>
         <div className={styles.badgeGroup}>
           <Badge variant="status">PILOTO 2026</Badge>

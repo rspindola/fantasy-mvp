@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { signOut } from '@/app/(auth)/login/actions'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import styles from './layout.module.css'
 
 export default async function DashboardLayout({
@@ -79,6 +80,8 @@ export default async function DashboardLayout({
                 <span className={styles.userLevel}>NÍVEL 14 • OURO</span>
               </div>
             </div> */}
+
+            <ThemeToggle />
 
             <form action={signOut} className={styles.signOutForm}>
               <button

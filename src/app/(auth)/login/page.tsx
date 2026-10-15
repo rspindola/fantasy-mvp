@@ -4,6 +4,7 @@ import { Suspense, useActionState, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { signInWithPassword, signInWithMagicLink, type AuthState } from './actions'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { Button } from '@/components/ui/Button'
 import styles from './page.module.css'
 
@@ -30,6 +31,9 @@ function LoginFormContent() {
 
   return (
     <main className={styles.container}>
+      <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }}>
+        <ThemeToggle />
+      </div>
       <div className={styles.card}>
         <div className={styles.logo}>
           <span className={styles.logoIcon}>⚽</span>

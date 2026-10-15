@@ -1,36 +1,61 @@
+/* ==========================================================================
+   DESIGN TOKENS — Fantasy Draft 2026
+   Suporte completo a Tema Claro (Light) e Escuro (Dark) com Toggle Manual
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Default Theme: Light
+   -------------------------------------------------------------------------- */
 :root {
-  /* Cores — Paleta Escura Premium Fantasy */
-  --bg-main: #0b0e14;
-  --bg-surface: #121722;
-  --bg-card: #19202e;
-  --bg-card-hover: #21293b;
-  --bg-glass: rgba(25, 32, 46, 0.7);
+  color-scheme: light;
 
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-medium: rgba(255, 255, 255, 0.16);
-  --border-accent: rgba(16, 185, 129, 0.4);
+  /* Paleta Light Oficial */
+  --bg: #F6F8F5;
+  --surface: #FFFFFF;
+  --surface-alt: #EAEFE8;
+  --border: #D5DDD2;
+  --text: #0F1A14;
+  --text-muted: #5A6B60;
+  --primary: #12873F;
+  --primary-hover: #0D6B31;
+  --accent: #B6F23A;
+  --gold: #E0A100;
+  --success: #1E9E4F;
+  --warning: #F2C200;
+  --danger: #D93025;
+  --info: #2563EB;
 
-  --text-primary: #f3f4f6;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
-  --text-inverse: #0b0e14;
+  /* Mapeamento de compatibilidade */
+  --bg-main: var(--bg);
+  --bg-surface: var(--surface);
+  --bg-card: var(--surface);
+  --bg-card-hover: var(--surface-alt);
+  --bg-glass: rgba(255, 255, 255, 0.85);
+
+  --border-subtle: var(--border);
+  --border-medium: var(--border);
+  --border-accent: rgba(18, 135, 63, 0.4);
+
+  --text-primary: var(--text);
+  --text-secondary: var(--text-muted);
+  --text-inverse: #FFFFFF;
 
   /* Cores de Destaque */
-  --accent-green: #10b981;
-  --accent-green-hover: #059669;
-  --accent-green-subtle: rgba(16, 185, 129, 0.12);
+  --accent-green: var(--primary);
+  --accent-green-hover: var(--primary-hover);
+  --accent-green-subtle: rgba(18, 135, 63, 0.12);
 
-  --accent-gold: #f59e0b;
-  --accent-blue: #3b82f6;
-  --accent-purple: #8b5cf6;
-  --accent-red: #ef4444;
+  --accent-gold: var(--gold);
+  --accent-blue: var(--info);
+  --accent-purple: #7C3AED;
+  --accent-red: var(--danger);
 
-  /* Cores por Posição Cartola */
-  --pos-gol: #eab308; /* Amarelo */
-  --pos-lat: #06b6d4; /* Ciano */
-  --pos-zag: #3b82f6; /* Azul */
-  --pos-mei: #10b981; /* Verde */
-  --pos-ata: #ef4444; /* Vermelho */
+  /* Posições */
+  --pos-gol: #D97706;
+  --pos-lat: #0284C7;
+  --pos-zag: #2563EB;
+  --pos-mei: #12873F;
+  --pos-ata: #D93025;
 
   /* Tipografia */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -43,10 +68,182 @@
   --radius-full: 9999px;
 
   /* Sombras */
-  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.2);
+  --shadow-card: 0 4px 20px rgba(15, 26, 20, 0.06);
+  --shadow-glow: 0 0 20px rgba(18, 135, 63, 0.15);
 
   /* Transição */
   --transition-fast: 0.15s ease;
   --transition-base: 0.25s ease;
+}
+
+/* --------------------------------------------------------------------------
+   2. System Dark (Aplica apenas quando não houver override explícito de light)
+   -------------------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    /* Paleta Dark Oficial */
+    --bg: #0B120E;
+    --surface: #121C16;
+    --surface-alt: #1A271F;
+    --border: #27372D;
+    --text: #EAF2EC;
+    --text-muted: #8FA396;
+    --primary: #2FD36B;
+    --primary-hover: #5BE38C;
+    --accent: #C6FF3D;
+    --gold: #FFC83D;
+    --success: #34D399;
+    --warning: #FFD84D;
+    --danger: #FF5A4F;
+    --info: #5B9BFF;
+
+    /* Mapeamento de compatibilidade */
+    --bg-main: var(--bg);
+    --bg-surface: var(--surface);
+    --bg-card: var(--surface);
+    --bg-card-hover: var(--surface-alt);
+    --bg-glass: rgba(18, 28, 22, 0.75);
+
+    --border-subtle: var(--border);
+    --border-medium: var(--border);
+    --border-accent: rgba(47, 211, 107, 0.4);
+
+    --text-primary: var(--text);
+    --text-secondary: var(--text-muted);
+    --text-inverse: #0B120E;
+
+    --accent-green: var(--primary);
+    --accent-green-hover: var(--primary-hover);
+    --accent-green-subtle: rgba(47, 211, 107, 0.15);
+
+    --accent-gold: var(--gold);
+    --accent-blue: var(--info);
+    --accent-purple: #A78BFA;
+    --accent-red: var(--danger);
+
+    --pos-gol: #FFC83D;
+    --pos-lat: #38BDF8;
+    --pos-zag: #60A5FA;
+    --pos-mei: #2FD36B;
+    --pos-ata: #FF5A4F;
+
+    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 20px rgba(47, 211, 107, 0.2);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. Override Explícito: Light Theme (Sempre vence quando data-theme="light")
+   -------------------------------------------------------------------------- */
+:root[data-theme="light"],
+html[data-theme="light"],
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Paleta Light Oficial */
+  --bg: #F6F8F5;
+  --surface: #FFFFFF;
+  --surface-alt: #EAEFE8;
+  --border: #D5DDD2;
+  --text: #0F1A14;
+  --text-muted: #5A6B60;
+  --primary: #12873F;
+  --primary-hover: #0D6B31;
+  --accent: #B6F23A;
+  --gold: #E0A100;
+  --success: #1E9E4F;
+  --warning: #F2C200;
+  --danger: #D93025;
+  --info: #2563EB;
+
+  --bg-main: var(--bg);
+  --bg-surface: var(--surface);
+  --bg-card: var(--surface);
+  --bg-card-hover: var(--surface-alt);
+  --bg-glass: rgba(255, 255, 255, 0.85);
+
+  --border-subtle: var(--border);
+  --border-medium: var(--border);
+  --border-accent: rgba(18, 135, 63, 0.4);
+
+  --text-primary: var(--text);
+  --text-secondary: var(--text-muted);
+  --text-inverse: #FFFFFF;
+
+  --accent-green: var(--primary);
+  --accent-green-hover: var(--primary-hover);
+  --accent-green-subtle: rgba(18, 135, 63, 0.12);
+
+  --accent-gold: var(--gold);
+  --accent-blue: var(--info);
+  --accent-purple: #7C3AED;
+  --accent-red: var(--danger);
+
+  --pos-gol: #D97706;
+  --pos-lat: #0284C7;
+  --pos-zag: #2563EB;
+  --pos-mei: #12873F;
+  --pos-ata: #D93025;
+
+  --shadow-card: 0 4px 20px rgba(15, 26, 20, 0.06);
+  --shadow-glow: 0 0 20px rgba(18, 135, 63, 0.15);
+}
+
+/* --------------------------------------------------------------------------
+   4. Override Explícito: Dark Theme (Sempre vence quando data-theme="dark")
+   -------------------------------------------------------------------------- */
+:root[data-theme="dark"],
+html[data-theme="dark"],
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Paleta Dark Oficial */
+  --bg: #0B120E;
+  --surface: #121C16;
+  --surface-alt: #1A271F;
+  --border: #27372D;
+  --text: #EAF2EC;
+  --text-muted: #8FA396;
+  --primary: #2FD36B;
+  --primary-hover: #5BE38C;
+  --accent: #C6FF3D;
+  --gold: #FFC83D;
+  --success: #34D399;
+  --warning: #FFD84D;
+  --danger: #FF5A4F;
+  --info: #5B9BFF;
+
+  --bg-main: var(--bg);
+  --bg-surface: var(--surface);
+  --bg-card: var(--surface);
+  --bg-card-hover: var(--surface-alt);
+  --bg-glass: rgba(18, 28, 22, 0.75);
+
+  --border-subtle: var(--border);
+  --border-medium: var(--border);
+  --border-accent: rgba(47, 211, 107, 0.4);
+
+  --text-primary: var(--text);
+  --text-secondary: var(--text-muted);
+  --text-inverse: #0B120E;
+
+  --accent-green: var(--primary);
+  --accent-green-hover: var(--primary-hover);
+  --accent-green-subtle: rgba(47, 211, 107, 0.15);
+
+  --accent-gold: var(--gold);
+  --accent-blue: var(--info);
+  --accent-purple: #A78BFA;
+  --accent-red: var(--danger);
+
+  --pos-gol: #FFC83D;
+  --pos-lat: #38BDF8;
+  --pos-zag: #60A5FA;
+  --pos-mei: #2FD36B;
+  --pos-ata: #FF5A4F;
+
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(47, 211, 107, 0.2);
 }

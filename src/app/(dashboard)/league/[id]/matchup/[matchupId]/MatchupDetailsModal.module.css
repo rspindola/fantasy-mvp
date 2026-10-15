@@ -24,9 +24,9 @@
 }
 
 .modal {
-  background: #0d1520;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(16, 185, 129, 0.1);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4), var(--shadow-card);
   border-radius: 18px;
   width: 100%;
   max-width: 640px;
@@ -36,7 +36,8 @@
   flex-direction: column;
   gap: 18px;
   padding: 24px;
-  color: #f1f5f9;
+  color: var(--text);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 /* Header */
@@ -57,9 +58,9 @@
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #10b981;
+  background: rgba(18, 135, 63, 0.12);
+  border: 1px solid rgba(18, 135, 63, 0.25);
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -70,20 +71,20 @@
   margin: 0;
   font-size: 1.15rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text);
   letter-spacing: -0.01em;
 }
 
 .subtitle {
   margin: 3px 0 0 0;
   font-size: 0.8125rem;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .closeBtn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #94a3b8;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
   width: 32px;
   height: 32px;
   border-radius: 8px;
@@ -96,8 +97,9 @@
 }
 
 .closeBtn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+  background: var(--surface);
+  border-color: var(--primary);
+  color: var(--text);
 }
 
 /* Section */
@@ -120,7 +122,7 @@
   gap: 8px;
   font-size: 0.8125rem;
   font-weight: 800;
-  color: #10b981;
+  color: var(--primary);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -130,9 +132,9 @@
 }
 
 .ruleBadge {
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  color: #34d399;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--primary);
   font-size: 0.6875rem;
   font-weight: 700;
   padding: 3px 10px;
@@ -148,8 +150,8 @@
 }
 
 .subCard {
-  background: #091018;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px 16px;
   display: flex;
@@ -159,7 +161,7 @@
 }
 
 .subCard:hover {
-  border-color: rgba(16, 185, 129, 0.4);
+  border-color: var(--primary);
 }
 
 .subCardHeader {
@@ -179,20 +181,20 @@
 }
 
 .subTeamTag {
-  color: #38bdf8;
+  color: var(--info);
   font-weight: 700;
   font-size: 0.8125rem;
 }
 
 .subOutPlayer {
-  color: #94a3b8;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .dnpBadge {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #f87171;
+  background: rgba(217, 48, 37, 0.12);
+  border: 1px solid rgba(217, 48, 37, 0.25);
+  color: var(--danger);
   font-size: 0.6875rem;
   font-weight: 700;
   padding: 2px 7px;
@@ -200,12 +202,12 @@
 }
 
 .subArrow {
-  color: #10b981;
+  color: var(--primary);
   font-weight: 800;
 }
 
 .subInPlayer {
-  color: #f1f5f9;
+  color: var(--text);
   font-weight: 700;
 }
 
@@ -217,34 +219,34 @@
 .subPtsAdded {
   font-size: 0.9375rem;
   font-weight: 800;
-  color: #22c55e;
+  color: var(--success);
   display: block;
 }
 
 .subPtsLabel {
   font-size: 0.6875rem;
-  color: #64748b;
+  color: var(--text-muted);
   display: block;
 }
 
 .subCardCriterion {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   line-height: 1.4;
 }
 
 .captainTransferTag {
-  color: #fbbf24;
+  color: var(--gold);
   font-weight: 600;
 }
 
 .emptySubsBox {
-  background: #091018;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px 18px;
   font-size: 0.8125rem;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .emptySubsBox p {
@@ -259,8 +261,8 @@
 }
 
 .summaryCard {
-  background: #091018;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px 16px;
   display: flex;
@@ -275,14 +277,14 @@
 }
 
 .goldCrown {
-  color: #f59e0b;
+  color: var(--gold);
   font-size: 0.9375rem;
 }
 
 .summaryCardTitle {
   font-size: 0.8125rem;
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--text);
 }
 
 .summaryCardBody {
@@ -290,29 +292,29 @@
   flex-direction: column;
   gap: 6px;
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   line-height: 1.4;
 }
 
 .captainLine strong,
 .summaryLine strong {
-  color: #e2e8f0;
+  color: var(--text);
 }
 
 .goldValue {
-  color: #fbbf24;
+  color: var(--gold);
   font-weight: 700;
 }
 
 .diffValue {
-  color: #22c55e;
+  color: var(--success);
   font-weight: 700;
 }
 
 /* Audit Box */
 .auditBox {
-  background: #091018;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px 16px;
   display: flex;
@@ -333,13 +335,13 @@
 .auditTitle {
   font-size: 0.8125rem;
   font-weight: 700;
-  color: #10b981;
+  color: var(--primary);
 }
 
 .auditText {
   margin: 0;
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   line-height: 1.45;
 }
 
@@ -351,8 +353,8 @@
 }
 
 .confirmBtn {
-  background: #10b981;
-  color: #042f1a;
+  background: var(--primary);
+  color: #FFFFFF;
   border: none;
   font-size: 0.875rem;
   font-weight: 800;
@@ -363,8 +365,8 @@
 }
 
 .confirmBtn:hover {
-  background: #059669;
-  box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+  background: var(--primary-hover);
+  box-shadow: 0 0 15px rgba(18, 135, 63, 0.4);
 }
 
 @media (max-width: 600px) {

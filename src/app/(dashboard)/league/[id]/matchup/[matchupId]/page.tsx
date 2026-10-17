@@ -171,58 +171,83 @@ export default function MatchupDetailPage() {
               : ''
           }`}
         >
-          {/* Icon based on position */}
-          {p.position === 'GOL' && (
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M12 2a4 4 0 0 0-4 4v3H6a2 2 0 0 0-2 2v7a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-7a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
-            </svg>
-          )}
-          {(p.position === 'LAT' || p.position === 'ZAG') && (
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
-          )}
-          {p.position === 'MEI' && (
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="12" cy="12" r="9" />
-              <line x1="3.6" y1="9" x2="20.4" y2="9" />
-              <line x1="3.6" y1="15" x2="20.4" y2="15" />
-              <path d="M11.5 3a17 17 0 0 0 0 18" />
-              <path d="M12.5 3a17 17 0 0 1 0 18" />
-            </svg>
-          )}
-          {p.position === 'ATA' && (
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-            </svg>
+          {p.photoUrl ? (
+            <img
+              src={p.photoUrl}
+              alt={p.name}
+              className={styles.tokenPhoto}
+              loading="lazy"
+              onError={(e) => {
+                ;(e.currentTarget as HTMLElement).style.display = 'none'
+                const fallback = (e.currentTarget.parentElement?.querySelector(`.${styles.tokenPhotoFallback}`) as HTMLElement | null)
+                if (fallback) fallback.style.display = 'flex'
+              }}
+            />
+          ) : null}
+
+          <div
+            className={styles.tokenPhotoFallback}
+            style={{ display: p.photoUrl ? 'none' : 'flex' }}
+          >
+            {/* Icon based on position */}
+            {p.position === 'GOL' && (
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 2a4 4 0 0 0-4 4v3H6a2 2 0 0 0-2 2v7a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-7a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
+              </svg>
+            )}
+            {(p.position === 'LAT' || p.position === 'ZAG') && (
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            )}
+            {p.position === 'MEI' && (
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <line x1="3.6" y1="9" x2="20.4" y2="9" />
+                <line x1="3.6" y1="15" x2="20.4" y2="15" />
+                <path d="M11.5 3a17 17 0 0 0 0 18" />
+                <path d="M12.5 3a17 17 0 0 1 0 18" />
+              </svg>
+            )}
+            {p.position === 'ATA' && (
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+            )}
+          </div>
+
+          {p.clubLogoUrl && (
+            <div className={styles.tokenClubBadge} title={p.clubShortName}>
+              <img src={p.clubLogoUrl} alt={p.clubShortName || 'Clube'} />
+            </div>
           )}
 
           {/* Position Pill */}
@@ -370,11 +395,45 @@ export default function MatchupDetailPage() {
       >
         <div className={styles.reserveLeft}>
           <div
-            className={`${styles.reservePosCircle} ${
-              isSubbedIn ? styles.reservePosCircleSubbed : ''
+            className={`${styles.reserveAvatarWrapper} ${
+              isSubbedIn ? styles.reserveAvatarSubbed : ''
             }`}
           >
-            {p.position}
+            {p.photoUrl ? (
+              <img
+                src={p.photoUrl}
+                alt={p.name}
+                className={styles.reservePhoto}
+                loading="lazy"
+                onError={(e) => {
+                  ;(e.currentTarget as HTMLElement).style.display = 'none'
+                  const fallback = (e.currentTarget.parentElement?.querySelector(`.${styles.reservePhotoFallback}`) as HTMLElement | null)
+                  if (fallback) fallback.style.display = 'flex'
+                }}
+              />
+            ) : null}
+
+            <div
+              className={styles.reservePhotoFallback}
+              style={{ display: p.photoUrl ? 'none' : 'flex' }}
+            >
+              {p.position}
+            </div>
+
+            {p.clubLogoUrl && (
+              <div className={styles.reserveClubBadge} title={p.clubShortName}>
+                <img src={p.clubLogoUrl} alt={p.clubShortName || 'Clube'} />
+              </div>
+            )}
+
+            <span
+              className={`${styles.reservePosPill} ${
+                styles[`posPill${p.position}`] || ''
+              }`}
+            >
+              {p.position}
+            </span>
+
             {isSubbedIn && <span className={styles.checkSubBadge}>✓</span>}
           </div>
 

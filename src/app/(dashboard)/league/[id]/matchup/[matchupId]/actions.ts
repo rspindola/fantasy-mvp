@@ -36,7 +36,9 @@ export type MatchupTeamDetail = {
   })[]
   substitutions: {
     outPlayerName: string
+    outPlayerPhotoUrl?: string | null
     inPlayerName: string
+    inPlayerPhotoUrl?: string | null
     position: string
     pointsAdded: number
     captainTransferred: boolean
@@ -390,7 +392,9 @@ export async function getMatchupDetailData(
       reserves: [...processed.reserves].sort(sortByPosition),
       substitutions: processed.substitutions.map((sub) => ({
         outPlayerName: sub.outPlayer.name,
+        outPlayerPhotoUrl: sub.outPlayer.photoUrl,
         inPlayerName: sub.inPlayer.name,
+        inPlayerPhotoUrl: sub.inPlayer.photoUrl,
         position: sub.position,
         pointsAdded: sub.inPlayer.points,
         captainTransferred: sub.captainTransferred,

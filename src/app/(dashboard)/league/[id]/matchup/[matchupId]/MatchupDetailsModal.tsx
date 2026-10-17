@@ -130,11 +130,31 @@ export function MatchupDetailsModal({
                     <div className={styles.subCardMatch}>
                       <span className={styles.subTeamTag}>[{sub.teamName}]</span>
                       <span className={styles.subOutPlayer}>
+                        {sub.outPlayerPhotoUrl && (
+                          <img
+                            src={sub.outPlayerPhotoUrl}
+                            alt={sub.outPlayerName}
+                            className={styles.modalMiniPhoto}
+                            onError={(e) => {
+                              ;(e.currentTarget as HTMLElement).style.display = 'none'
+                            }}
+                          />
+                        )}
                         <del>{sub.outPlayerName} ({sub.position})</del>
                       </span>
                       <span className={styles.dnpBadge}>0 min / Não relacionado</span>
                       <span className={styles.subArrow}>➔</span>
                       <span className={styles.subInPlayer}>
+                        {sub.inPlayerPhotoUrl && (
+                          <img
+                            src={sub.inPlayerPhotoUrl}
+                            alt={sub.inPlayerName}
+                            className={styles.modalMiniPhoto}
+                            onError={(e) => {
+                              ;(e.currentTarget as HTMLElement).style.display = 'none'
+                            }}
+                          />
+                        )}
                         {sub.inPlayerName} ({sub.position})
                       </span>
                     </div>
@@ -180,10 +200,22 @@ export function MatchupDetailsModal({
             <div className={styles.summaryCardBody}>
               {homeCaptain ? (
                 <div className={styles.captainLine}>
-                  • <strong>{homeCaptain.name}</strong> ({data.homeTeam.teamName}):
-                  Base {homeCaptain.points.toFixed(1)} pts × 1.5 ={' '}
-                  <span className={styles.goldValue}>
-                    {(homeCaptain.points * 1.5).toFixed(1)} pts
+                  {homeCaptain.photoUrl && (
+                    <img
+                      src={homeCaptain.photoUrl}
+                      alt={homeCaptain.name}
+                      className={styles.modalMiniPhoto}
+                      onError={(e) => {
+                        ;(e.currentTarget as HTMLElement).style.display = 'none'
+                      }}
+                    />
+                  )}
+                  <span>
+                    • <strong>{homeCaptain.name}</strong> ({data.homeTeam.teamName}):
+                    Base {homeCaptain.points.toFixed(1)} pts × 1.5 ={' '}
+                    <span className={styles.goldValue}>
+                      {(homeCaptain.points * 1.5).toFixed(1)} pts
+                    </span>
                   </span>
                 </div>
               ) : (
@@ -194,10 +226,22 @@ export function MatchupDetailsModal({
 
               {awayCaptain ? (
                 <div className={styles.captainLine}>
-                  • <strong>{awayCaptain.name}</strong> ({data.awayTeam.teamName}):
-                  Base {awayCaptain.points.toFixed(1)} pts × 1.5 ={' '}
-                  <span className={styles.goldValue}>
-                    {(awayCaptain.points * 1.5).toFixed(1)} pts
+                  {awayCaptain.photoUrl && (
+                    <img
+                      src={awayCaptain.photoUrl}
+                      alt={awayCaptain.name}
+                      className={styles.modalMiniPhoto}
+                      onError={(e) => {
+                        ;(e.currentTarget as HTMLElement).style.display = 'none'
+                      }}
+                    />
+                  )}
+                  <span>
+                    • <strong>{awayCaptain.name}</strong> ({data.awayTeam.teamName}):
+                    Base {awayCaptain.points.toFixed(1)} pts × 1.5 ={' '}
+                    <span className={styles.goldValue}>
+                      {(awayCaptain.points * 1.5).toFixed(1)} pts
+                    </span>
                   </span>
                 </div>
               ) : (

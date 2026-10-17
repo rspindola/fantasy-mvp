@@ -160,10 +160,18 @@ export default function LineupPage() {
   const reservePlayerIds = new Set(reserves.map((r) => r.playerId))
   const reqs = FORMATION_REQUIREMENTS[formation] || FORMATION_REQUIREMENTS['4-4-2']
 
+  // ── Market Closing & Live Countdown Calculations ──
+  const marketCloseTimestamp = data.kickoffAt
+    ? new Date(data.kickoffAt).getTime() - 30 * 60 * 1000
+    : null
+
+  const isMarketDynamicallyLocked =
+    data.isLocked || (marketCloseTimestamp !== null && now >= marketCloseTimestamp)
+
   // ── Formation Change ──
 
   const handleFormationChange = (newFormation: Formation) => {
-    if (data.isLocked) return
+    if (isMarketDynamicallyLocked) return
     setSaveMessage(null)
 
     const newReqs = FORMATION_REQUIREMENTS[newFormation]
@@ -230,7 +238,7 @@ export default function LineupPage() {
   // ── Clear Lineup Handling ──
 
   const handleClearLineup = () => {
-    if (data.isLocked) return
+    if (isMarketDynamicallyLocked) return
     if (starters.length === 0 && reserves.length === 0) return
     setModal({ type: 'clear' })
   }
@@ -248,7 +256,7 @@ export default function LineupPage() {
   // ── Captain Handling ──
 
   const handleMakeCaptain = (playerId: string) => {
-    if (data.isLocked) return
+    if (isMarketDynamicallyLocked) return
     setStarters((prev) =>
       prev.map((s) => ({
         ...s,
@@ -261,7 +269,7 @@ export default function LineupPage() {
   // ── Removals ──
 
   const handleRemoveStarter = (playerId: string) => {
-    if (data.isLocked) return
+    if (isMarketDynamicallyLocked) return
     setStarters((prev) => {
       const remaining = prev.filter((s) => s.playerId !== playerId)
       if (remaining.length > 0 && !remaining.some((s) => s.isCaptain)) {
@@ -273,7 +281,7 @@ export default function LineupPage() {
   }
 
   const handleRemoveReserve = (playerId: string) => {
-    if (data.isLocked) return
+    if (isMarketDynamicallyLocked) return
     setReserves((prev) => prev.filter((r) => r.playerId !== playerId))
   }
 
@@ -288,7 +296,7 @@ export default function LineupPage() {
       currentPlayerId?: string
     }
   ): boolean => {
-    if (data.isLocked) return false
+    if (isMarketDynamicallyLocked) return false
     const { type, currentPlayerId } = target
 
     if (type === 'starter') {
@@ -399,7 +407,7 @@ export default function LineupPage() {
   // ── Save Lineup ──
 
   const handleSaveLineup = () => {
-    if (data.isLocked) return
+    if (isMarketDynamicallyLocked) return
     setSaveMessage(null)
 
     if (starters.length !== 11) {
@@ -458,15 +466,7 @@ export default function LineupPage() {
     return true
   })
 
-  // ── Market Closing & Live Countdown Calculations ──
-  const marketCloseTimestamp = data.kickoffAt
-    ? new Date(data.kickoffAt).getTime() - 30 * 60 * 1000
-    : null
-
-  const isMarketDynamicallyLocked =
-    data.isLocked || (marketCloseTimestamp !== null && now >= marketCloseTimestamp)
-
-  // Format closing date label (e.g. "Sáb (10/10) às 16:30", "Hoje às 16:30")
+  // ── Format closing date label (e.g. "Sáb (10/10) às 16:30", "Hoje às 16:30")
   let marketCloseLabel = '16:30'
   let countdownText: string | null = null
 
@@ -531,7 +531,7 @@ export default function LineupPage() {
           </span>
         </div>
 
-        {!data.isLocked && (
+        {!isMarketDynamicallyLocked && (
           <div className={styles.topActionsGroup}>
             <button
               type="button"
@@ -602,7 +602,7 @@ export default function LineupPage() {
               <button
                 key={form.id}
                 type="button"
-                disabled={data.isLocked}
+                disabled={isMarketDynamicallyLocked}
                 onClick={() => handleFormationChange(form.id)}
                 className={`${styles.formationCard} ${
                   isSelected ? styles.formationCardSelected : ''
@@ -656,7 +656,7 @@ export default function LineupPage() {
             formation={formation}
             starters={starters}
             roster={data.roster}
-            isLocked={data.isLocked}
+            isLocked={isMarketDynamicallyLocked}
             onEmptySlotClick={(position, slotIndex) => {
               if (isDesktop) {
                 setPanelPosFilter(position)
@@ -914,7 +914,7 @@ export default function LineupPage() {
                       </div>
                     </div>
 
-                    {!data.isLocked && (
+                    {!isMarketDynamicallyLocked && (
                       <div className={styles.reserveCardActions}>
                         <button
                           type="button"
@@ -959,7 +959,7 @@ export default function LineupPage() {
                 <button
                   key={`bench-empty-${pos}`}
                   type="button"
-                  disabled={data.isLocked}
+                  disabled={isMarketDynamicallyLocked}
                   className={styles.reserveCardEmpty}
                   onClick={() => {
                     if (isDesktop) {
@@ -1277,7 +1277,7 @@ export default function LineupPage() {
 
             <div className={styles.actionSheetActionsList}>
               {/* Make Captain */}
-              {!actionSheetTarget.starterItem.isCaptain && !data.isLocked && (
+              {!actionSheetTarget.starterItem.isCaptain && !isMarketDynamicallyLocked && (
                 <button
                   type="button"
                   className={`${styles.actionSheetBtn} ${styles.actionSheetBtnCaptain}`}
@@ -1288,7 +1288,7 @@ export default function LineupPage() {
               )}
 
               {/* Substitute Player */}
-              {!data.isLocked && (
+              {!isMarketDynamicallyLocked && (
                 <button
                   type="button"
                   className={styles.actionSheetBtn}
@@ -1320,7 +1320,7 @@ export default function LineupPage() {
               </button>
 
               {/* Remove from Starters */}
-              {!data.isLocked && (
+              {!isMarketDynamicallyLocked && (
                 <button
                   type="button"
                   className={`${styles.actionSheetBtn} ${styles.actionSheetBtnRemove}`}

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { validateLineup } from '@/lib/lineup/lineup-engine'
-import { generateAutoFallbackLineup, autoCompleteLineup } from '@/lib/lineup/lock'
+import { generateAutoFallbackLineup, autoCompleteLineup, checkRoundLockStatus } from '@/lib/lineup/lock'
 
 describe('Lineup Engine & Validation', () => {
   const dummyRoster = [
@@ -197,3 +197,113 @@ describe('Lineup Engine & Validation', () => {
     expect(posCounts['ATA']).toBe(2)
   })
 })
+
+describe('checkRoundLockStatus', () => {
+  it('locks the market if any fixture has finished (status: FT)', async () => {
+    const mockSupabase = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              order: () =>
+                Promise.resolve({
+                  data: [
+                    { id: 'f1', kickoff_at: '2026-10-18T20:00:00Z', status: 'FT', home_score: 2, away_score: 0 },
+                    { id: 'f2', kickoff_at: '2026-10-18T20:00:00Z', status: 'scheduled', home_score: null, away_score: null },
+                  ],
+                  error: null,
+                }),
+            }),
+          }),
+        }),
+      }),
+    }
+
+    const res = await checkRoundLockStatus('season-1', 31, { supabaseClient: mockSupabase as any })
+    expect(res.isLocked).toBe(true)
+    expect(res.roundNumber).toBe(31)
+  })
+
+  it('locks the market if any fixture is live', async () => {
+    const mockSupabase = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              order: () =>
+                Promise.resolve({
+                  data: [
+                    { id: 'f1', kickoff_at: '2026-10-18T20:00:00Z', status: 'live', home_score: 1, away_score: 0 },
+                    { id: 'f2', kickoff_at: '2026-10-18T20:00:00Z', status: 'scheduled', home_score: null, away_score: null },
+                  ],
+                  error: null,
+                }),
+            }),
+          }),
+        }),
+      }),
+    }
+
+    const res = await checkRoundLockStatus('season-1', 31, { supabaseClient: mockSupabase as any })
+    expect(res.isLocked).toBe(true)
+  })
+
+  it('locks the market if current time is within 30 min of kickoff', async () => {
+    const nearFutureKickoff = new Date(Date.now() + 10 * 60 * 1000).toISOString()
+    const mockSupabase = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              order: () =>
+                Promise.resolve({
+                  data: [
+                    { id: 'f1', kickoff_at: nearFutureKickoff, status: 'scheduled', home_score: null, away_score: null },
+                  ],
+                  error: null,
+                }),
+            }),
+          }),
+        }),
+      }),
+    }
+
+    const res = await checkRoundLockStatus('season-1', 31, { supabaseClient: mockSupabase as any })
+    expect(res.isLocked).toBe(true)
+  })
+
+  it('leaves the market unlocked if all fixtures are scheduled well in advance', async () => {
+    const distantKickoff = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
+    const mockSupabase = {
+      from: (table: string) => {
+        if (table === 'fixtures') {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: () => ({
+                  order: () =>
+                    Promise.resolve({
+                      data: [
+                        { id: 'f1', kickoff_at: distantKickoff, status: 'scheduled', home_score: null, away_score: null },
+                      ],
+                      error: null,
+                    }),
+                }),
+              }),
+            }),
+          }
+        }
+        // player_fixture_stats fallback check
+        return {
+          select: () => ({
+            in: () => Promise.resolve({ count: 0, error: null }),
+          }),
+        }
+      },
+    }
+
+    const res = await checkRoundLockStatus('season-1', 31, { supabaseClient: mockSupabase as any })
+    expect(res.isLocked).toBe(false)
+  })
+})
+

@@ -11,6 +11,7 @@ import {
   generateRoundPartialsAction,
   getRoundTopScorersAction,
   sendMarketClosingAlertAction,
+  syncRoundScheduleAction,
   type CommissionerPageData,
   type RoundTopScorer,
 } from './actions'
@@ -113,6 +114,22 @@ export default function CommissionerAdminPage() {
         })
       } catch (err: any) {
         setFeedback({ type: 'error', message: err.message || 'Erro ao enviar aviso de mercado.' })
+      }
+    })
+  }
+
+  const handleSyncSchedule = () => {
+    setFeedback(null)
+    startTransition(async () => {
+      try {
+        const res = await syncRoundScheduleAction(leagueId, currentRound)
+        setFeedback({
+          type: 'success',
+          message: `🗓️ Agenda da Rodada ${currentRound} sincronizada com sucesso! (${res.updatedCount} partida(s) atualizada(s)).`,
+        })
+        await reloadData()
+      } catch (err: any) {
+        setFeedback({ type: 'error', message: err.message || 'Erro ao sincronizar agenda.' })
       }
     })
   }
@@ -488,6 +505,16 @@ export default function CommissionerAdminPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <Button
+                  size="md"
+                  variant="secondary"
+                  isLoading={isPending}
+                  disabled={isPending}
+                  onClick={handleSyncSchedule}
+                  title="Atualiza datas e horários oficiais das partidas diretamente da CBF / API-Football"
+                >
+                  🗓️ Sincronizar Agenda
+                </Button>
                 <Button
                   size="md"
                   variant="secondary"

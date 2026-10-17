@@ -5,7 +5,7 @@ import {
   type ProcessedLineupResult,
 } from '@/lib/lineup/auto-sub'
 import { ensureLockedRoundLineups, populateInitialLineupsForLeague } from '@/lib/lineup/lock'
-import { syncRoundFromApiFootball } from './sync-api-round'
+import { syncRoundFromApiFootball, syncRoundSchedule } from './sync-api-round'
 
 export interface RoundTopScorer {
   rank: number
@@ -339,6 +339,13 @@ export async function executeAutoSubAndCloseRound(
         await populateInitialLineupsForLeague(leagueId, newRound!)
       } catch (e) {
         console.error('[advanceRound] Error populating initial lineups for new round:', e)
+      }
+
+      // Automatically sync and update the official match schedule for the new round
+      try {
+        await syncRoundSchedule(league.season_id, newRound!, { supabaseClient: supabase })
+      } catch (e) {
+        console.warn(`[advanceRound] Error syncing fixtures schedule for new round ${newRound}:`, e)
       }
     }
   }

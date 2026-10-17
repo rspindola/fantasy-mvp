@@ -9,36 +9,77 @@ export interface RoundLockStatus {
 
 /**
  * Checks if the market for a given fixture round is locked.
- * Locked when current time >= first fixture kickoff_at of that round.
+ * Locked when:
+ * 1. Any fixture in that round has started or finished (status is live/FT or scores set), OR
+ * 2. Player scout stats already exist for fixtures in that round, OR
+ * 3. Current time >= first fixture kickoff_at minus 30 minutes of that round.
  */
 export async function checkRoundLockStatus(
   seasonId: string,
-  fixtureRound: number
+  fixtureRound: number,
+  options?: { supabaseClient?: any }
 ): Promise<RoundLockStatus> {
-  const supabase = await createClient()
+  const supabase = options?.supabaseClient || (await createClient())
 
-  // Fetch earliest kickoff_at for fixtures in this round
+  // Fetch all fixtures in this round
   const { data: fixtures, error } = await supabase
     .from('fixtures')
-    .select('kickoff_at')
+    .select('id, kickoff_at, status, home_score, away_score')
     .eq('season_id', seasonId)
     .eq('round', fixtureRound)
     .order('kickoff_at', { ascending: true })
-    .limit(1)
 
-  if (error || !fixtures || fixtures.length === 0 || !fixtures[0].kickoff_at) {
-    // If no fixtures found or no kickoff set, default to unlocked
+  if (error || !fixtures || fixtures.length === 0) {
+    // If no fixtures found, default to unlocked
     return { isLocked: false, kickoffAt: null, roundNumber: fixtureRound }
   }
 
-  const kickoffTime = new Date(fixtures[0].kickoff_at).getTime()
-  // Market closes exactly 30 minutes before the first kickoff of the round
-  const marketLockTime = kickoffTime - 30 * 60 * 1000
+  // 1. Check if any fixture in this round has already kicked off, is live, or is finished
+  const startedOrFinished = fixtures.some((f: any) =>
+    ['live', 'FT', 'HT', '1H', '2H', 'ET', 'P', 'BT', 'INT'].includes(f.status) ||
+    (f.status !== 'scheduled' && f.status !== 'postponed' && f.status !== 'cancelled') ||
+    f.home_score !== null ||
+    f.away_score !== null
+  )
+
+  // 2. Identify active fixtures to find the earliest kickoff
+  const activeFixtures = fixtures.filter(
+    (f: any) => f.status !== 'postponed' && f.status !== 'cancelled'
+  )
+  const candidateFixtures = activeFixtures.length > 0 ? activeFixtures : fixtures
+
+  const kickoffs = candidateFixtures
+    .map((f: any) => (f.kickoff_at ? new Date(f.kickoff_at).getTime() : null))
+    .filter((t: number | null): t is number => t !== null && !isNaN(t))
+
+  const earliestKickoff = kickoffs.length > 0 ? Math.min(...kickoffs) : null
+  const kickoffAt = earliestKickoff
+    ? new Date(earliestKickoff).toISOString()
+    : fixtures[0]?.kickoff_at || null
+
   const now = Date.now()
+  // Market closes exactly 30 minutes before the first kickoff of the round
+  const marketLockTime = earliestKickoff ? earliestKickoff - 30 * 60 * 1000 : null
+  const isTimeLocked = marketLockTime !== null ? now >= marketLockTime : false
+
+  let isLocked = startedOrFinished || isTimeLocked
+
+  // 3. Fallback check: if any player scout stats already exist for this round, players are already scoring
+  if (!isLocked) {
+    const fixtureIds = fixtures.map((f: any) => f.id)
+    const { count } = await supabase
+      .from('player_fixture_stats')
+      .select('id', { count: 'exact', head: true })
+      .in('fixture_id', fixtureIds)
+
+    if (count && count > 0) {
+      isLocked = true
+    }
+  }
 
   return {
-    isLocked: now >= marketLockTime,
-    kickoffAt: fixtures[0].kickoff_at,
+    isLocked,
+    kickoffAt,
     roundNumber: fixtureRound,
   }
 }
@@ -257,7 +298,7 @@ export async function ensureLockedRoundLineups(
   if (!league) return { teamsAutoCompleted: 0 }
 
   if (!options?.force) {
-    const lockStatus = await checkRoundLockStatus(league.season_id, fixtureRound)
+    const lockStatus = await checkRoundLockStatus(league.season_id, fixtureRound, { supabaseClient: supabase })
     if (!lockStatus.isLocked) {
       // Market is not locked yet - managers can still set their own lineups
       return { teamsAutoCompleted: 0 }

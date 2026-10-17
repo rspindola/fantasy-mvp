@@ -56,7 +56,7 @@ export default async function DashboardLayout({
           </Link>
 
           {/* Central Nav Links */}
-          <nav className={styles.nav}>
+          {/* <nav className={styles.nav}>
             <Link href="/dashboard" className={`${styles.navItem} ${styles.navItemActive}`}>
               PAINEL
             </Link>
@@ -69,7 +69,7 @@ export default async function DashboardLayout({
             <Link href="/dashboard" className={styles.navItem}>
               REGRAS
             </Link>
-          </nav>
+          </nav> */}
 
           {/* User Profile Pill & Signout */}
           <div className={styles.userArea}>

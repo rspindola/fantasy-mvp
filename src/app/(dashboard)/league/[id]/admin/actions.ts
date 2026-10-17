@@ -396,3 +396,37 @@ export async function sendMarketClosingAlertAction(
   revalidatePath(`/league/${leagueId}/admin`)
   return result
 }
+
+export async function syncRoundScheduleAction(
+  leagueId: string,
+  fixtureRound?: number
+) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Não autenticado')
+
+  const { data: league } = await supabase
+    .from('leagues')
+    .select('commissioner_id, season_id, season:seasons(current_round)')
+    .eq('id', leagueId)
+    .single()
+
+  if (!league || league.commissioner_id !== user.id) {
+    throw new Error('Apenas o comissário pode sincronizar a agenda da rodada.')
+  }
+
+  const currentRound = (league.season as any)?.current_round ?? 1
+  const roundToSync = fixtureRound ?? currentRound
+
+  const { syncRoundSchedule } = await import('@/lib/round/sync-api-round')
+  const result = await syncRoundSchedule(league.season_id, roundToSync, { supabaseClient: supabase })
+
+  revalidatePath(`/league/${leagueId}`)
+  revalidatePath(`/league/${leagueId}/admin`)
+  revalidatePath(`/league/${leagueId}/standings`)
+  revalidatePath(`/league/${leagueId}/lineup`)
+  return result
+}

@@ -158,13 +158,14 @@ export async function syncRoundFromApiFootball(
     const awayScore = status === 'scheduled' ? null : apiFix.goals.away
     const elapsedMinutes = apiFix.fixture.status.elapsed || 0
 
-    // Update fixture status and score in Supabase
+    // Update fixture status, score and kickoff time in Supabase
     await supabase
       .from('fixtures')
       .update({
         status,
         home_score: homeScore,
         away_score: awayScore,
+        kickoff_at: apiFix.fixture.date,
       })
       .eq('id', dbFixture.id)
 
@@ -332,3 +333,76 @@ export async function syncRoundFromApiFootball(
     matches: matchDetails,
   }
 }
+
+/**
+ * Synchronizes the official match schedule (kickoff_at, status, scores) from API-Football
+ * for a specific round without querying player statistics.
+ * Fast and lightweight (only 1 HTTP request).
+ */
+export async function syncRoundSchedule(
+  seasonId: string,
+  fixtureRound: number,
+  options?: { supabaseClient?: any }
+): Promise<{ updatedCount: number }> {
+  const apiKey = process.env.FOOTBALL_API_KEY
+  if (!apiKey) {
+    console.warn('⚠️ FOOTBALL_API_KEY not configured, skipping schedule sync.')
+    return { updatedCount: 0 }
+  }
+
+  const supabase = options?.supabaseClient || (await createClient())
+
+  const roundEndpoint = `/fixtures?league=${LEAGUE_ID}&season=${SEASON_YEAR}&round=Regular Season - ${fixtureRound}`
+  const apiFixturesRes = await fetchApiFootball(roundEndpoint, apiKey)
+
+  if (!apiFixturesRes?.response || apiFixturesRes.response.length === 0) {
+    console.warn(`⚠️ Nenhum confronto retornado pela API-Football para a rodada ${fixtureRound}`)
+    return { updatedCount: 0 }
+  }
+
+  const apiFixtures = apiFixturesRes.response as any[]
+
+  // Fetch db fixtures for this round
+  const { data: dbFixtures } = await supabase
+    .from('fixtures')
+    .select('id, api_fixture_id')
+    .eq('season_id', seasonId)
+    .eq('round', fixtureRound)
+
+  if (!dbFixtures || dbFixtures.length === 0) {
+    return { updatedCount: 0 }
+  }
+
+  const dbMap = new Map<number, string>()
+  dbFixtures.forEach((f: any) => {
+    if (f.api_fixture_id) {
+      dbMap.set(Number(f.api_fixture_id), f.id)
+    }
+  })
+
+  let updatedCount = 0
+  for (const apiFix of apiFixtures) {
+    const apiId = Number(apiFix.fixture.id)
+    const dbId = dbMap.get(apiId)
+    if (!dbId) continue
+
+    const status = mapApiFixtureStatus(apiFix.fixture.status.short)
+    const homeScore = status === 'scheduled' ? null : apiFix.goals.home
+    const awayScore = status === 'scheduled' ? null : apiFix.goals.away
+
+    await supabase
+      .from('fixtures')
+      .update({
+        status,
+        home_score: homeScore,
+        away_score: awayScore,
+        kickoff_at: apiFix.fixture.date,
+      })
+      .eq('id', dbId)
+
+    updatedCount++
+  }
+
+  return { updatedCount }
+}
+

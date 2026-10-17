@@ -5,6 +5,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { sendTemplateMessage } from './client'
+import { checkRoundLockStatus } from '@/lib/lineup/lock'
 
 export interface MarketNotificationResult {
   leagueId: string
@@ -126,29 +127,33 @@ export async function notifyMarketClosing(
     const currentRound = season?.current_round ?? 1
     result.round = currentRound
 
-    // 3. Find earliest fixture for current round
-    const { data: fixtures } = await supabase
-      .from('fixtures')
-      .select('kickoff_at')
-      .eq('season_id', league.season_id)
-      .eq('round', currentRound)
-      .order('kickoff_at', { ascending: true })
-      .limit(1)
+    // Sync latest schedule from API-Football before checking lock & sending notification
+    if (process.env.FOOTBALL_API_KEY) {
+      try {
+        const { syncRoundSchedule } = await import('@/lib/round/sync-api-round')
+        await syncRoundSchedule(league.season_id, currentRound, { supabaseClient: supabase })
+      } catch (err) {
+        console.warn('[WhatsApp] Could not refresh round schedule before notifying:', err)
+      }
+    }
+
+    // 3. Find earliest fixture and check market lock for current round
+    const lockStatus = await checkRoundLockStatus(league.season_id, currentRound, { supabaseClient: supabase })
 
     let marketCloseTimestamp: number | null = null
-    if (fixtures && fixtures.length > 0 && fixtures[0].kickoff_at) {
-      const kickoffTime = new Date(fixtures[0].kickoff_at).getTime()
+    if (lockStatus.kickoffAt) {
+      const kickoffTime = new Date(lockStatus.kickoffAt).getTime()
       // Market closes 30 minutes before first kickoff
       marketCloseTimestamp = kickoffTime - 30 * 60 * 1000
     }
 
     if (marketCloseTimestamp) {
       result.marketCloseLabel = formatMarketCloseLabel(marketCloseTimestamp)
-      const now = Date.now()
-      if (now >= marketCloseTimestamp && !options?.force) {
-        console.log(`[WhatsApp] Market for league ${leagueId} is already closed. Skipping.`)
-        return result
-      }
+    }
+
+    if (lockStatus.isLocked && !options?.force) {
+      console.log(`[WhatsApp] Market for league ${leagueId} is already closed. Skipping.`)
+      return result
     }
 
     // 4. Fetch all teams and managers in the league

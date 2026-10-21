@@ -37,7 +37,11 @@
 | Banner/logo da liga (Supabase Storage) | ✅ Produção |
 | Número de telefone no perfil (WhatsApp) | ✅ Produção |
 | Alerta de fechamento de mercado (cron) | ✅ Produção |
-| Backend Node.js separado | 🔧 Em planejamento |
+| Backend NestJS (`api-cartola-mvp`) | 🔧 Em desenvolvimento |
+| Migração de banco (Supabase → Neon/Railway) | 🔧 Fase 1 |
+| Realtime (Supabase → WebSocket NestJS) | 🔧 Fase 2 |
+| Storage (Supabase → Cloudflare R2) | 🔧 Fase 2 |
+| Auth próprio (Supabase Auth → JWT custom) | 🔧 Fase 3 |
 
 ---
 
@@ -279,4 +283,5 @@ Criar liga (teamCap 2..maxClubes) → convites até N ≤ cap
 6. H2H 2026 = turno único se o calendário real couber para o N efetivo; senão TOTAL.
 7. Formações suportadas: 4-3-3, 4-4-2, 3-5-2, 4-2-3-1, 5-3-2, 5-4-1, 3-4-3.
 8. WhatsApp via Meta Cloud API (templates aprovados); SMS fora do MVP.
-9. Backend Node.js separado: extrai lógica de `lib/` para serviço autônomo com REST/webhook; o frontend Next.js deixa de ter Server Actions de negócio crítico.
+9. Backend NestJS (`api-cartola-mvp`): extrai lógica de `lib/` para serviço autônomo. Stack: NestJS 12, Drizzle ORM, PostgreSQL externo (Neon/Railway), BullMQ, WebSocket nativo.
+10. **Saída completa do Supabase** em 3 fases: (1) banco + auth guard, (2) realtime + storage, (3) auth próprio. Ver `docs/BACKEND_PLAN.md` seção 9.

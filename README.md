@@ -6,17 +6,21 @@ Liga fantasy fechada com draft snake, elenco único por liga e pontuação estil
 
 | Camada | Tecnologia |
 |---|---|
-| Frontend + BFF | Next.js 16 (App Router, React 19) |
-| Banco de dados | Supabase (PostgreSQL + Auth + RLS + Realtime) |
-| ORM / client | `@supabase/supabase-js` + `pg` direto para scripts |
+| Frontend + BFF leve | Next.js 16 (App Router, React 19) |
+| **Backend de negócio** | **NestJS 12** (`api-cartola-mvp`) |
+| Banco de dados | Supabase PostgreSQL → **Neon / Railway** (migração em curso) |
+| ORM | **Drizzle ORM** (backend) / `@supabase/supabase-js` (frontend, transitório) |
 | Validações | Zod 4 |
 | IDs curtos | nanoid |
 | Notificações | WhatsApp Cloud API (Meta Graph API v22) |
 | Fonte de dados | API-Football (`league_id=71`, Brasileirão Série A) |
+| Realtime | Supabase Realtime → **WebSocket NestJS** (Fase 2) |
+| Storage | Supabase Storage → **Cloudflare R2** (Fase 2) |
+| Auth | Supabase Auth → **JWT próprio** (Fase 3) |
 | Testes | Vitest |
 | Linguagem | TypeScript |
 
-> **Backend separado (Node.js)** — em desenvolvimento. Veja [`docs/BACKEND_PLAN.md`](./docs/BACKEND_PLAN.md).
+> **Migração do Supabase:** saída completa em 3 fases. Ver [`docs/BACKEND_PLAN.md`](./docs/BACKEND_PLAN.md) seção 9.
 
 ---
 
@@ -176,28 +180,30 @@ Criar liga (teamCap 2..20) → gerar inviteCode → convidar managers
       → notificação WhatsApp
 ```
 
-## Módulos core (lib/)
+## Módulos core (lib/) — em migração para NestJS
 
-| Módulo | Responsabilidade |
-|---|---|
-| `draft/engine.ts` | Start draft, Fisher-Yates shuffle, geração de H2H matchups, notificações |
-| `draft/auto-pick.ts` | Auto-pick por ranking (avgPoints, déficit de posição) |
-| `draft/snake-order.ts` | Geração da ordem snake para N times |
-| `round/round-processor.ts` | Fecha rodada: auto-sub, pontuação, H2H, avança temporada |
-| `round/sync-api-round.ts` | Sincroniza fixtures e player stats da API-Football |
-| `scoring/scoring-engine.ts` | Scouts → pontos (espelho Cartola 2026) |
-| `lineup/lock.ts` | Lock de escalação no kickoff, fallback para última escalação |
-| `lineup/auto-sub.ts` | Substituição automática se titular não jogou |
-| `h2h/berger-generator.ts` | Geração de chave H2H (método do círculo/Berger) |
-| `h2h/h2h-processor.ts` | Processamento de resultados e pontos de tabela H2H |
-| `standings/total-standings.ts` | Recalcula standings TOTAL |
-| `whatsapp/client.ts` | Envio de template messages via Meta Cloud API |
+| Módulo | Responsabilidade | Status |
+|---|---|---|
+| `draft/engine.ts` | Start draft, Fisher-Yates shuffle, geração de H2H matchups, notificações | 🔧 → `DraftModule` |
+| `draft/auto-pick.ts` | Auto-pick por ranking (avgPoints, déficit de posição) | 🔧 → `AutoPickService` |
+| `draft/snake-order.ts` | Geração da ordem snake para N times | 🔧 utilitário puro |
+| `round/round-processor.ts` | Fecha rodada: auto-sub, pontuação, H2H, avança temporada | 🔧 → `RoundModule` |
+| `round/sync-api-round.ts` | Sincroniza fixtures e player stats da API-Football | 🔧 → `SyncApiService` |
+| `scoring/scoring-engine.ts` | Scouts → pontos (espelho Cartola 2026) | ✅ Portado para NestJS |
+| `lineup/lock.ts` | Lock de escalação no kickoff, fallback para última escalação | 🔧 → `LockService` |
+| `lineup/auto-sub.ts` | Substituição automática se titular não jogou | 🔧 → `AutoSubService` |
+| `h2h/berger-generator.ts` | Geração de chave H2H (método do círculo/Berger) | 🔧 utilitário puro |
+| `h2h/h2h-processor.ts` | Processamento de resultados e pontos de tabela H2H | 🔧 → `H2HService` |
+| `standings/total-standings.ts` | Recalcula standings TOTAL | 🔧 → `StandingsService` |
+| `whatsapp/client.ts` | Envio de template messages via Meta Cloud API | 🔧 → `NotificationsModule` |
 
 ---
 
-## Banco de dados (Supabase / PostgreSQL)
+## Banco de dados (PostgreSQL)
 
 Ver [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) para detalhes completos do schema.
+
+Atualmente hospedado no **Supabase** (em migração para Neon/Railway). O schema é PostgreSQL puro e porta sem alterações.
 
 Tabelas principais:
 
@@ -207,7 +213,7 @@ Tabelas principais:
 - `lineups` → `lineup_slots` (escalação por rodada)
 - `round_scores` → `league_standings` → `h2h_matchups`
 
-Todas as tabelas têm **RLS habilitado**. Catálogo é leitura pública.
+Autorização atual: **RLS no Supabase**. Destino: **Guards no NestJS** (Fase 1 da migração).
 
 ---
 

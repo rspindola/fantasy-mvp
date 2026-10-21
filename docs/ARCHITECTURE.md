@@ -1,39 +1,60 @@
 # Arquitetura Técnica — Fantasy Draft MVP
 
-> Documento de referência para o sistema atual (Next.js + Supabase).
-> Para o plano do backend Node.js separado, ver [`BACKEND_PLAN.md`](./BACKEND_PLAN.md).
+> Documento de referência para o **sistema atual** (Next.js + Supabase).
+> O Supabase será **migrado progressivamente** — veja o plano em [`BACKEND_PLAN.md`](./BACKEND_PLAN.md).
 
 ---
 
-## 1. Visão geral
+## 1. Visão geral (estado atual)
 
 ```
 Browser (React 19)
     │
     ├─ Server Components / Server Actions (Next.js 16 App Router)
     │       │
-    │       ├─ lib/supabase/server.ts   ← Supabase SSR client
-    │       ├─ lib/draft/engine.ts      ← lógica de draft
-    │       ├─ lib/round/              ← processamento de rodada
-    │       ├─ lib/scoring/            ← motor de pontuação
-    │       └─ lib/whatsapp/           ← notificações
+    │       ├─ lib/supabase/server.ts   ← Supabase SSR client  [TRANSITÓRIO]
+    │       ├─ lib/draft/engine.ts      ← lógica de draft       [→ NestJS DraftModule]
+    │       ├─ lib/round/              ← processamento de rodada [→ NestJS RoundModule]
+    │       ├─ lib/scoring/            ← motor de pontuação      [→ NestJS (já portado)]
+    │       └─ lib/whatsapp/           ← notificações            [→ NestJS NotificationsModule]
     │
     ├─ Client Components (Realtime)
-    │       └─ Supabase Realtime (draft board ao vivo)
+    │       └─ Supabase Realtime       [TRANSITÓRIO → WebSocket NestJS na Fase 2]
     │
     └─ API Routes
-            └─ /api/cron/market-alert  ← cron protegido por CRON_SECRET
+            └─ /api/cron/market-alert  [TRANSITÓRIO → job BullMQ no NestJS]
 
 Supabase (PostgreSQL + Auth + RLS + Storage + Realtime)
+    [TRANSITÓRIO — sendo migrado. Ver BACKEND_PLAN.md seção 9]
 
 API-Football (fonte de dados externa — league_id=71)
+    [Permanente — BFF no NestJS: api-cartola-mvp]
 
 WhatsApp Cloud API (Meta Graph API v22)
+    [Permanente — NotificationsModule no NestJS]
 ```
+
+### Estado da migração
+
+| Camada | Destino | Status |
+|---|---|---|
+| BFF API-Football | NestJS `FootballModule` + `FixturesModule` | ✅ Feito |
+| Motor de pontuação | NestJS `fantasy/scoring.ts` | ✅ Feito |
+| PostgreSQL (dados) | Neon ou Railway | 🔧 Fase 1 |
+| Auth (JWT) | AuthGuard NestJS via JWKS | 🔧 Fase 1 |
+| Draft engine | NestJS `DraftModule` + WebSocket | 🔧 Fase 2 |
+| Round processor | NestJS `RoundModule` + BullMQ | 🔧 Fase 2 |
+| Lineup engine | NestJS `LineupModule` | 🔧 Fase 2 |
+| Storage (banners) | Cloudflare R2 | 🔧 Fase 2 |
+| Realtime (draft) | WebSocket NestJS | 🔧 Fase 2 |
+| Auth completo | Auth próprio (Lucia / custom JWT) | 🔧 Fase 3 |
 
 ---
 
 ## 2. Schema do banco de dados
+
+O schema é PostgreSQL puro e **migra sem alterações** para qualquer host (Neon, Railway, etc.).
+Atualmente hospedado no Supabase. Migrations em `supabase/migrations/`.
 
 ### Tabelas do catálogo (leitura pública)
 
@@ -112,9 +133,9 @@ Estatísticas por jogador por jogo. Todos os scouts são persistidos aqui.
 | penalties_won | PS pênalti sofrido | +1,0 |
 | computed_points | — | Pontos calculados e armazenados |
 
-> **Nota sobre passes_completed:** a coluna foi adicionada na migration `20261002000000_add_passes_completed.sql`. O script `backfill-passes-completed.ts` preenche dados históricos.
+> **`passes_completed`:** adicionado na migration `20261002000000_add_passes_completed.sql`. Backfill via `scripts/backfill-passes-completed.ts`.
 
-> **Nota sobre clean_sheet:** calculado via `fix-clean-sheets.ts` com base no placar final do fixture, não diretamente da API (que pode ter inconsistências).
+> **`clean_sheet`:** calculado localmente via `fix-clean-sheets.ts` (base: placar final do fixture + regra de ≥ 60 min) porque a API-Football tem inconsistências nesse campo.
 
 ---
 
@@ -123,6 +144,8 @@ Estatísticas por jogador por jogo. Todos os scouts são persistidos aqui.
 #### `profiles`
 Extensão de `auth.users`. Criada automaticamente via trigger `on_auth_user_created`.
 - `phone_number` (TEXT) — para notificações WhatsApp.
+
+> Na migração do Auth, `profiles` deixa de referenciar `auth.users` e passa a ter `password_hash` ou similar.
 
 #### `leagues`
 | Coluna | Tipo |
@@ -134,7 +157,7 @@ Extensão de `auth.users`. Criada automaticamente via trigger `on_auth_user_crea
 | pick_timer_seconds | INT (default 90) |
 | current_pick | INT |
 | total_picks | INT (N×22) |
-| banner_url | TEXT (Supabase Storage) |
+| banner_url | TEXT (→ migrar para Cloudflare R2) |
 
 #### `fantasy_teams`
 - `draft_order` — atribuído no start do draft (Fisher-Yates shuffle).
@@ -164,7 +187,9 @@ Extensão de `auth.users`. Criada automaticamente via trigger `on_auth_user_crea
 
 ---
 
-## 3. RLS (Row Level Security)
+## 3. RLS (Row Level Security) — estado atual
+
+> **Transitório.** Com a migração para o NestJS, a autorização sairá do banco e irá para os Guards do NestJS. Isso torna as políticas testáveis, explícitas e sem vendor lock-in.
 
 | Tabela | Leitura | Escrita |
 |---|---|---|
@@ -176,76 +201,93 @@ Extensão de `auth.users`. Criada automaticamente via trigger `on_auth_user_crea
 | lineups / lineup_slots | Pública | user_id owner do fantasy_team |
 | round_scores, league_standings, h2h_matchups | Pública | Service role |
 
-> Operações de admin (fechar rodada, sync, reprocessar) usam `SUPABASE_SERVICE_ROLE_KEY` via Server Actions.
+**Equivalentes no NestJS:**
+- `auth.uid()` → `@CurrentUser()` no decorator, injetado pelo `AuthGuard`
+- `commissioner_id = auth.uid()` → verificação explícita no `LeagueService`
+- Service role → `ServiceKeyGuard` com `SERVICE_API_KEY` no header
 
 ---
 
-## 4. Realtime
+## 4. Realtime — estado atual e migração
 
-Habilitado para o draft:
+**Atual (Supabase Realtime):**
 - Tabela `draft_picks` — subscribers recebem novos picks em tempo real.
 - Tabela `leagues` — subscribers recebem mudança de `current_pick` e `status`.
+- Habilitado via migration `20261005000001_enable_realtime_draft.sql`.
 
-Habilitado via migration `20261005000001_enable_realtime_draft.sql`.
+**Destino (WebSocket NestJS):**
+```typescript
+// draft/draft.gateway.ts
+@WebSocketGateway({ namespace: '/draft' })
+export class DraftGateway {
+  @WebSocketServer() server: Server
+
+  emitPickMade(leagueId: string, payload: PickMadeEvent) {
+    this.server.to(`league:${leagueId}`).emit('pick_made', payload)
+  }
+
+  emitDraftDone(leagueId: string) {
+    this.server.to(`league:${leagueId}`).emit('draft_done', { leagueId })
+  }
+}
+```
+
+Next.js substitui `supabase.channel()` por `socket.on('pick_made', ...)`.
 
 ---
 
-## 5. Módulos core (`src/lib/`)
+## 5. Módulos core do Next.js (`src/lib/`)
 
-### `draft/engine.ts`
+> Estes módulos serão **migrados para o NestJS** progressivamente. O código já está isolado — a migração é mover + adaptar para injeção de dependência.
+
+### `draft/engine.ts` → `DraftModule`
 - `startDraftEngine(leagueId)` — shuffles teams, seta `total_picks`, muda status para `drafting`, gera matchups H2H se necessário, cria lineups iniciais.
 - `makePick(leagueId, playerId, fantasyTeamId)` — valida turno, insere `draft_picks`, insere `roster_players`, avança `current_pick`, dispara notificação WhatsApp.
 - `autoPickForTeam(leagueId, fantasyTeamId)` — seleciona melhor jogador disponível por posição em déficit.
 - `finalizeDraft(leagueId)` — muda status para `active`.
 
-### `draft/snake-order.ts`
+### `draft/snake-order.ts` → utilitário puro
 - `generateSnakeOrder(n, rounds)` → array de `{round, teamIndex}` na ordem snake.
 
-### `draft/auto-pick.ts`
+### `draft/auto-pick.ts` → `AutoPickService`
 - Algoritmo: posição com maior déficit relativo aos mínimos → jogador com maior `avg_points` → desempate por `total_minutes` → nome.
 
-### `round/round-processor.ts`
+### `round/round-processor.ts` → `RoundService`
 - `ensureRoundScouts(seasonId, round)` — sincroniza stats da API se ainda não persistidas.
 - `closeAndAdvanceRound(leagueId, round)` — fluxo completo: lock lineups → auto-sub → calcular pontos → H2H results → standings → avançar rodada.
 - `recalculatePostponedRound(leagueId, round)` — reprocessa rodada com jogos adiados.
 - `generateRoundPartials(leagueId, round)` — pontos parciais antes de fechar.
 
-### `round/sync-api-round.ts`
+### `round/sync-api-round.ts` → `SyncApiService`
 - `syncRoundFromApiFootball(seasonId, round)` — baixa `fixtures/players` da API e persiste em `player_fixture_stats`.
 - `syncRoundSchedule(seasonId)` — atualiza `kickoff_at` e `status` dos fixtures.
 
-### `scoring/scoring-engine.ts`
+### `scoring/scoring-engine.ts` → `fantasy/scoring.ts` (já no NestJS ✅)
 - `calculatePlayerPoints(stats, position)` — aplica a tabela de scouts e retorna pontos.
 - Lógica de `clean_sheet`: só conta para GOL/LAT/ZAG se o time não sofreu gols E o jogador jogou ≥ 60 minutos.
 
-### `lineup/lock.ts`
+### `lineup/lock.ts` → `LockService`
 - `lockLineupsForRound(seasonId, round)` — identifica o menor `kickoff_at` da rodada e bloqueia todas as ligas ativas.
 - `ensureLockedRoundLineups(leagueId, round)` — se manager não escalou, copia última escalação ou auto-escala.
 
-### `lineup/auto-sub.ts`
+### `lineup/auto-sub.ts` → `AutoSubService`
 - `processAutoSubstitutions(teamId, round)` — substitui titular com 0 minutos pelo melhor banco da mesma posição que jogou.
 
-### `h2h/berger-generator.ts`
+### `h2h/berger-generator.ts` → utilitário puro
 - `generateBergerMatchups(teams, startRound)` — gera chave completa do turno único pelo método do círculo.
 
-### `h2h/h2h-processor.ts`
+### `h2h/h2h-processor.ts` → `H2HService`
 - `processH2HRound(leagueId, round)` — calcula resultado do duelo e atualiza `h2h_matchups` e `league_standings`.
 
-### `standings/total-standings.ts`
+### `standings/total-standings.ts` → `StandingsService`
 - `recalculateTotalStandings(leagueId)` — recalcula standings TOTAL a partir de `round_scores`.
 
-### `league/h2h-validation.ts`
+### `league/h2h-validation.ts` → utilitário compartilhado
 - `h2hRoundsNeeded(n)` — fórmula: par = N-1, ímpar = N.
 - `validateH2HStart(n, remainingRounds)` — trava dura antes de iniciar draft H2H.
 
-### `whatsapp/client.ts`
+### `whatsapp/client.ts` → `WhatsAppService`
 - `sendTemplateMessage({to, templateName, bodyParameters})` — Meta Graph API v22.
-
-### `whatsapp/draft-notification.ts`
-- `notifyDraftTurn(leagueId, pickNumber)` — busca o manager da vez e manda WhatsApp.
-
-### `whatsapp/market-notification.ts`
-- `sendMarketClosingAlert(leagueId, round)` — avisa managers sem escalação.
 
 ---
 
@@ -272,6 +314,7 @@ Habilitado via migration `20261005000001_enable_realtime_draft.sql`.
 
 ## 7. Variáveis de ambiente
 
+### Next.js (frontend — estado atual)
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
@@ -286,21 +329,44 @@ WHATSAPP_ACCESS_TOKEN=
 CRON_SECRET=
 ```
 
+### NestJS backend (`api-cartola-mvp`)
+```env
+DATABASE_URL=postgresql://...   # Neon ou Railway (não Supabase)
+REDIS_URL=redis://...
+
+SUPABASE_URL=                   # apenas para JWKS na fase de transição
+API_FOOTBALL_KEY=
+API_FOOTBALL_LEAGUE_ID=71
+
+WHATSAPP_PHONE_NUMBER_ID=
+WHATSAPP_ACCESS_TOKEN=
+
+R2_ACCOUNT_ID=                  # Cloudflare R2 (Storage)
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET=
+
+SERVICE_API_KEY=                # endpoints de admin/cron
+```
+
 ---
 
-## 8. Decisões técnicas e trade-offs
+## 8. Decisões técnicas
 
-### Por que Supabase e não um backend próprio?
-O MVP precisava de velocidade de entrega. Supabase fornece Auth, RLS, Realtime e Storage prontos. O trade-off é que a lógica de negócio ficou misturada com Server Actions do Next.js, o que dificulta testes e escala. O backend Node.js separado resolve isso.
+### Saída do Supabase — justificativa
+O Supabase foi a escolha certa para o MVP: entrega rápida, auth e realtime prontos. O trade-off — vendor lock-in em Auth, RLS e Realtime — era aceitável em 2026. Com o backend NestJS, o lock-in deixa de ser necessário e cria mais custo do que valor.
 
-### Por que `passes_completed` foi adicionado depois?
-A migration inicial não incluía esse scout. Após análise dos dados da API-Football, foi adicionado em `20261002000000_add_passes_completed.sql` com backfill dos dados históricos.
+### Por que Drizzle e não Prisma?
+Drizzle é mais próximo do SQL, sem camada de abstração que esconde o que está sendo executado. O schema como código TypeScript facilita a migração entre bancos. Prisma tem mais magia (lazy loading, N+1 automático) que pode surpreender negativamente em produção.
 
 ### Por que `clean_sheet` é calculado localmente?
 A API-Football tem inconsistências no campo de clean sheet (especialmente para substitutos). O script `fix-clean-sheets.ts` recalcula com base no placar final do fixture, aplicando a regra dos 60 minutos.
 
+### Por que `passes_completed` foi adicionado depois?
+A migration inicial não incluía esse scout. Após análise dos dados da API-Football, foi adicionado em `20261002000000_add_passes_completed.sql` com backfill dos dados históricos.
+
 ### Custo de API-Football
 Plano Free: 100 req/dia. Plano Basic: 7.500 req/dia. Para o piloto com 1–3 ligas e ~38 rodadas, o plano Basic é suficiente. O batch de fixtures evita chamadas desnecessárias.
 
-### Realtime no draft
-Usa Supabase Realtime via `REALTIME_LISTEN_EVENTS` nas tabelas `draft_picks` e `leagues`. O cliente React se inscreve no canal e atualiza o board sem polling.
+### Realtime no draft — por que sair do Supabase Realtime?
+Supabase Realtime funciona via `postgres_changes` (CDC). Com o banco saindo do Supabase, o Realtime para de funcionar automaticamente. WebSocket nativo no NestJS é a substituição natural — mais performático, sem polling e sem taxa de mensagens limitada pelo plano.

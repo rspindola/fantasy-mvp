@@ -8,6 +8,39 @@
 
 ---
 
+## 0. Status de implementação (Out/2026)
+
+> Esta seção reflete o que está **efetivamente construído** no monorepo `fantasy-mvp`.
+> O frontend (Next.js 16) está funcional. O backend Node.js separado está **em planejamento** — ver [`docs/BACKEND_PLAN.md`](./docs/BACKEND_PLAN.md).
+
+| Feature | Status |
+|---|---|
+| Auth (Supabase magic link / senha) | ✅ Produção |
+| CRUD de liga + invite code | ✅ Produção |
+| Draft snake — modo MANUAL | ✅ Produção |
+| Draft snake — modo AUTO | ✅ Produção |
+| Draft snake — modo HYBRID | ✅ Produção |
+| Board do draft com unicidade e filtros | ✅ Produção |
+| Realtime no draft (Supabase Realtime) | ✅ Produção |
+| Notificação de turno via WhatsApp | ✅ Produção |
+| Escalação 11 titulares + capitão | ✅ Produção |
+| Lock automático no 1º apito da rodada | ✅ Produção |
+| Auto-substituição de titular sem minutos | ✅ Produção |
+| Motor de pontuação (espelho Cartola 2026) | ✅ Produção |
+| Standings TOTAL | ✅ Produção |
+| Standings H2H (Berger) | ✅ Produção |
+| Painel do comissário (admin) | ✅ Produção |
+| Sync catálogo via API-Football | ✅ Produção |
+| Sync fixtures e player stats | ✅ Produção |
+| Histórico de scouts (player_fixture_stats) | ✅ Produção |
+| Seed local sem API key | ✅ Produção |
+| Banner/logo da liga (Supabase Storage) | ✅ Produção |
+| Número de telefone no perfil (WhatsApp) | ✅ Produção |
+| Alerta de fechamento de mercado (cron) | ✅ Produção |
+| Backend Node.js separado | 🔧 Em planejamento |
+
+---
+
 ## 1. Problema
 
 No Cartola todo mundo disputa os mesmos jogadores. Aqui o ativo é **exclusivo na liga**: se o Time A draftou o centroavante do Palmeiras, nenhum outro time daquela liga o usa. Isso cria draft, rivalidade e um elenco para o resto do recorte do campeonato.
@@ -44,7 +77,7 @@ No Cartola todo mundo disputa os mesmos jogadores. Aqui o ativo é **exclusivo n
    - **Modo de draft:** `MANUAL` | `AUTO` | `HYBRID`
    - **Teto de times** `teamCap`
    - Tempo por pick (default 90s no draft ao vivo; até 3h se assíncrono)
-6. Campeonato real no MVP: **Brasileirão Série A**, season configurável (`API_FOOTBALL_LEAGUE_ID=71`). `maxClubesReais` vem do catálogo da season (`COUNT(real_clubs)`), não de constante mágica — assim outras ligas no futuro só mudam o universo.
+6. Campeonato real no MVP: **Brasileirão Série A**, season configurável (`API_FOOTBALL_LEAGUE_ID=71`). `maxClubesReais` vem do catálogo da season (`COUNT(real_clubs)`), não de constante mágica.
 
 ### 3.2 Elenco e unicidade
 
@@ -74,7 +107,7 @@ Ordem **snake** (1→N, N→1, …) por 22 voltas = `N × 22` escolhas.
 | `AUTO` | Assim que o draft começa, o sistema preenche os `N × 22` picks pela fila de ranking (média de pontos / minutos). |
 | `HYBRID` | Pick humano até o timer. Expira → auto-pick do melhor elegível. Manager pode marcar `autoComplete` para o resto do draft. |
 
-**Auto-pick:** maior `avgPoints` entre jogadores ativos, da posição mais “em déficit” vs. mínimos; desempate: mais minutos, depois nome.
+**Auto-pick:** maior `avgPoints` entre jogadores ativos, da posição mais "em déficit" vs. mínimos; desempate: mais minutos, depois nome.
 
 **Board:** filtros por posição, clube, busca; mostra se já foi draftado (e por quem, na própria liga).
 
@@ -84,13 +117,15 @@ Status da liga: `open` → `drafting` → `active` → `closed`.
 
 Elenco de 22 **não pontua inteiro**. Cada rodada do Brasileirão o manager escala:
 
-- 11 titulares (formação 4-3-3, 4-4-2 ou 3-5-2)
+- 11 titulares (formação: 4-3-3, 4-4-2, 3-5-2, 4-2-3-1, 5-3-2, 5-4-1, 3-4-3)
 - 1 capitão (pontos × 1,5) — opcional no MVP, default ligado
 - Banco não pontua
 
-Lock: **primeiro apito da rodada real** (menor `kickoffAt` dos jogos daquela rodada do campeonato; no Brasileirão, 10 partidas). Independente de N da liga fantasy. Depois disso a escalação congela. Se o manager não escalou, copia a última escalação válida; se não houver, auto-escala os 11 de maior média respeitando a formação.
+Lock: **primeiro apito da rodada real** (menor `kickoffAt` dos jogos daquela rodada). Depois disso a escalação congela. Se o manager não escalou, copia a última escalação válida; se não houver, auto-escala os 11 de maior média respeitando a formação.
 
 Só titulares com `minutes > 0` no jogo da rodada pontuam. Jogador sem jogo / no banco real / 0 min = 0.
+
+**Auto-substituição:** se um titular terminou com `minutes = 0`, o sistema substitui automaticamente pelo melhor jogador do banco na mesma posição que jogou na rodada.
 
 ### 3.5 Pontuação do jogador (espelho Cartola 2026)
 
@@ -148,7 +183,7 @@ Resultado do duelo (pelos `roundPoints` daquela rodada):
 
 Classificação H2H: pontos de tabela → confronto direto (se já jogaram) → saldo de pontos fantasy no recorte → total de pontos fantasy.
 
-**Teto de rodadas da liga = rodadas reais restantes.** A chave é **turno único** no piloto (ida e volta só se o calendário real couber — em geral não, na reta final).
+**Teto de rodadas da liga = rodadas reais restantes.** A chave é **turno único** no piloto.
 
 Rodadas necessárias no turno único:
 
@@ -161,11 +196,9 @@ Geração: método do círculo / Berger, alinhada 1:1 com as próximas `h2hRound
 
 **Quando validar**
 
-1. **Criação:** H2H sempre pode ser escolhido se `remainingRealRounds >= 1` (cabe N=2). Se `remaining < h2hRoundsNeeded(teamCap)`, avisar: “se a liga encher até {teamCap}, o turno único não cabe; dá para iniciar com menos times ou usar TOTAL”.
-2. **Início do draft (trava dura):** `N = inscritos`. Se `remainingRealRounds < h2hRoundsNeeded(N)`, **não inicia** em H2H. Mensagem: “faltam X rodadas; H2H com N times precisa de Y. Reduza o grupo, espere (não vai aumentar), ou mude para TOTAL”.
-3. Ida e volta (`2 × h2hRoundsNeeded` para o mesmo N): **não oferecer** se não couber; no piloto 2026, não oferecer ida e volta.
-
-Exemplos com ~10 rodadas reais restantes: H2H ok para N=2..10 (par) ou N=3,5,7,9; N=12 precisa 11; N=20 precisa 19 — recusar o start, não a existência da regra.
+1. **Criação:** H2H sempre pode ser escolhido se `remainingRealRounds >= 1` (cabe N=2). Se `remaining < h2hRoundsNeeded(teamCap)`, avisar.
+2. **Início do draft (trava dura):** `N = inscritos`. Se `remainingRealRounds < h2hRoundsNeeded(N)`, **não inicia** em H2H.
+3. Ida e volta: **não oferecer** no piloto 2026.
 
 ### 3.8 Sincronizar catálogo
 
@@ -181,22 +214,31 @@ Botão admin **Sincronizar**:
 
 Toda estatística usada para pontuar é **persistida** (`player_fixture_stats`). Reprocessar uma rodada não depende da API além do gap. UI de jogador: pontos por rodada, scouts, clube.
 
+### 3.10 Notificações WhatsApp
+
+- **Turno no draft:** notifica o manager cuja vez é de pickar (via template `fantasy_draft_turn`).
+- **Alerta de fechamento de mercado:** cron pré-rodada avisa managers que não escalaram (via template `market_closing_alert`).
+- Configuração: manager adiciona número de telefone no perfil (`profiles.phone_number`).
+
 ---
 
 ## 4. Escopo do MVP (in / out)
 
-**In**
+**In** (implementado ou em produção)
 
 - Auth e-mail (magic link ou senha)
 - CRUD de liga + convite
-- Draft snake 22, 3 modos
-- Board + unicidade
-- Escalação 11 + lock
+- Draft snake 22, 3 modos (MANUAL, AUTO, HYBRID)
+- Board + unicidade + realtime
+- Escalação 11 + lock + auto-substituição
 - Scoring TOTAL e H2H (com trava de rodadas)
-- Tabela, rodada, time, ficha do jogador
+- Tabela, rodada, duelo, time, ficha do jogador
 - Sync catálogo + ingestão de scouts + cron pós-rodada
 - Seed local sem API key (para desenvolver offline)
-- Admin: sync, reprocessar rodada, ligas demo
+- Admin: sync, reprocessar rodada, avançar rodada, top scorers
+- Banner/logo da liga
+- Notificações WhatsApp (turno no draft, fechamento de mercado)
+- Backend Node.js separado *(em planejamento — ver `docs/BACKEND_PLAN.md`)*
 
 **Out (2027+)**
 
@@ -223,7 +265,8 @@ Toda estatística usada para pontuar é **persistida** (`player_fixture_stats`).
 Criar liga (teamCap 2..maxClubes) → convites até N ≤ cap
   → comissário inicia (≥2) → (embaralhar ordem) → draft N×22 picks
   → liga active → a cada rodada: escalar até lock → jogos reais
-  → ingest scouts → pontuar titulares → atualizar TOTAL ou H2H → tabela
+  → ingest scouts → pontuar titulares → auto-sub → atualizar TOTAL ou H2H → tabela
+  → notificação WhatsApp pós-rodada
 ```
 
 ## 7. Decisões explícitas (não reabrir no MVP)
@@ -234,3 +277,6 @@ Criar liga (teamCap 2..maxClubes) → convites até N ≤ cap
 4. Capitão ×1,5 no MVP (desligar por feature flag se o piloto achar barulho).
 5. Jogador transferido: inativo para nova escalação, permanece no histórico.
 6. H2H 2026 = turno único se o calendário real couber para o N efetivo; senão TOTAL.
+7. Formações suportadas: 4-3-3, 4-4-2, 3-5-2, 4-2-3-1, 5-3-2, 5-4-1, 3-4-3.
+8. WhatsApp via Meta Cloud API (templates aprovados); SMS fora do MVP.
+9. Backend Node.js separado: extrai lógica de `lib/` para serviço autônomo com REST/webhook; o frontend Next.js deixa de ter Server Actions de negócio crítico.
